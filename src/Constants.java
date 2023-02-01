@@ -1,5 +1,5 @@
 /**
- * Class to store Constants needed for the program
+ * Class to store src.Constants needed for the program
  */
 public final class Constants {
 

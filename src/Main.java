@@ -4,7 +4,7 @@ import java.util.Scanner;
 public class Main {
 
     /**
-     * Entry Program: java Main <db loc> <page size> <buffer size>
+     * Entry Program: java src.Main <db loc> <page size> <buffer size>
      */
     public static void main(String[] args) {
         if(args.length != 3){
@@ -16,7 +16,7 @@ public class Main {
     }
 
     /**
-     * Main interface with user. Will continuously ask for command until quit
+     * src.Main interface with user. Will continuously ask for command until quit
      * @param dbLoc
      * @param pageSize
      * @param bufferSize
