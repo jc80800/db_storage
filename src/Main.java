@@ -1,3 +1,7 @@
+import Constants.Constant;
+import Objects.Statement;
+import Objects.StorageManager;
+
 import java.io.File;
 import java.util.Scanner;
 
@@ -16,7 +20,7 @@ public class Main {
     }
 
     /**
-     * src.Main interface with user. Will continuously ask for command until quit
+     * Main interface with user. Will continuously ask for command until quit
      * @param dbLoc
      * @param pageSize
      * @param bufferSize
@@ -36,15 +40,25 @@ public class Main {
         while(true) {
             // while running command
             Scanner scanner = new Scanner(System.in);
-            System.out.print(Constants.PROMPT);
+            System.out.print(Constant.PROMPT);
 
             String command = scanner.nextLine();
-            System.out.println(command);
-            break;
+
+            Statement statement = new Statement();
+            Constant.PrepareResult prepareResult = statement.prepareStatement(command);
+            switch (prepareResult) {
+                case PREPARE_QUIT -> {
+                    System.out.println("Closing database");
+                }
+                case PREPARE_SUCCESS -> {
+                }
+                case PREPARE_UNRECOGNIZED_STATEMENT -> {
+                    System.out.printf("Unrecognized keyword at \"%s\".\n", command);
+                    continue;
+                }
+            }
+            statement.execute();
         }
-
-        System.out.println("System Closing");
-
     }
 
     /**
@@ -52,7 +66,7 @@ public class Main {
      * If directory exist or created, return file
      * else system exist
      */
-    public static Boolean checkDirectory(File f){
+    private static Boolean checkDirectory(File f){
 
         if(f.exists() && f.isDirectory()) {
             System.out.println("Directory" + f.getName() + " exists");
