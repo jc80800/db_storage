@@ -1,5 +1,5 @@
 import Constants.Constant;
-import Objects.Statement;
+import SqlParser.Statement;
 import Objects.StorageManager;
 
 import java.io.File;
