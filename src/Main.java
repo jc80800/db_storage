@@ -1,6 +1,6 @@
 import Constants.Constant;
 import SqlParser.Statement;
-import Objects.StorageManager;
+import StorageManager.StorageManager;
 
 import java.io.File;
 import java.util.Scanner;
