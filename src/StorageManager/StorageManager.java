@@ -1,5 +1,6 @@
 package StorageManager;
 
+import StorageManager.Metadata.Catalog;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
