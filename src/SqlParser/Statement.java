@@ -1,11 +1,19 @@
 package SqlParser;
 
 import Constants.Constant;
+import StorageManager.StorageManager;
+
 import java.util.Locale;
 
 public class Statement {
 
-    Constant.StatementType type;
+    private Constant.StatementType type;
+
+    private final StorageManager storageManager;
+
+    public Statement(StorageManager storageManager) {
+        this.storageManager = storageManager;
+    }
 
     public Constant.PrepareResult prepareStatement(String input) {
         String[] tokens = input.split(" ");
@@ -84,6 +92,9 @@ public class Statement {
             if (!token.equals(Constant.TABLE)) {
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
+
+            storageManager.createTable();
+
         } catch (ArrayIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }

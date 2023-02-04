@@ -23,4 +23,8 @@ public class StorageManager {
             }
         }
     }
+
+    public void createTable(){
+        return;
+    }
 }

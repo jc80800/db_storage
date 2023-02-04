@@ -44,7 +44,7 @@ public class Main {
 
             String command = scanner.nextLine();
 
-            Statement statement = new Statement();
+            Statement statement = new Statement(storageManager);
             Constant.PrepareResult prepareResult = statement.prepareStatement(command);
             switch (prepareResult) {
                 case PREPARE_QUIT -> {
