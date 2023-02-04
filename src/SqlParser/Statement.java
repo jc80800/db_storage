@@ -12,19 +12,17 @@ public class Statement {
         String type = tokens[0].toUpperCase(Locale.ROOT);
         Constant.PrepareResult result;
         switch (type) {
-            case Constant.CREATE -> {
+            case Constant.CREATE ->
                 result = createCommand(tokens);
-            }
-            case Constant.DISPLAY -> {
+            case Constant.DISPLAY ->
                 result = displayCommand(tokens);
-            }
             case Constant.INSERT -> {
                 this.type = Constant.StatementType.INSERT;
-                result = Constant.PrepareResult.PREPARE_SUCCESS;
+                result = insertCommand(tokens);
             }
             case Constant.SELECT -> {
                 this.type = Constant.StatementType.SELECT;
-                result = Constant.PrepareResult.PREPARE_SUCCESS;
+                result = selectCommand(tokens);
             }
             case Constant.QUIT_CODE -> {
                 this.type = Constant.StatementType.QUIT;
@@ -35,7 +33,32 @@ public class Statement {
 
         return result;
     }
+    private Constant.PrepareResult selectCommand(String[] tokens) {
+        try{
+            String token = tokens[1].toUpperCase();
+            if (!(token.equals(Constant.SELECT))){
+                return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+            }
 
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+        }
+
+        return Constant.PrepareResult.PREPARE_SUCCESS;
+    }
+    private Constant.PrepareResult insertCommand(String[] tokens) {
+        try{
+            String token = tokens[1].toUpperCase();
+            if (!(token.equals(Constant.INSERT))){
+                return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+            }
+
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+        }
+
+        return Constant.PrepareResult.PREPARE_SUCCESS;
+    }
     private Constant.PrepareResult displayCommand(String[] tokens) {
         try {
             String token = tokens[1].toUpperCase();
@@ -54,7 +77,7 @@ public class Statement {
         return Constant.PrepareResult.PREPARE_SUCCESS;
     }
 
-    public Constant.PrepareResult createCommand(String[] commandTokens) {
+    private Constant.PrepareResult createCommand(String[] commandTokens) {
         // check if second word is "table"
         try {
             String token = commandTokens[1].toUpperCase();
@@ -74,21 +97,16 @@ public class Statement {
                 System.out.println("Quit statement executing");
                 System.exit(0);
             }
-            case INSERT -> {
+            case INSERT ->
                 System.out.println("Insert statement executing");
-            }
-            case SELECT -> {
+            case SELECT ->
                 System.out.println("Select statement executing");
-            }
-            case CREATE_TABLE -> {
+            case CREATE_TABLE ->
                 System.out.println("Create Table statement executing");
-            }
-            case DISPLAY_INFO -> {
+            case DISPLAY_INFO ->
                 System.out.println("Display info statement executing");
-            }
-            case DISPLAY_SCHEMA -> {
+            case DISPLAY_SCHEMA ->
                 System.out.println("Display schema statement executing");
-            }
         }
     }
 }
