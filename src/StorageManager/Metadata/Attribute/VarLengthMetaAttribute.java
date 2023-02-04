@@ -1,12 +1,13 @@
-package StorageManager.Attribute;
+package StorageManager.Metadata.Attribute;
 
 import Constants.Constant;
 
-public class VarLengthAttribute extends Attribute{
+public class VarLengthMetaAttribute extends MetaAttribute {
+
     // length of type (CHAR, VARCHAR);
     private final int length;
 
-    public VarLengthAttribute(String name, Constant.DataType type, int length) {
+    public VarLengthMetaAttribute(String name, Constant.DataType type, int length) {
         super(name, type);
         this.length = length;
     }

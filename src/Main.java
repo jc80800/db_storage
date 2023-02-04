@@ -1,7 +1,6 @@
 import Constants.Constant;
 import SqlParser.Statement;
 import StorageManager.StorageManager;
-
 import java.io.File;
 import java.util.Scanner;
 
@@ -11,7 +10,7 @@ public class Main {
      * Entry Program: java src.Main <db loc> <page size> <buffer size>
      */
     public static void main(String[] args) {
-        if(args.length != 3){
+        if (args.length != 3) {
             System.err.println("Argument Length invalid");
             System.exit(1);
         }
@@ -21,6 +20,7 @@ public class Main {
 
     /**
      * Main interface with user. Will continuously ask for command until quit
+     *
      * @param dbLoc
      * @param pageSize
      * @param bufferSize
@@ -30,14 +30,14 @@ public class Main {
         // Check if Directory exist, if not create else restart
         File db = new File(dbLoc);
 
-        if(!checkDirectory(db)){
+        if (!checkDirectory(db)) {
             System.exit(1);
         }
 
         // Create Storage Manager
-        StorageManager storageManager = new StorageManager();
+        StorageManager storageManager = new StorageManager(db);
 
-        while(true) {
+        while (true) {
             // while running command
             Scanner scanner = new Scanner(System.in);
             System.out.print(Constant.PROMPT);
@@ -62,18 +62,17 @@ public class Main {
     }
 
     /**
-     * Helper function for checking directory
-     * If directory exist or created, return file
-     * else system exist
+     * Helper function for checking directory If directory exist or created, return file else system
+     * exist
      */
-    private static Boolean checkDirectory(File f){
+    private static Boolean checkDirectory(File f) {
 
-        if(f.exists() && f.isDirectory()) {
+        if (f.exists() && f.isDirectory()) {
             System.out.println("Directory" + f.getName() + " exists");
             return true;
         } else {
             // Directory needs to be in the format of ./foo
-            if(f.mkdirs()) {
+            if (f.mkdirs()) {
                 System.out.println("Directory " + f.getName() + " has been created");
                 return true;
             } else {

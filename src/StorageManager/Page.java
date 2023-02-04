@@ -1,14 +1,17 @@
 package StorageManager;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 
 public class Page {
-    private int numOfRecords;
-    private ArrayList<Integer> recordPointers;
-    private ArrayDeque<Record> records;
 
-    public Page(int numOfRecords, ArrayList<Integer> recordPointers, ArrayDeque<Record> records) {
+    private final int tableNumber;
+    private int numOfRecords;
+    private ArrayList<Coordinate> recordPointers;
+    private ArrayList<Record> records;
+
+    public Page(int tableNumber, int numOfRecords, ArrayList<Coordinate> recordPointers,
+        ArrayList<Record> records) {
+        this.tableNumber = tableNumber;
         this.numOfRecords = numOfRecords;
         this.recordPointers = recordPointers;
         this.records = records;
@@ -22,19 +25,23 @@ public class Page {
         this.numOfRecords = numOfRecords;
     }
 
-    public ArrayList<Integer> getRecordPointers() {
+    public ArrayList<Coordinate> getRecordPointers() {
         return recordPointers;
     }
 
-    public void setRecordPointers(ArrayList<Integer> recordPointers) {
+    public void setRecordPointers(ArrayList<Coordinate> recordPointers) {
         this.recordPointers = recordPointers;
     }
 
-    public ArrayDeque<Record> getRecords() {
+    public ArrayList<Record> getRecords() {
         return records;
     }
 
-    public void setRecords(ArrayDeque<Record> records) {
+    public void setRecords(ArrayList<Record> records) {
         this.records = records;
+    }
+
+    public int getTableNumber() {
+        return tableNumber;
     }
 }

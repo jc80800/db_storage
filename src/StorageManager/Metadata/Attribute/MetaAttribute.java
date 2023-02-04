@@ -1,12 +1,13 @@
-package StorageManager.Attribute;
+package StorageManager.Metadata.Attribute;
 
 import Constants.Constant;
 
-public class Attribute {
+public class MetaAttribute {
+
     private final String name;
     private final Constant.DataType type;
 
-    public Attribute(String name, Constant.DataType type) {
+    public MetaAttribute(String name, Constant.DataType type) {
         this.name = name;
         this.type = type;
     }

@@ -3,8 +3,9 @@ package StorageManager;
 import java.util.PriorityQueue;
 
 public class PageBuffer {
+
     private final int bufferSize;
-    private PriorityQueue<Page> bufferQueue;
+    private final PriorityQueue<Page> bufferQueue;
 
     public PageBuffer(int bufferSize, PriorityQueue<Page> bufferQueue) {
         this.bufferSize = bufferSize;

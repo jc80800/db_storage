@@ -1,7 +1,6 @@
 package SqlParser;
 
 import Constants.Constant;
-
 import java.util.Locale;
 
 public class Statement {
@@ -62,7 +61,7 @@ public class Statement {
             if (!token.equals(Constant.TABLE)) {
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
-        } catch (ArrayIndexOutOfBoundsException e){
+        } catch (ArrayIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
         this.type = Constant.StatementType.CREATE_TABLE;

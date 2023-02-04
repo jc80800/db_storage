@@ -1,27 +1,31 @@
 package StorageManager;
 
-import StorageManager.Attribute.Attribute;
-
-import java.util.ArrayList;
+import StorageManager.Metadata.Metatable;
+import java.util.HashMap;
 
 public class Catalog {
-    private final String name;
-    private ArrayList<Attribute> attributes;
 
-    public Catalog(String name, ArrayList<Attribute> attributes) {
-        this.name = name;
-        this.attributes = attributes;
+    private int numOfTables;
+    private HashMap<Integer, Metatable> tablesMetadata;
+
+    public Catalog(int numOfTables, HashMap<Integer, Metatable> tablesMetadata) {
+        this.numOfTables = numOfTables;
+        this.tablesMetadata = tablesMetadata;
     }
 
-    public String getName() {
-        return name;
+    public int getNumOfTables() {
+        return numOfTables;
     }
 
-    public ArrayList<Attribute> getAttributes() {
-        return attributes;
+    public void setNumOfTables(int numOfTables) {
+        this.numOfTables = numOfTables;
     }
 
-    public void setAttributes(ArrayList<Attribute> attributes) {
-        this.attributes = attributes;
+    public HashMap<Integer, Metatable> getTablesMetadata() {
+        return tablesMetadata;
+    }
+
+    public void setTablesMetadata(HashMap<Integer, Metatable> tablesMetadata) {
+        this.tablesMetadata = tablesMetadata;
     }
 }
