@@ -30,9 +30,9 @@ public class Main {
         // Check if Directory exist, if not create else restart
         File db = new File(dbLoc);
 
-        if (!checkDirectory(db)) {
-            System.exit(1);
-        }
+        //if (!checkDirectory(db)) {
+        //    System.exit(1);
+        //}
 
         // Create Storage Manager
         StorageManager storageManager = new StorageManager(db);
