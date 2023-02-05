@@ -14,6 +14,11 @@ public final class Constant {
     public static final String TABLE = "TABLE";
     public static final String SCHEMA = "SCHEMA";
     public static final String INFO = "INFO";
+    public static final String INTEGER = "INTEGER";
+    public static final String DOUBLE = "DOUBLE";
+    public static final String BOOLEAN = "BOOLEAN";
+    public static final String CHAR = "CHAR";
+    public static final String VARCHAR = "VARCHAR";
 
     public enum StatementType {
         CREATE_TABLE,
