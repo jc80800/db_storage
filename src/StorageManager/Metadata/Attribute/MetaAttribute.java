@@ -11,11 +11,12 @@ public class MetaAttribute {
 
     // byte: length of name, string name, number of length of type, type
 
-    protected MetaAttribute(String name, DataType type) {
+    public MetaAttribute(String name, DataType type) {
         this.name = name;
         this.type = type;
     }
 
+    /*
     public MetaAttribute deserialize(byte[] input) {
         int index = 0;
         int nameLength = ((int) input[index]) & 0xFF;
@@ -35,6 +36,8 @@ public class MetaAttribute {
         };
         return new MetaAttribute(name, type);
     }
+
+     */
 
     public String getName() {
         return name;

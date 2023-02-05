@@ -9,11 +9,12 @@ public class VarLengthMetaAttribute extends MetaAttribute {
     // length of type (CHAR, VARCHAR);
     private final int length;
 
-    private VarLengthMetaAttribute(String name, Constant.DataType type, int length) {
+    public VarLengthMetaAttribute(String name, Constant.DataType type, int length) {
         super(name, type);
         this.length = length;
     }
 
+    /*
     @Override
     public VarLengthMetaAttribute deserialize(byte[] input) {
         int index = 0;
@@ -38,6 +39,8 @@ public class VarLengthMetaAttribute extends MetaAttribute {
             typeString.substring(typeString.indexOf("(") + 1, typeString.indexOf(")")));
         return new VarLengthMetaAttribute(name, type, length);
     }
+
+     */
 
     public int getLength() {
         return length;

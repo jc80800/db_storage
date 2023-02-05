@@ -30,16 +30,16 @@ public class Main {
         // Check if Directory exist, if not create else restart
         File db = new File(dbLoc);
 
-        //if (!checkDirectory(db)) {
-        //    System.exit(1);
-        //}
+        if (!checkDirectory(db)) {
+            System.exit(1);
+        }
 
         // Create Storage Manager
         StorageManager storageManager = new StorageManager(db);
+        Scanner scanner = new Scanner(System.in);
 
         while (true) {
             // while running command
-            Scanner scanner = new Scanner(System.in);
             System.out.print(Constant.PROMPT);
 
             String command = scanner.nextLine();
@@ -49,15 +49,14 @@ public class Main {
             switch (prepareResult) {
                 case PREPARE_QUIT -> {
                     System.out.println("Closing database");
+                    scanner.close();
+                    System.exit(0);
                 }
                 case PREPARE_SUCCESS -> {
+                    System.out.println("Execution Completed");
                 }
-                case PREPARE_UNRECOGNIZED_STATEMENT -> {
-                    System.out.printf("Unrecognized keyword at \"%s\".\n", command);
-                    continue;
-                }
+                case PREPARE_UNRECOGNIZED_STATEMENT -> System.out.printf("Unrecognized keyword at \"%s\".\n", command);
             }
-            statement.execute();
         }
     }
 

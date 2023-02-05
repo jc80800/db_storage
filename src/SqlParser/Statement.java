@@ -6,11 +6,10 @@ import StorageManager.Metadata.Attribute.VarLengthMetaAttribute;
 import StorageManager.StorageManager;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Locale;
 
 public class Statement {
-
-    private Constant.StatementType type;
 
     private final StorageManager storageManager;
 
@@ -18,6 +17,11 @@ public class Statement {
         this.storageManager = storageManager;
     }
 
+    /**
+     * Function to parse initial command and call respective functions
+     * @param input
+     * @return
+     */
     public Constant.PrepareResult prepareStatement(String input) {
         String[] tokens = input.split(" ");
         String type = tokens[0].toUpperCase(Locale.ROOT);
@@ -28,15 +32,12 @@ public class Statement {
             case Constant.DISPLAY ->
                 result = displayCommand(tokens);
             case Constant.INSERT -> {
-                this.type = Constant.StatementType.INSERT;
                 result = insertCommand(tokens);
             }
             case Constant.SELECT -> {
-                this.type = Constant.StatementType.SELECT;
                 result = selectCommand(tokens);
             }
             case Constant.QUIT_CODE -> {
-                this.type = Constant.StatementType.QUIT;
                 result = Constant.PrepareResult.PREPARE_QUIT;
             }
             default -> result = Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
@@ -44,12 +45,18 @@ public class Statement {
 
         return result;
     }
+
+    /**
+     * Function to check if Select command is properly formatted
+     * @param tokens user command
+     * @return
+     */
     private Constant.PrepareResult selectCommand(String[] tokens) {
         try{
-            String token = tokens[1].toUpperCase();
-            if (!(token.equals(Constant.SELECT))){
+            if (tokens.length != 4 || !tokens[1].equals("*") || !tokens[2].equals("from")){
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
+            storageManager.executeSelect(tokens[3]);
 
         } catch (ArrayIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
@@ -57,12 +64,27 @@ public class Statement {
 
         return Constant.PrepareResult.PREPARE_SUCCESS;
     }
+
+    /**
+     * Parses the insert command and calls storage manager if valid
+     * @param tokens
+     * @return
+     */
     private Constant.PrepareResult insertCommand(String[] tokens) {
         try{
-            String token = tokens[1].toUpperCase();
-            if (!(token.equals(Constant.INSERT))){
+            if(tokens.length < 5 || !tokens[1].equals("into") || !tokens[3].equals("values")){
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
+
+            String table_name = tokens[2];
+
+            // Recombining and splitting the values based on comma
+
+            tokens = Arrays.copyOfRange(tokens, 4, tokens.length);
+            String combined_values = String.join(" ", tokens);
+            String[] values = combined_values.split(",");
+
+            storageManager.executeInsert(table_name, values);
 
         } catch (ArrayIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
@@ -70,16 +92,21 @@ public class Statement {
 
         return Constant.PrepareResult.PREPARE_SUCCESS;
     }
+
+    /**
+     * Parses Display command calls storage manager if valid
+     * @param tokens
+     * @return
+     */
     private Constant.PrepareResult displayCommand(String[] tokens) {
         try {
-            String token = tokens[1].toUpperCase();
-            if (!(token.equals(Constant.INFO) || token.equals(Constant.SCHEMA))) {
-                return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
-            }
-            if (token.equals(Constant.INFO)) {
-                this.type = Constant.StatementType.DISPLAY_INFO;
+            if (tokens.length == 3 && tokens[1].equals(Constant.INFO)) {
+                storageManager.displayInfo(tokens[2]);
+
+            } else if(tokens.length == 2 && tokens[1].equals(Constant.SCHEMA)){
+                storageManager.displaySchema();
             } else {
-                this.type = Constant.StatementType.DISPLAY_SCHEMA;
+                return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
@@ -141,26 +168,7 @@ public class Statement {
             System.out.println("GOT HER");
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
-        this.type = Constant.StatementType.CREATE_TABLE;
         return Constant.PrepareResult.PREPARE_SUCCESS;
     }
 
-    public void execute() {
-        switch (this.type) {
-            case QUIT -> {
-                System.out.println("Quit statement executing");
-                System.exit(0);
-            }
-            case INSERT ->
-                System.out.println("Insert statement executing");
-            case SELECT ->
-                System.out.println("Select statement executing");
-            case CREATE_TABLE ->
-                System.out.println("Create Table statement executing");
-            case DISPLAY_INFO ->
-                System.out.println("Display info statement executing");
-            case DISPLAY_SCHEMA ->
-                System.out.println("Display schema statement executing");
-        }
-    }
 }
