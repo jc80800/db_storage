@@ -1,5 +1,8 @@
 package Constants;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 /**
  * Class to store src.Constants.Constants needed for the program
  */
@@ -19,6 +22,8 @@ public final class Constant {
     public static final String BOOLEAN = "BOOLEAN";
     public static final String CHAR = "CHAR";
     public static final String VARCHAR = "VARCHAR";
+    public static final Charset CHARSET = StandardCharsets.UTF_8;
+    public static final Integer INTEGER_SIZE = 4;
 
     public enum StatementType {
         CREATE_TABLE,
