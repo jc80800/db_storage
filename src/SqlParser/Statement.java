@@ -138,23 +138,23 @@ public class Statement {
                 String[] attribute = s.split(" ");
                 String attributeType = attribute[1].toUpperCase();
                 if(attributeType.equals("INTEGER")) {
-                    attributes.add(new MetaAttribute(attribute[0], Constant.DataType.INTEGER));
+                    attributes.add(new MetaAttribute(attribute[0], Constant.DataType.INTEGER, false));
                 }
                 else if(attributeType.equals("DOUBLE")) {
-                    attributes.add(new MetaAttribute(attribute[0], Constant.DataType.DOUBLE));
+                    attributes.add(new MetaAttribute(attribute[0], Constant.DataType.DOUBLE, false));
                 }
                 else if(attributeType.equals("BOOLEAN")) {
-                    attributes.add(new MetaAttribute(attribute[0], Constant.DataType.BOOLEAN));
+                    attributes.add(new MetaAttribute(attribute[0], Constant.DataType.BOOLEAN, false));
                 }
                 else if(attributeType.contains("CHAR")) {
                     int length = Integer.parseInt(attribute[1].split("\\(")[1].replace(")", ""));
-                    attributes.add(new VarLengthMetaAttribute(attribute[0], Constant.DataType.CHAR, length));
+                    attributes.add(new VarLengthMetaAttribute(attribute[0], Constant.DataType.CHAR, false, length));
                     System.out.println(length);
 
                 }
                 else if(attributeType.contains("VARCHAR")) {
                     int length = Integer.parseInt(attribute[1].split("\\(")[1].replace(")", ""));
-                    attributes.add(new VarLengthMetaAttribute(attribute[0], Constant.DataType.VARCHAR, length));
+                    attributes.add(new VarLengthMetaAttribute(attribute[0], Constant.DataType.VARCHAR, false, length));
                     System.out.println(length);
                 }
                 else {
