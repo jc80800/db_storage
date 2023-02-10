@@ -71,6 +71,7 @@ public class FixedLengthMetaAttribute implements MetaAttribute {
             case Constant.INTEGER -> DataType.INTEGER;
             case Constant.BOOLEAN -> DataType.BOOLEAN;
             case Constant.DOUBLE -> DataType.DOUBLE;
+            default -> DataType.DOUBLE;
         };
         return new FixedLengthMetaAttribute(name, type, isPrimaryKey);
     }

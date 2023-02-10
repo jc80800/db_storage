@@ -70,6 +70,7 @@ public class VarLengthMetaAttribute extends FixedLengthMetaAttribute implements 
         DataType type = switch (typeString) {
             case Constant.CHAR -> DataType.CHAR;
             case Constant.VARCHAR -> DataType.VARCHAR;
+            default -> DataType.VARCHAR;
         };
         int valueLength = Helper.convertByteArrayToInt(
             Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE + 1));

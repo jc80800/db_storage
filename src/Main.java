@@ -2,9 +2,13 @@ import Constants.Constant;
 import SqlParser.Statement;
 import StorageManager.StorageManager;
 import java.io.File;
+import java.io.IOException;
 import java.util.Scanner;
 
 public class Main {
+
+    public static int pageSize;
+    public static int bufferSize;
 
     /**
      * Entry Program: java src.Main <db loc> <page size> <buffer size>
@@ -29,6 +33,8 @@ public class Main {
 
         // Check if Directory exist, if not create else restart
         File db = new File(dbLoc);
+        Main.pageSize = pageSize;
+        Main.bufferSize = bufferSize;
 
         if (!checkDirectory(db)) {
             System.exit(1);
@@ -73,7 +79,15 @@ public class Main {
             // Directory needs to be in the format of ./foo
             if (f.mkdirs()) {
                 System.out.println("Directory " + f.getName() + " has been created");
-                return true;
+                File catalog_file = new File(f.getPath() + "/Catalog.txt");
+                try {
+                    if (catalog_file.createNewFile()){
+                        return true;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return false;
+                }
             } else {
                 System.err.println("Directory could not be created");
             }
