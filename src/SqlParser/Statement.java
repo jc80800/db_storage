@@ -1,11 +1,8 @@
 package SqlParser;
 
 import Constants.Constant;
-import StorageManager.Metadata.Attribute.FixedLengthMetaAttribute;
 import StorageManager.Metadata.Attribute.MetaAttribute;
-import StorageManager.Metadata.Attribute.VarLengthMetaAttribute;
 import StorageManager.StorageManager;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
@@ -20,6 +17,7 @@ public class Statement {
 
     /**
      * Function to parse initial command and call respective functions
+     *
      * @param input
      * @return
      */
@@ -28,10 +26,8 @@ public class Statement {
         String type = tokens[0].toUpperCase(Locale.ROOT);
         Constant.PrepareResult result;
         switch (type) {
-            case Constant.CREATE ->
-                result = createCommand(tokens, input);
-            case Constant.DISPLAY ->
-                result = displayCommand(tokens);
+            case Constant.CREATE -> result = createCommand(tokens, input);
+            case Constant.DISPLAY -> result = displayCommand(tokens);
             case Constant.INSERT -> {
                 result = insertCommand(tokens);
             }
@@ -49,12 +45,13 @@ public class Statement {
 
     /**
      * Function to check if Select command is properly formatted
+     *
      * @param tokens user command
      * @return
      */
     private Constant.PrepareResult selectCommand(String[] tokens) {
-        try{
-            if (tokens.length != 4 || !tokens[1].equals("*") || !tokens[2].equals("from")){
+        try {
+            if (tokens.length != 4 || !tokens[1].equals("*") || !tokens[2].equals("from")) {
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
             storageManager.executeSelect(tokens[3]);
@@ -68,12 +65,13 @@ public class Statement {
 
     /**
      * Parses the insert command and calls storage manager if valid
+     *
      * @param tokens
      * @return
      */
     private Constant.PrepareResult insertCommand(String[] tokens) {
-        try{
-            if(tokens.length < 5 || !tokens[1].equals("into") || !tokens[3].equals("values")){
+        try {
+            if (tokens.length < 5 || !tokens[1].equals("into") || !tokens[3].equals("values")) {
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
 
@@ -96,6 +94,7 @@ public class Statement {
 
     /**
      * Parses Display command calls storage manager if valid
+     *
      * @param tokens
      * @return
      */
@@ -104,7 +103,7 @@ public class Statement {
             if (tokens.length == 3 && tokens[1].equals(Constant.INFO)) {
                 storageManager.displayInfo(tokens[2]);
 
-            } else if(tokens.length == 2 && tokens[1].equals(Constant.SCHEMA)){
+            } else if (tokens.length == 2 && tokens[1].equals(Constant.SCHEMA)) {
                 storageManager.displaySchema();
             } else {
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
@@ -128,7 +127,7 @@ public class Statement {
             int nameIndex = tokens[1].length() + tokens[2].length() + 2;
             StringBuilder name = new StringBuilder();
             ArrayList<MetaAttribute> attributes = new ArrayList<>();
-            while(input.charAt(nameIndex) == '(') {
+            while (input.charAt(nameIndex) == '(') {
                 name.append(input.charAt(nameIndex));
                 nameIndex += 1;
             }
@@ -138,27 +137,27 @@ public class Statement {
                 System.out.println(s);
                 String[] attribute = s.split(" ");
                 String attributeType = attribute[1].toUpperCase();
-                if(attributeType.equals("INTEGER")) {
-                    attributes.add(new FixedLengthMetaAttribute(attribute[0], Constant.DataType.INTEGER, false));
-                }
-                else if(attributeType.equals("DOUBLE")) {
-                    attributes.add(new FixedLengthMetaAttribute(attribute[0], Constant.DataType.DOUBLE, false));
-                }
-                else if(attributeType.equals("BOOLEAN")) {
-                    attributes.add(new FixedLengthMetaAttribute(attribute[0], Constant.DataType.BOOLEAN, false));
-                }
-                else if(attributeType.contains("CHAR")) {
+                if (attributeType.equals("INTEGER")) {
+                    attributes.add(
+                        new MetaAttribute(false, attribute[0], Constant.DataType.INTEGER));
+                } else if (attributeType.equals("DOUBLE")) {
+                    attributes.add(
+                        new MetaAttribute(false, attribute[0], Constant.DataType.DOUBLE));
+                } else if (attributeType.equals("BOOLEAN")) {
+                    attributes.add(
+                        new MetaAttribute(false, attribute[0], Constant.DataType.BOOLEAN));
+                } else if (attributeType.contains("CHAR")) {
                     int length = Integer.parseInt(attribute[1].split("\\(")[1].replace(")", ""));
-                    attributes.add(new VarLengthMetaAttribute(attribute[0], Constant.DataType.CHAR, false, length));
+                    attributes.add(
+                        new MetaAttribute(false, attribute[0], Constant.DataType.CHAR, length));
                     System.out.println(length);
 
-                }
-                else if(attributeType.contains("VARCHAR")) {
+                } else if (attributeType.contains("VARCHAR")) {
                     int length = Integer.parseInt(attribute[1].split("\\(")[1].replace(")", ""));
-                    attributes.add(new VarLengthMetaAttribute(attribute[0], Constant.DataType.VARCHAR, false, length));
+                    attributes.add(
+                        new MetaAttribute(false, attribute[0], Constant.DataType.VARCHAR, length));
                     System.out.println(length);
-                }
-                else {
+                } else {
                     return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
                 }
             }

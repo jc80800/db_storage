@@ -2,6 +2,7 @@ package Constants;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 
 /**
  * Class to store src.Constants.Constants needed for the program
@@ -17,13 +18,15 @@ public final class Constant {
     public static final String TABLE = "TABLE";
     public static final String SCHEMA = "SCHEMA";
     public static final String INFO = "INFO";
-    public static final String INTEGER = "INTEGER";
-    public static final String DOUBLE = "DOUBLE";
-    public static final String BOOLEAN = "BOOLEAN";
-    public static final String CHAR = "CHAR";
-    public static final String VARCHAR = "VARCHAR";
     public static final Charset CHARSET = StandardCharsets.UTF_8;
     public static final Integer INTEGER_SIZE = 4;
+    public static final HashMap<Integer, DataType> DATA_TYPE_MAP = new HashMap<>(){{
+        put(1, DataType.INTEGER);
+        put(2, DataType.DOUBLE);
+        put(3, DataType.BOOLEAN);
+        put(4, DataType.CHAR);
+        put(5, DataType.VARCHAR);
+    }};
 
     public enum StatementType {
         CREATE_TABLE,
