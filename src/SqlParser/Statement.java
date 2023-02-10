@@ -1,6 +1,7 @@
 package SqlParser;
 
 import Constants.Constant;
+import StorageManager.Metadata.Attribute.FixedLengthMetaAttribute;
 import StorageManager.Metadata.Attribute.MetaAttribute;
 import StorageManager.Metadata.Attribute.VarLengthMetaAttribute;
 import StorageManager.StorageManager;
@@ -138,13 +139,13 @@ public class Statement {
                 String[] attribute = s.split(" ");
                 String attributeType = attribute[1].toUpperCase();
                 if(attributeType.equals("INTEGER")) {
-                    attributes.add(new MetaAttribute(attribute[0], Constant.DataType.INTEGER, false));
+                    attributes.add(new FixedLengthMetaAttribute(attribute[0], Constant.DataType.INTEGER, false));
                 }
                 else if(attributeType.equals("DOUBLE")) {
-                    attributes.add(new MetaAttribute(attribute[0], Constant.DataType.DOUBLE, false));
+                    attributes.add(new FixedLengthMetaAttribute(attribute[0], Constant.DataType.DOUBLE, false));
                 }
                 else if(attributeType.equals("BOOLEAN")) {
-                    attributes.add(new MetaAttribute(attribute[0], Constant.DataType.BOOLEAN, false));
+                    attributes.add(new FixedLengthMetaAttribute(attribute[0], Constant.DataType.BOOLEAN, false));
                 }
                 else if(attributeType.contains("CHAR")) {
                     int length = Integer.parseInt(attribute[1].split("\\(")[1].replace(")", ""));
