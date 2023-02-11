@@ -3,42 +3,48 @@ package StorageManager;
 import StorageManager.Metadata.Attribute.MetaAttribute;
 import StorageManager.Metadata.Catalog;
 import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class StorageManager {
 
     private final File db;
-    private ArrayList<RandomAccessFile> tables;
     private Catalog catalog;
+    private final int pageSize;
+    private final int bufferSize;
 
-    public StorageManager(File db) {
+    /**
+     * Phase 1: create table
+     *          insert
+     *          select *
+     *          DisplayInfo()
+     *          DisplaySchema()
+     * @param db
+     * @param pageSize
+     * @param bufferSize
+     */
+    public StorageManager(File db, int pageSize, int bufferSize) {
         this.db = db;
-        /**
-        for (File file : Objects.requireNonNull(db.listFiles())) {
-            try {
-                tables.add(new RandomAccessFile(file, "rw"));
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        }**/
+        this.pageSize = pageSize;
+        this.bufferSize = bufferSize;
     }
 
-    public void createTable(String name, ArrayList<MetaAttribute> attributes){
-        System.out.println(name);
-        for(MetaAttribute a : attributes){
-            System.out.println(a.getName());
-            System.out.println(a.getType());
-        }
+    public void createTable(String table_name, String[] values){
+        // input = create table foo( age char(10), num integer primarykey )
+        // values = [ age char(10), num integer primarykey ]
+        // table_name = foo
+
+        // TODO parse the attributes and make sure it's gucci
+        // if so, create table
+        // if not, print error
     }
 
     public void executeSelect(String table){
         // Check if the file exist in the directory
 
         File table_file = getTableFile(table);
-        if(table_file.exists()){
-            // TODO determine what is the process after this? We want to read the entire file
+        if(table_file.exists()){ // TODO change this to checking the catalog instead
+            // TODO
         } else {
             System.out.println("File does not exist");
         }
@@ -46,10 +52,10 @@ public class StorageManager {
 
     public void executeInsert(String table, String[] values) {
         File table_file = getTableFile(table);
-        if(!table_file.exists()){
-            createNewFile(table_file);
-        } else {
+        if(table_file.exists()){
             searchForRecordPlacement(table_file);
+        } else {
+            System.out.println("Table doesn't exist");
         }
 
         /* Example of RandomAccessFile Usage
@@ -74,11 +80,18 @@ public class StorageManager {
         }
     }
 
+    /**
+     * NEED FINESSE
+     */
     public void displaySchema() {
         // database location
         // page size
         // buffer size
         // table schema
+        System.out.println(db.getPath());
+        System.out.println(this.pageSize);
+        System.out.println(this.bufferSize);
+        System.out.println(this.catalog.stringifyMetaTable());
 
     }
 
@@ -86,19 +99,14 @@ public class StorageManager {
         // TODO loop through and search for the appropriate spot and insert record
     }
 
-    public void createNewFile(File file) {
-        try {
-            if(file.createNewFile()){
-                System.out.println("File for " + file.getName() + " has been created");
+    public Catalog createNewCatalog(){
+        this.catalog = new Catalog(this.pageSize, 0, new HashMap<>());
+        return this.catalog;
+    }
 
-                // TODO make new page and add to file
-
-            } else {
-                System.out.println("Unable to create new File for " + file.getName());
-            }
-        } catch (IOException e) {
-            System.out.println("Unable to create new File for " + file.getName());
-        }
+    public void parseCatalog(File catalog_file) {
+        // Deserialize the file and return a catalog
+        this.catalog = Catalog.deserialize(catalog_file);
     }
 
     public File getTableFile(String table){
