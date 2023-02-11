@@ -1,4 +1,4 @@
-package StorageManager.Metadata.Attribute;
+package StorageManager.Metadata;
 
 import Constants.Constant;
 import Constants.Constant.DataType;
@@ -70,7 +70,7 @@ public class MetaAttribute {
      * @param bytes - binary form of metaAttribute
      * @return metaAttribute object
      */
-    public MetaAttribute deserialize(byte[] bytes) {
+    public static MetaAttribute deserialize(byte[] bytes) {
         int index = 0;
         boolean isPrimaryKey = Helper.convertByteToBoolean(bytes[index++]);
 
@@ -95,7 +95,7 @@ public class MetaAttribute {
         return new MetaAttribute(isPrimaryKey, name, dataType);
     }
 
-    private DataType getDataType(int code) {
+    private static DataType getDataType(int code) {
         return Constant.DATA_TYPE_MAP.get(code);
     }
 

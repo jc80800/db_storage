@@ -1,6 +1,6 @@
 package StorageManager;
 
-import StorageManager.Metadata.Attribute.MetaAttribute;
+import StorageManager.Metadata.MetaAttribute;
 import StorageManager.Metadata.Catalog;
 import java.io.File;
 import java.util.ArrayList;

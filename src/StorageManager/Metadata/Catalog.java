@@ -5,9 +5,9 @@ import java.util.HashMap;
 
 public class Catalog {
 
-    private int pageSize;
+    private final int pageSize;
     private int numOfTables;
-    private HashMap<Integer, Metatable> metaTable;
+    private HashMap<Integer, MetaTable> metaTable;
 
     public Catalog(int pageSize, int numOfTables, HashMap<Integer, Metatable> metaTable) {
         this.numOfTables = numOfTables;
@@ -23,7 +23,7 @@ public class Catalog {
         this.numOfTables = numOfTables;
     }
 
-    public HashMap<Integer, Metatable> getMetaTable() {
+    public HashMap<Integer, MetaTable> getMetaTable() {
         return metaTable;
     }
 
@@ -31,7 +31,7 @@ public class Catalog {
         return this.pageSize;
     }
 
-    public void setMetaTable(HashMap<Integer, Metatable> metaTable) {
+    public void setMetaTable(HashMap<Integer, MetaTable> metaTable) {
         this.metaTable = metaTable;
     }
 
