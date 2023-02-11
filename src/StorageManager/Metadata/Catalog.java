@@ -9,7 +9,7 @@ public class Catalog {
     private int numOfTables;
     private HashMap<Integer, MetaTable> metaTable;
 
-    public Catalog(int pageSize, int numOfTables, HashMap<Integer, Metatable> metaTable) {
+    public Catalog(int pageSize, int numOfTables, HashMap<Integer, MetaTable> metaTable) {
         this.numOfTables = numOfTables;
         this.metaTable = metaTable;
         this.pageSize = pageSize;
