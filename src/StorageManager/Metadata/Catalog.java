@@ -4,10 +4,12 @@ import java.util.HashMap;
 
 public class Catalog {
 
+    private final int pageSize;
     private int numOfTables;
-    private HashMap<Integer, Metatable> metaTable;
+    private HashMap<Integer, MetaTable> metaTable;
 
-    public Catalog(int numOfTables, HashMap<Integer, Metatable> metaTable) {
+    public Catalog(int pageSize, int numOfTables, HashMap<Integer, MetaTable> metaTable) {
+        this.pageSize = pageSize;
         this.numOfTables = numOfTables;
         this.metaTable = metaTable;
     }
@@ -20,11 +22,11 @@ public class Catalog {
         this.numOfTables = numOfTables;
     }
 
-    public HashMap<Integer, Metatable> getMetaTable() {
+    public HashMap<Integer, MetaTable> getMetaTable() {
         return metaTable;
     }
 
-    public void setMetaTable(HashMap<Integer, Metatable> metaTable) {
+    public void setMetaTable(HashMap<Integer, MetaTable> metaTable) {
         this.metaTable = metaTable;
     }
 }

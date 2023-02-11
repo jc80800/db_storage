@@ -1,7 +1,7 @@
 package SqlParser;
 
 import Constants.Constant;
-import StorageManager.Metadata.Attribute.MetaAttribute;
+import StorageManager.Metadata.MetaAttribute;
 import StorageManager.StorageManager;
 import java.util.ArrayList;
 import java.util.Arrays;
