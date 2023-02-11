@@ -1,10 +1,14 @@
 import Constants.Constant;
 import SqlParser.Statement;
+import StorageManager.Metadata.Catalog;
 import StorageManager.StorageManager;
 import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.Scanner;
 
 public class Main {
+
 
     /**
      * Entry Program: java src.Main <db loc> <page size> <buffer size>
@@ -30,12 +34,13 @@ public class Main {
         // Check if Directory exist, if not create else restart
         File db = new File(dbLoc);
 
-        if (!checkDirectory(db)) {
+        // Create Storage Manager
+        StorageManager storageManager = new StorageManager(db, pageSize, bufferSize);
+
+        if (!checkDirectory(db, storageManager)) {
             System.exit(1);
         }
 
-        // Create Storage Manager
-        StorageManager storageManager = new StorageManager(db);
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
@@ -64,16 +69,32 @@ public class Main {
      * Helper function for checking directory If directory exist or created, return file else system
      * exist
      */
-    private static Boolean checkDirectory(File f) {
+    private static Boolean checkDirectory(File f, StorageManager storageManager) {
+
+        File catalog_file = new File(f.getPath() + "/Catalog.txt");
 
         if (f.exists() && f.isDirectory()) {
-            System.out.println("Directory" + f.getName() + " exists");
+            System.out.println("Directory " + f.getName() + " exists");
+            // parse the catalog file
+            // set the catalog in the storage manager
+            storageManager.parseCatalog(catalog_file);
             return true;
         } else {
             // Directory needs to be in the format of ./foo
             if (f.mkdirs()) {
                 System.out.println("Directory " + f.getName() + " has been created");
-                return true;
+                try {
+                    if (catalog_file.createNewFile()){
+                        Catalog catalog = storageManager.createNewCatalog();
+                        RandomAccessFile randomAccessFile = new RandomAccessFile(catalog_file, "rw");
+                        randomAccessFile.write(catalog.serialize());
+                        randomAccessFile.close();
+                        return true;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return false;
+                }
             } else {
                 System.err.println("Directory could not be created");
             }
