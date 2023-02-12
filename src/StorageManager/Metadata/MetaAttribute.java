@@ -50,7 +50,7 @@ public class MetaAttribute {
             throw new RuntimeException(e);
         }
         byte[] typeCodeBytes = Helper.convertIntToByteArray(typeCode);
-        boolean isLength = getLength() != 0;
+        boolean isLength = getLength() != null;
         byte[] isLengthBytes = new byte[]{
             Helper.convertBooleanToByte(isLength)};
         if (isLength) {

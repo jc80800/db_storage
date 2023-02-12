@@ -94,7 +94,6 @@ public class StorageManager {
             return;
         }
 
-
         MetaTable table = new MetaTable(table_name, attributes);
 
     }
