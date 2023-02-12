@@ -1,10 +1,12 @@
 package StorageManager;
 
+import Constants.Constant;
 import StorageManager.Metadata.MetaAttribute;
 import StorageManager.Metadata.Catalog;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class StorageManager {
 
@@ -37,6 +39,64 @@ public class StorageManager {
         // TODO parse the attributes and make sure it's gucci
         // if so, create table
         // if not, print error
+        ArrayList<MetaAttribute> attributes = new ArrayList<>();
+        HashSet<String> seenAttributeNames = new HashSet<>();
+        boolean foundPrimaryKey = false;
+        for(String value : values) {
+            value = value.trim();
+            String[] valArray = value.split(" ");
+            boolean isPrimary = false;
+            if(valArray.length < 2){
+                System.err.println("ERROR: Missing fields for table attribute!");
+            }
+            else if(valArray.length > 3 || (valArray.length == 3 && !valArray[2].equalsIgnoreCase("primarykey"))){
+                System.err.println("ERROR: Too many fields found for table attribute!");
+            }
+            else{
+                if(valArray.length == 3 && foundPrimaryKey){
+                    System.err.println("ERROR: Found more than one primary key!");
+                }
+                else if(valArray.length == 3){
+                    isPrimary = true;
+                    foundPrimaryKey = true;
+                }
+
+                if(seenAttributeNames.contains(valArray[0].toLowerCase())){
+                    System.err.println("ERROR: One or more attributes have the same name!");
+                }
+                else{
+                    seenAttributeNames.add(valArray[0].toLowerCase());
+                }
+                if(valArray[1].matches("(?i)INTEGER|DOUBLE|BOOLEAN")){
+                    Constant.DataType type = Constant.DataType.INTEGER;
+                    if(valArray[1].equalsIgnoreCase("DOUBLE")){
+                        type = Constant.DataType.DOUBLE;
+                    }
+                    else if(valArray[1].equalsIgnoreCase("BOOLEAN")){
+                        type = Constant.DataType.BOOLEAN;
+                    }
+                    attributes.add(new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type));
+                }
+                else if(valArray[1].matches("(?i)CHAR\\([0-9]+\\)|VARCHAR\\([0-9]+\\)")){
+                    String[] typeArray = valArray[1].split("\\(");
+                    Constant.DataType type = Constant.DataType.CHAR;
+                    if(typeArray[0].equalsIgnoreCase("VARCHAR")){
+                        type = Constant.DataType.VARCHAR;
+                    }
+                    int length = Integer.parseInt(typeArray[1].replace(")", ""));
+                    attributes.add(new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, length));
+                }
+                else{
+                    System.err.println("ERROR: Invalid attribute type was found!");
+                }
+            }
+        }
+
+        if(!foundPrimaryKey){
+            System.err.println("ERROR: No primary key was specified!");
+            return;
+        }
+
     }
 
     public void executeSelect(String table){

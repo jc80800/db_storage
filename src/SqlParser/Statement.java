@@ -27,15 +27,12 @@ public class Statement {
         switch (type) {
             case Constant.CREATE -> result = createCommand(tokens, input);
             case Constant.DISPLAY -> result = displayCommand(tokens);
-            case Constant.INSERT -> {
+            case Constant.INSERT ->
                 result = insertCommand(tokens);
-            }
-            case Constant.SELECT -> {
+            case Constant.SELECT ->
                 result = selectCommand(tokens);
-            }
-            case Constant.QUIT_CODE -> {
+            case Constant.QUIT_CODE ->
                 result = Constant.PrepareResult.PREPARE_QUIT;
-            }
             default -> result = Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
 
@@ -116,22 +113,31 @@ public class Statement {
 
     private Constant.PrepareResult createCommand(String[] tokens, String input) {
         // check if second word is "table"
-        //try {
-        String token = tokens[1].toUpperCase();
-        if (!token.equals(Constant.TABLE)) {
+        try {
+            String token = tokens[1].toUpperCase();
+            if (!token.equals(Constant.TABLE)) {
+                return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+            }
+
+            StringBuilder table_name = new StringBuilder();
+            int index = 0;
+            while(!(tokens[2].charAt(index) == '(')){
+                table_name.append(tokens[2].charAt(index));
+                index += 1;
+            }
+
+            tokens[2] = tokens[2].substring(index + 1);
+
+            tokens = Arrays.copyOfRange(tokens, 2, tokens.length);
+            String combined_values = String.join(" ", tokens);
+            String[] values = combined_values.split(",");
+
+            values[values.length - 1] = values[values.length - 1].substring(0,
+                values[values.length - 1].length() - 1);
+            storageManager.createTable(table_name.toString(), values);
+        } catch (Exception e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
-
-        String table_name = tokens[2].substring(0, tokens[2].length() - 1);
-
-        tokens = Arrays.copyOfRange(tokens, 3, tokens.length);
-        String combined_values = String.join(" ", tokens);
-        String[] values = combined_values.split(",");
-
-        values[values.length - 1] = values[values.length - 1].substring(0,
-            values[values.length - 1].length() - 1);
-        storageManager.createTable(table_name, values);
-
         return PrepareResult.PREPARE_SUCCESS;
     }
 
