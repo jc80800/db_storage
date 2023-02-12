@@ -23,10 +23,10 @@ public class Coordinate {
     public static Coordinate deserialize(byte[] bytes) {
         int index = 0;
         int offset = Helper.convertByteArrayToInt(
-            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE + 1));
-        index += Constant.INTEGER_SIZE + 1;
+            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
+        index += Constant.INTEGER_SIZE;
         int length = Helper.convertByteArrayToInt(
-            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE + 1));
+            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
         return new Coordinate(offset, length);
     }
 

@@ -86,8 +86,10 @@ public class Main {
                 try {
                     if (catalog_file.createNewFile()){
                         Catalog catalog = storageManager.createNewCatalog();
-                        RandomAccessFile randomAccessFile = new RandomAccessFile(catalog_file, "rw");
-                        randomAccessFile.write(catalog.serialize());
+                        RandomAccessFile randomAccessFile = new RandomAccessFile(catalog_file,
+                            "rw");
+                        byte[] bytes = catalog.serialize();
+                        randomAccessFile.write(bytes);
                         randomAccessFile.close();
                         return true;
                     }

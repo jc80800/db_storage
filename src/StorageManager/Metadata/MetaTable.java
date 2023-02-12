@@ -38,26 +38,26 @@ public final class MetaTable {
     public static MetaTable deserialize(byte[] bytes) {
         int index = 0;
         int nameLength = Helper.convertByteArrayToInt(
-            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE + 1));
-        index += Constant.INTEGER_SIZE + 1;
+            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
+        index += Constant.INTEGER_SIZE;
         String name = Helper.convertByteArrayToString(
-            Arrays.copyOfRange(bytes, index, nameLength + 1));
-        index += nameLength + 1;
+            Arrays.copyOfRange(bytes, index, nameLength));
+        index += nameLength;
 
         int numOfMetaAttributes = Helper.convertByteArrayToInt(
-            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE + 1));
-        index += Constant.INTEGER_SIZE + 1;
+            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
+        index += Constant.INTEGER_SIZE;
 
         ArrayList<MetaAttribute> metaAttributes = new ArrayList<>();
         ArrayList<Coordinate> pointers = new ArrayList<>();
 
         while (numOfMetaAttributes > 0) {
             Coordinate coordinate = Coordinate.deserialize(
-                Arrays.copyOfRange(bytes, index, index + Coordinate.getBinarySize() + 1));
+                Arrays.copyOfRange(bytes, index, index + Coordinate.getBinarySize()));
             pointers.add(coordinate);
 
             MetaAttribute metaAttribute = MetaAttribute.deserialize(
-                Arrays.copyOfRange(bytes, coordinate.getOffset(), coordinate.getLength() + 1));
+                Arrays.copyOfRange(bytes, coordinate.getOffset(), coordinate.getLength()));
             metaAttributes.add(metaAttribute);
             numOfMetaAttributes--;
         }
@@ -109,7 +109,7 @@ public final class MetaTable {
         for (MetaAttribute metaAttribute : metaAttributes) {
             int metaAttributeBinarySize = metaAttribute.getBinarySize();
             pointers.add(new Coordinate(offset, metaAttributeBinarySize));
-            offset += metaAttributeBinarySize + 1;
+            offset += metaAttributeBinarySize;
         }
         return pointers;
     }

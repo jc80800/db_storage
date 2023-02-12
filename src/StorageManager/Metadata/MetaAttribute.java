@@ -98,21 +98,21 @@ public class MetaAttribute {
         boolean isPrimaryKey = Helper.convertByteToBoolean(bytes[index++]);
 
         int nameLength = Helper.convertByteArrayToInt(
-            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE + 1));
-        index += Constant.INTEGER_SIZE + 1;
+            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
+        index += Constant.INTEGER_SIZE;
         String name = Helper.convertByteArrayToString(
-            Arrays.copyOfRange(bytes, index, index + nameLength + 1));
-        index += nameLength + 1;
+            Arrays.copyOfRange(bytes, index, index + nameLength));
+        index += nameLength;
 
         int dataTypeCode = Helper.convertByteArrayToInt(
-            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE + 1));
-        index += Constant.INTEGER_SIZE + 1;
+            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
+        index += Constant.INTEGER_SIZE;
         DataType dataType = getDataType(dataTypeCode);
 
         boolean isLength = Helper.convertByteToBoolean(bytes[index++]);
         if (isLength) {
             int length = Helper.convertByteArrayToInt(
-                Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE + 1));
+                Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
             return new MetaAttribute(isPrimaryKey, name, dataType, length, bytes.length);
         }
         return new MetaAttribute(isPrimaryKey, name, dataType, bytes.length);

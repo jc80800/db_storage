@@ -35,18 +35,18 @@ public class Catalog {
     public static Catalog deserialize(byte[] bytes) {
         int index = 0;
         int pageSize = Helper.convertByteArrayToInt(
-            Arrays.copyOfRange(bytes, index, Constant.INTEGER_SIZE + 1));
-        index += Constant.INTEGER_SIZE + 1;
+            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
+        index += Constant.INTEGER_SIZE;
         int numOfMetaTables = Helper.convertByteArrayToInt(
-            Arrays.copyOfRange(bytes, index, Constant.INTEGER_SIZE + 1));
-        index += Constant.INTEGER_SIZE + 1;
+            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
+        index += Constant.INTEGER_SIZE;
 
         ArrayList<Coordinate> pointers = new ArrayList<>();
         HashMap<Integer, MetaTable> metaTableHashMap = new HashMap<>();
         int tableNum = 1;
         while (numOfMetaTables > 0) {
             Coordinate coordinate = Coordinate.deserialize(
-                Arrays.copyOfRange(bytes, index, index + Coordinate.getBinarySize() + 1));
+                Arrays.copyOfRange(bytes, index, index + Coordinate.getBinarySize()));
             pointers.add(coordinate);
 
             MetaTable metaTable = MetaTable.deserialize(
@@ -63,7 +63,7 @@ public class Catalog {
         for (MetaTable metaTable : metaTableHashMap.values()) {
             int metaTableBinarySize = metaTable.getBinarySize();
             pointers.add(new Coordinate(offset, metaTableBinarySize));
-            offset += metaTableBinarySize + 1;
+            offset += metaTableBinarySize;
         }
         return pointers;
     }
@@ -76,6 +76,9 @@ public class Catalog {
     public byte[] serialize() {
         byte[] pageSizeBytes = Helper.convertIntToByteArray(pageSize);
         byte[] numOfMetaTables = Helper.convertIntToByteArray(metaTableHashMap.size());
+        if (metaTableHashMap.size() == 0) {
+            return Helper.concatenate(pageSizeBytes, numOfMetaTables);
+        }
 
         byte[] pointersBytes = new byte[0];
         for (Coordinate pointer : pointers) {
