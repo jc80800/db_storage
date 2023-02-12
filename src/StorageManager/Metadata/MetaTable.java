@@ -11,19 +11,22 @@ public final class MetaTable {
     private final String tableName;
     private final ArrayList<MetaAttribute> metaAttributes;
     private final ArrayList<Coordinate> pointers;
+    private final int binarySize;
 
     public MetaTable(String tableName,
         ArrayList<MetaAttribute> metaAttributes) {
         this.tableName = tableName;
         this.metaAttributes = metaAttributes;
         pointers = constructPointers();
+        binarySize = calculateBinarySize();
     }
 
     public MetaTable(String tableName, ArrayList<MetaAttribute> metaAttributes,
-        ArrayList<Coordinate> pointers) {
+        ArrayList<Coordinate> pointers, int binarySize) {
         this.tableName = tableName;
         this.metaAttributes = metaAttributes;
         this.pointers = pointers;
+        this.binarySize = binarySize;
     }
 
     /**
@@ -50,15 +53,26 @@ public final class MetaTable {
 
         while (numOfMetaAttributes > 0) {
             Coordinate coordinate = Coordinate.deserialize(
-                Arrays.copyOfRange(bytes, index, index + (Constant.INTEGER_SIZE * 2) + 1));
+                Arrays.copyOfRange(bytes, index, index + Coordinate.getBinarySize() + 1));
             pointers.add(coordinate);
-            index += (Constant.INTEGER_SIZE * 2) + 1;
+
             MetaAttribute metaAttribute = MetaAttribute.deserialize(
                 Arrays.copyOfRange(bytes, coordinate.getOffset(), coordinate.getLength() + 1));
             metaAttributes.add(metaAttribute);
             numOfMetaAttributes--;
         }
-        return new MetaTable(name, metaAttributes, pointers);
+        return new MetaTable(name, metaAttributes, pointers, bytes.length);
+    }
+
+    private int calculateBinarySize() {
+        int binarySize = Constant.INTEGER_SIZE;
+        binarySize += tableName.getBytes().length;
+        binarySize += Constant.INTEGER_SIZE;
+        binarySize += Coordinate.getBinarySize() * pointers.size();
+        for (MetaAttribute metaAttribute : metaAttributes) {
+            binarySize += metaAttribute.calculateBinarySize();
+        }
+        return binarySize;
     }
 
     /**
@@ -90,14 +104,12 @@ public final class MetaTable {
 
     private ArrayList<Coordinate> constructPointers() {
         ArrayList<Coordinate> pointers = new ArrayList<>();
-        byte[] nameLengthBytes = Helper.convertIntToByteArray(tableName.length());
         byte[] nameBytes = Helper.convertStringToByteArrays(tableName);
-        byte[] numOfMetaAttributes = Helper.convertIntToByteArray(metaAttributes.size());
-        int offset = nameLengthBytes.length + nameBytes.length + numOfMetaAttributes.length;
+        int offset = (Constant.INTEGER_SIZE * 2) + nameBytes.length;
         for (MetaAttribute metaAttribute : metaAttributes) {
-            byte[] metaAttributeBytes = metaAttribute.serialize();
-            pointers.add(new Coordinate(offset, metaAttributeBytes.length));
-            offset += metaAttributeBytes.length + 1;
+            int metaAttributeBinarySize = metaAttribute.getBinarySize();
+            pointers.add(new Coordinate(offset, metaAttributeBinarySize));
+            offset += metaAttributeBinarySize + 1;
         }
         return pointers;
     }
@@ -108,5 +120,19 @@ public final class MetaTable {
 
     public ArrayList<MetaAttribute> metaAttributes() {
         return metaAttributes;
+    }
+
+    public int getBinarySize() {
+        return binarySize;
+    }
+
+    @Override
+    public String toString() {
+        return "MetaTable{" +
+            "tableName='" + tableName + '\'' +
+            ", metaAttributes=" + metaAttributes +
+            ", pointers=" + pointers +
+            ", binarySize=" + binarySize +
+            '}';
     }
 }

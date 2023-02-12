@@ -6,6 +6,9 @@ import StorageManager.Metadata.Catalog;
 import StorageManager.Metadata.MetaTable;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -150,7 +153,7 @@ public class StorageManager {
         System.out.println(db.getPath());
         System.out.println(this.pageSize);
         System.out.println(this.bufferSize);
-        System.out.println(this.catalog.stringifyMetaTable());
+        System.out.println(this.catalog.toString());
 
     }
 
@@ -159,13 +162,23 @@ public class StorageManager {
     }
 
     public Catalog createNewCatalog(){
-        this.catalog = new Catalog(this.pageSize, 0, new HashMap<>());
+        this.catalog = new Catalog(this.pageSize, new HashMap<>());
         return this.catalog;
     }
 
     public void parseCatalog(File catalog_file) {
         // Deserialize the file and return a catalog
-        this.catalog = Catalog.deserialize(catalog_file);
+
+            try (RandomAccessFile raf = new RandomAccessFile(catalog_file, "rw")) {
+                int fileLength = (int) raf.length();
+                byte[] bytes = new byte[fileLength];
+                raf.readFully(bytes);
+                this.catalog = Catalog.deserialize(bytes);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+
     }
 
     public File getTableFile(String table){

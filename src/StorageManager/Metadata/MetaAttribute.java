@@ -13,19 +13,42 @@ public class MetaAttribute {
     private final String name;
     private final DataType type;
     private final Integer length;
+    private final int binarySize;
 
     public MetaAttribute(boolean isPrimaryKey, String name, DataType type) {
         this.isPrimaryKey = isPrimaryKey;
         this.name = name;
         this.type = type;
         this.length = null;
+        this.binarySize = calculateBinarySize();
     }
 
-    public MetaAttribute(boolean isPrimaryKey, String name, DataType type, Integer length) {
+    public MetaAttribute(boolean isPrimaryKey, String name, DataType type, int binarySize) {
+        this.isPrimaryKey = isPrimaryKey;
+        this.name = name;
+        this.type = type;
+        this.length = null;
+        this.binarySize = binarySize;
+    }
+
+    public MetaAttribute(boolean isPrimaryKey, String name, DataType type, Integer length, int binarySize) {
         this.isPrimaryKey = isPrimaryKey;
         this.name = name;
         this.type = type;
         this.length = length;
+        this.binarySize = binarySize;
+    }
+
+    public int calculateBinarySize() {
+        int size = Constant.BOOLEAN_SIZE;
+        size += Constant.INTEGER_SIZE;
+        size += name.getBytes().length;
+        size += Constant.INTEGER_SIZE;
+        size += Constant.BOOLEAN_SIZE;
+        if (length != null) {
+            size += Constant.INTEGER_SIZE;
+        }
+        return size;
     }
 
     /**
@@ -90,9 +113,9 @@ public class MetaAttribute {
         if (isLength) {
             int length = Helper.convertByteArrayToInt(
                 Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE + 1));
-            return new MetaAttribute(isPrimaryKey, name, dataType, length);
+            return new MetaAttribute(isPrimaryKey, name, dataType, length, bytes.length);
         }
-        return new MetaAttribute(isPrimaryKey, name, dataType);
+        return new MetaAttribute(isPrimaryKey, name, dataType, bytes.length);
     }
 
     private static DataType getDataType(int code) {
@@ -122,5 +145,20 @@ public class MetaAttribute {
 
     public Integer getLength() {
         return length;
+    }
+
+    public int getBinarySize() {
+        return binarySize;
+    }
+
+    @Override
+    public String toString() {
+        return "MetaAttribute{" +
+            "isPrimaryKey=" + isPrimaryKey +
+            ", name='" + name + '\'' +
+            ", type=" + type +
+            ", length=" + length +
+            ", binarySize=" + binarySize +
+            '}';
     }
 }
