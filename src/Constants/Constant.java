@@ -19,7 +19,9 @@ public final class Constant {
     public static final String SCHEMA = "SCHEMA";
     public static final String INFO = "INFO";
     public static final Charset CHARSET = StandardCharsets.UTF_8;
+    public static final Integer BOOLEAN_SIZE = 1;
     public static final Integer INTEGER_SIZE = 4;
+    public static final Integer DOUBLE_SIZE = 8;
     public static final HashMap<Integer, DataType> DATA_TYPE_MAP = new HashMap<>(){{
         put(1, DataType.INTEGER);
         put(2, DataType.DOUBLE);

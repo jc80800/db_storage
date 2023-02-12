@@ -30,6 +30,10 @@ public class Coordinate {
         return new Coordinate(offset, length);
     }
 
+    public static int getBinarySize() {
+        return Constant.INTEGER_SIZE * 2;
+    }
+
     public int getOffset() {
         return offset;
     }
