@@ -32,6 +32,24 @@ public class Catalog {
         this.metaTableHashMap = metaTableHashMap;
     }
 
+    public MetaTable getMetaTable(int file_number) {
+        return this.metaTableHashMap.get(file_number);
+    }
+
+    public int getPageSize() {
+        return this.pageSize;
+    }
+
+    public int getTableSize(){
+        return this.pointers.size();
+    }
+
+    public void putMetaTable(MetaTable metaTable){
+        this.metaTableHashMap.put(getTableSize() + 1, metaTable);
+        this.pointers = constructPointers();
+    }
+
+
     public static Catalog deserialize(byte[] bytes) {
         int index = 0;
         int pageSize = Helper.convertByteArrayToInt(
@@ -81,29 +99,19 @@ public class Catalog {
         }
 
         byte[] pointersBytes = new byte[0];
+
         for (Coordinate pointer : pointers) {
             byte[] pointerBytes = pointer.serialize();
             Helper.concatenate(pointersBytes, pointerBytes);
         }
 
         byte[] metaTablesBytes = new byte[0];
-        for (MetaTable metaTable : metaTableHashMap.values()) {
-            byte[] metaTableBytes = metaTable.serialize();
+        for (int i = 1; i < pointers.size(); i++){
+            byte[] metaTableBytes = metaTableHashMap.get(i).serialize();
             Helper.concatenate(metaTablesBytes, metaTableBytes);
         }
+
         return Helper.concatenate(pageSizeBytes, numOfMetaTables, pointersBytes, metaTablesBytes);
-    }
-
-    public HashMap<Integer, MetaTable> getMetaTableHashMap() {
-        return metaTableHashMap;
-    }
-
-    public void setMetaTableHashMap(HashMap<Integer, MetaTable> metaTableHashMap) {
-        this.metaTableHashMap = metaTableHashMap;
-    }
-
-    public int getPageSize() {
-        return this.pageSize;
     }
 
     @Override

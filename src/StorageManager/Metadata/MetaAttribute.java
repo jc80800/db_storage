@@ -23,12 +23,12 @@ public class MetaAttribute {
         this.binarySize = calculateBinarySize();
     }
 
-    public MetaAttribute(boolean isPrimaryKey, String name, DataType type, int binarySize) {
+    public MetaAttribute(boolean isPrimaryKey, String name, DataType type, Integer length) {
         this.isPrimaryKey = isPrimaryKey;
         this.name = name;
         this.type = type;
-        this.length = null;
-        this.binarySize = binarySize;
+        this.length = length;
+        this.binarySize = calculateBinarySize();
     }
 
     public MetaAttribute(boolean isPrimaryKey, String name, DataType type, Integer length, int binarySize) {
@@ -38,6 +38,7 @@ public class MetaAttribute {
         this.length = length;
         this.binarySize = binarySize;
     }
+
 
     public int calculateBinarySize() {
         int size = Constant.BOOLEAN_SIZE;

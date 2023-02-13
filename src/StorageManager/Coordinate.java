@@ -49,4 +49,12 @@ public class Coordinate {
     public void setLength(int length) {
         this.length = length;
     }
+
+    @Override
+    public String toString() {
+        return "Coordinate{" +
+            "offset=" + offset +
+            ", length=" + length +
+            '}';
+    }
 }
