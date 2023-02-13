@@ -6,7 +6,6 @@ import StorageManager.Metadata.Catalog;
 import StorageManager.Metadata.MetaTable;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -120,6 +119,12 @@ public class StorageManager {
             System.out.println("Table doesn't exist");
         }
 
+        /* Proposed steps for inserting
+        1. Get page size from catalog object
+        2. Traverse to last page of the table file
+        3. Add record if page is not full. Else, split page in half and insert new record
+        4. Update table pointers for new page
+         */
         /* Example of RandomAccessFile Usage
         try {
             RandomAccessFile file = new RandomAccessFile(table_file.getPath(), "rw");
