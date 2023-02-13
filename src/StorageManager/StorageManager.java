@@ -1,6 +1,7 @@
 package StorageManager;
 
 import Constants.Constant;
+import Constants.Constant.DataType;
 import StorageManager.Metadata.MetaAttribute;
 import StorageManager.Metadata.Catalog;
 import StorageManager.Metadata.MetaTable;
@@ -9,7 +10,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -98,7 +101,12 @@ public class StorageManager {
         }
 
         MetaTable table = new MetaTable(table_name, attributes);
+        this.catalog.putMetaTable(table);
 
+        System.out.println("Table created");
+        System.out.println(table);
+
+        updateCatalog();
     }
 
     public void executeSelect(String table){
@@ -135,15 +143,36 @@ public class StorageManager {
         // TODO Same as executeSelect
     }
 
+    /**
+     * TODO need to test if it works after populating with create table and such
+     * @param table
+     */
     public void displayInfo(String table) {
         File table_file = getTableFile(table);
         if(table_file != null){
-            // TODO Same as executeSelect
+            try {
+                RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(), "rw");
+
+                // Access file for information
+                randomAccessFile.seek(0);
+                int tableNumber = randomAccessFile.readInt();
+                int numOfPages = randomAccessFile.readInt();
+                int numOfRecords = randomAccessFile.readInt();
+                MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
+                System.out.println(metaTable);
+                System.out.println(tableNumber);
+                System.out.println(numOfPages);
+                System.out.println(numOfRecords);
+                randomAccessFile.close();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     /**
-     * NEED FINESSE
+     * loop through each table schema in catalog and print
      */
     public void displaySchema() {
         // database location
@@ -159,26 +188,39 @@ public class StorageManager {
 
     public void searchForRecordPlacement(File file){
         // TODO loop through and search for the appropriate spot and insert record
+
     }
 
-    public Catalog createNewCatalog(){
-        this.catalog = new Catalog(this.pageSize, new HashMap<>());
-        return this.catalog;
+    public void createNewCatalog(){
+        this.catalog = new Catalog(this.pageSize);
+    }
+
+    public void updateCatalog(){
+        File catalog_file = new File(this.db + "/" + "Catalog");
+
+        try {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(catalog_file,
+                "rw");
+            byte[] bytes = this.catalog.serialize();
+            randomAccessFile.write(bytes);
+            randomAccessFile.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void parseCatalog(File catalog_file) {
         // Deserialize the file and return a catalog
 
-            try (RandomAccessFile raf = new RandomAccessFile(catalog_file, "rw")) {
-                int fileLength = (int) raf.length();
-                byte[] bytes = new byte[fileLength];
-                raf.readFully(bytes);
-                this.catalog = Catalog.deserialize(bytes);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-
+        try (RandomAccessFile raf = new RandomAccessFile(catalog_file, "rw")) {
+            int fileLength = (int) raf.length();
+            byte[] bytes = new byte[fileLength];
+            raf.readFully(bytes);
+            this.catalog = Catalog.deserialize(bytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public File getTableFile(String table){

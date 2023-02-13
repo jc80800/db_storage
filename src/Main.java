@@ -71,7 +71,7 @@ public class Main {
      */
     private static Boolean checkDirectory(File f, StorageManager storageManager) {
 
-        File catalog_file = new File(f.getPath() + "/Catalog.txt");
+        File catalog_file = new File(f.getPath() + "/Catalog");
 
         if (f.exists() && f.isDirectory()) {
             System.out.println("Directory " + f.getName() + " exists");
@@ -85,12 +85,8 @@ public class Main {
                 System.out.println("Directory " + f.getName() + " has been created");
                 try {
                     if (catalog_file.createNewFile()){
-                        Catalog catalog = storageManager.createNewCatalog();
-                        RandomAccessFile randomAccessFile = new RandomAccessFile(catalog_file,
-                            "rw");
-                        byte[] bytes = catalog.serialize();
-                        randomAccessFile.write(bytes);
-                        randomAccessFile.close();
+                        storageManager.createNewCatalog();
+                        storageManager.updateCatalog();
                         return true;
                     }
                 } catch (IOException e) {
