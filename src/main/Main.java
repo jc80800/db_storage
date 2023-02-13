@@ -1,17 +1,17 @@
-import Constants.Constant;
-import SqlParser.Statement;
-import StorageManager.Metadata.Catalog;
-import StorageManager.StorageManager;
+package main;
+
+import main.Constants.Constant;
+import main.SqlParser.Statement;
+import main.StorageManager.StorageManager;
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.Scanner;
 
 public class Main {
 
 
     /**
-     * Entry Program: java src.Main <db loc> <page size> <buffer size>
+     * Entry Program: java src.main.Main <db loc> <page size> <buffer size>
      */
     public static void main(String[] args) {
         if (args.length != 3) {
@@ -23,7 +23,7 @@ public class Main {
     }
 
     /**
-     * Main interface with user. Will continuously ask for command until quit
+     * main.Main interface with user. Will continuously ask for command until quit
      *
      * @param dbLoc
      * @param pageSize
@@ -54,13 +54,15 @@ public class Main {
             switch (prepareResult) {
                 case PREPARE_QUIT -> {
                     System.out.println("Closing database");
+                    storageManager.updateCatalog();
                     scanner.close();
                     System.exit(0);
                 }
                 case PREPARE_SUCCESS -> {
                     System.out.println("Execution Completed");
                 }
-                case PREPARE_UNRECOGNIZED_STATEMENT -> System.out.printf("Unrecognized keyword at \"%s\".\n", command);
+                case PREPARE_UNRECOGNIZED_STATEMENT ->
+                    System.out.printf("Unrecognized keyword at \"%s\".\n", command);
             }
         }
     }
@@ -84,7 +86,7 @@ public class Main {
             if (f.mkdirs()) {
                 System.out.println("Directory " + f.getName() + " has been created");
                 try {
-                    if (catalog_file.createNewFile()){
+                    if (catalog_file.createNewFile()) {
                         storageManager.createNewCatalog();
                         storageManager.updateCatalog();
                         return true;

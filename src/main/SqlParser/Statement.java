@@ -1,8 +1,8 @@
-package SqlParser;
+package main.SqlParser;
 
-import Constants.Constant;
-import Constants.Constant.PrepareResult;
-import StorageManager.StorageManager;
+import main.Constants.Constant;
+import main.Constants.Constant.PrepareResult;
+import main.StorageManager.StorageManager;
 import java.util.Arrays;
 import java.util.Locale;
 

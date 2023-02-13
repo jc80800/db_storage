@@ -1,10 +1,11 @@
-package StorageManager.Metadata;
+package main.StorageManager.Metadata;
 
-import Constants.Constant;
-import Constants.Helper;
-import StorageManager.Coordinate;
+import main.Constants.Constant;
+import main.Constants.Helper;
+import main.StorageManager.Coordinate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
 public final class MetaTable {
 
@@ -41,7 +42,7 @@ public final class MetaTable {
             Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
         index += Constant.INTEGER_SIZE;
         String name = Helper.convertByteArrayToString(
-            Arrays.copyOfRange(bytes, index, nameLength));
+            Arrays.copyOfRange(bytes, index, index + nameLength));
         index += nameLength;
 
         int numOfMetaAttributes = Helper.convertByteArrayToInt(
@@ -55,9 +56,10 @@ public final class MetaTable {
             Coordinate coordinate = Coordinate.deserialize(
                 Arrays.copyOfRange(bytes, index, index + Coordinate.getBinarySize()));
             pointers.add(coordinate);
+            index += Coordinate.getBinarySize();
 
             MetaAttribute metaAttribute = MetaAttribute.deserialize(
-                Arrays.copyOfRange(bytes, coordinate.getOffset(), coordinate.getLength()));
+                Arrays.copyOfRange(bytes, coordinate.getOffset(), coordinate.getOffset() + coordinate.getLength()));
             metaAttributes.add(metaAttribute);
             numOfMetaAttributes--;
         }
@@ -89,7 +91,7 @@ public final class MetaTable {
         byte[] pointersBytes = new byte[0];
         for (Coordinate pointer : pointers) {
             byte[] pointerBytes = pointer.serialize();
-            Helper.concatenate(pointersBytes, pointerBytes);
+            pointersBytes = Helper.concatenate(pointersBytes, pointerBytes);
         }
 
         byte[] metaAttributesBytes = new byte[0];
@@ -105,7 +107,7 @@ public final class MetaTable {
     private ArrayList<Coordinate> constructPointers() {
         ArrayList<Coordinate> pointers = new ArrayList<>();
         byte[] nameBytes = Helper.convertStringToByteArrays(tableName);
-        int offset = (Constant.INTEGER_SIZE * 2) + nameBytes.length;
+        int offset = (Constant.INTEGER_SIZE * 2) + nameBytes.length + Coordinate.getBinarySize() * metaAttributes.size();
         for (MetaAttribute metaAttribute : metaAttributes) {
             int metaAttributeBinarySize = metaAttribute.getBinarySize();
             pointers.add(new Coordinate(offset, metaAttributeBinarySize));
@@ -134,5 +136,24 @@ public final class MetaTable {
             ", pointers=" + pointers +
             ", binarySize=" + binarySize +
             '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        MetaTable metaTable = (MetaTable) o;
+        return binarySize == metaTable.binarySize && tableName.equals(metaTable.tableName)
+            && metaAttributes.equals(metaTable.metaAttributes) && pointers.equals(
+            metaTable.pointers);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableName, metaAttributes, pointers, binarySize);
     }
 }

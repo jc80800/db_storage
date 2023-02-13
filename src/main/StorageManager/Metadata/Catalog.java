@@ -1,8 +1,9 @@
-package StorageManager.Metadata;
+package main.StorageManager.Metadata;
 
-import Constants.Constant;
-import Constants.Helper;
-import StorageManager.Coordinate;
+import java.util.Objects;
+import main.Constants.Constant;
+import main.Constants.Helper;
+import main.StorageManager.Coordinate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -66,9 +67,10 @@ public class Catalog {
             Coordinate coordinate = Coordinate.deserialize(
                 Arrays.copyOfRange(bytes, index, index + Coordinate.getBinarySize()));
             pointers.add(coordinate);
+            index += Coordinate.getBinarySize();
 
             MetaTable metaTable = MetaTable.deserialize(
-                Arrays.copyOfRange(bytes, coordinate.getOffset(), coordinate.getLength()));
+                Arrays.copyOfRange(bytes, coordinate.getOffset(), coordinate.getOffset() + coordinate.getLength()));
             metaTableHashMap.put(tableNum++, metaTable);
             numOfMetaTables--;
         }
@@ -77,7 +79,7 @@ public class Catalog {
 
     private ArrayList<Coordinate> constructPointers() {
         ArrayList<Coordinate> pointers = new ArrayList<>();
-        int offset = Constant.INTEGER_SIZE * 2;
+        int offset = Constant.INTEGER_SIZE * 2 + Coordinate.getBinarySize() * metaTableHashMap.size();
         for (MetaTable metaTable : metaTableHashMap.values()) {
             int metaTableBinarySize = metaTable.getBinarySize();
             pointers.add(new Coordinate(offset, metaTableBinarySize));
@@ -102,13 +104,13 @@ public class Catalog {
 
         for (Coordinate pointer : pointers) {
             byte[] pointerBytes = pointer.serialize();
-            Helper.concatenate(pointersBytes, pointerBytes);
+            pointersBytes = Helper.concatenate(pointersBytes, pointerBytes);
         }
 
         byte[] metaTablesBytes = new byte[0];
-        for (int i = 1; i < pointers.size(); i++){
+        for (int i = 1; i < pointers.size() + 1; i++){
             byte[] metaTableBytes = metaTableHashMap.get(i).serialize();
-            Helper.concatenate(metaTablesBytes, metaTableBytes);
+            metaTablesBytes = Helper.concatenate(metaTablesBytes, metaTableBytes);
         }
 
         return Helper.concatenate(pageSizeBytes, numOfMetaTables, pointersBytes, metaTablesBytes);
@@ -121,5 +123,23 @@ public class Catalog {
             ", pointers=" + pointers +
             ", metaTableHashMap=" + metaTableHashMap +
             '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Catalog catalog = (Catalog) o;
+        return pageSize == catalog.pageSize && pointers.equals(catalog.pointers)
+            && metaTableHashMap.equals(catalog.metaTableHashMap);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pageSize, pointers, metaTableHashMap);
     }
 }

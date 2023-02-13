@@ -1,19 +1,15 @@
-package StorageManager;
+package main.StorageManager;
 
-import Constants.Constant;
-import Constants.Constant.DataType;
-import Constants.Helper;
-import StorageManager.Metadata.MetaAttribute;
-import StorageManager.Metadata.Catalog;
-import StorageManager.Metadata.MetaTable;
+import main.Constants.Constant;
+import main.Constants.Helper;
+import main.StorageManager.Metadata.MetaAttribute;
+import main.StorageManager.Metadata.Catalog;
+import main.StorageManager.Metadata.MetaTable;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 
 public class StorageManager {

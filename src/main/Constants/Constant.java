@@ -1,11 +1,11 @@
-package Constants;
+package main.Constants;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
 /**
- * Class to store src.Constants.Constants needed for the program
+ * Class to store src.main.Constants.main.Constants needed for the program
  */
 public final class Constant {
 

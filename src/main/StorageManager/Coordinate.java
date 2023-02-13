@@ -1,8 +1,9 @@
-package StorageManager;
+package main.StorageManager;
 
-import Constants.Constant;
-import Constants.Helper;
+import main.Constants.Constant;
+import main.Constants.Helper;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class Coordinate {
 
@@ -56,5 +57,22 @@ public class Coordinate {
             "offset=" + offset +
             ", length=" + length +
             '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Coordinate that = (Coordinate) o;
+        return offset == that.offset && length == that.length;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(offset, length);
     }
 }

@@ -1,11 +1,12 @@
-package StorageManager.Metadata;
+package main.StorageManager.Metadata;
 
-import Constants.Constant;
-import Constants.Constant.DataType;
-import Constants.Helper;
+import main.Constants.Constant;
+import main.Constants.Constant.DataType;
+import main.Constants.Helper;
 import java.security.InvalidKeyException;
 import java.util.Arrays;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 public class MetaAttribute {
 
@@ -116,7 +117,7 @@ public class MetaAttribute {
                 Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
             return new MetaAttribute(isPrimaryKey, name, dataType, length, bytes.length);
         }
-        return new MetaAttribute(isPrimaryKey, name, dataType, bytes.length);
+        return new MetaAttribute(isPrimaryKey, name, dataType);
     }
 
     private static DataType getDataType(int code) {
@@ -161,5 +162,23 @@ public class MetaAttribute {
             ", length=" + length +
             ", binarySize=" + binarySize +
             '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        MetaAttribute that = (MetaAttribute) o;
+        return isPrimaryKey == that.isPrimaryKey && binarySize == that.binarySize && name.equals(
+            that.name) && type == that.type && Objects.equals(length, that.length);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(isPrimaryKey, name, type, length, binarySize);
     }
 }

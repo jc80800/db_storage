@@ -2,7 +2,7 @@
 
 # Starting Functionality
 
-- `java src.Main <db loc> <page size> <buffer size>`
+- `java src.main <db loc> <page size> <buffer size>`
 - May need to compile beforehand if using terminal
 
 # Database Directory
