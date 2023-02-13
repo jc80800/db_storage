@@ -44,4 +44,9 @@ public class Page {
     public int getTableNumber() {
         return tableNumber;
     }
+
+    public static Page deserialize(byte[] bytes) {
+        //TODO
+        return new Page(1, 1, new ArrayList<>(), new ArrayList<>());
+    }
 }

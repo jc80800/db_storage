@@ -2,6 +2,7 @@ package StorageManager;
 
 import Constants.Constant;
 import Constants.Constant.DataType;
+import Constants.Helper;
 import StorageManager.Metadata.MetaAttribute;
 import StorageManager.Metadata.Catalog;
 import StorageManager.Metadata.MetaTable;
@@ -125,8 +126,41 @@ public class StorageManager {
             searchForRecordPlacement(table_file);
         } else {
             System.out.println("Table doesn't exist");
+            return;
         }
 
+        int pageSize = catalog.getPageSize();
+        try{
+            RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(), "rw");
+            randomAccessFile.seek(4);
+
+            //get number of pages in table
+            byte[] numPagesBytes = new byte[4];
+            randomAccessFile.read(numPagesBytes);
+            int numPages = Helper.convertByteArrayToInt(numPagesBytes);
+
+            // Get coordinate object of last page
+            randomAccessFile.seek(12 + (numPages - 1) * 8L);
+            byte[] coordinateBytes = new byte[8];
+            randomAccessFile.read(coordinateBytes);
+            Coordinate coordinate = Coordinate.deserialize(coordinateBytes);
+
+            // Check capacity of page
+            randomAccessFile.seek(coordinate.getOffset());
+            byte[] pageBytes = new byte[coordinate.getLength()];
+            randomAccessFile.read(pageBytes);
+            Page currentPage = Page.deserialize(pageBytes);
+
+            //if page can fit another record
+            //if(pageSize - coordinate.getLength() >= )
+                // if so, add to page, write new page object to file, update coordinate/pointers
+            //else, make new page object, make and add new coordinate object/ update pointers, write to file
+
+
+            randomAccessFile.close();
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
         /* Proposed steps for inserting
         1. Get page size from catalog object
         2. Traverse to last page of the table file
