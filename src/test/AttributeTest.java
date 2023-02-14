@@ -3,7 +3,7 @@ package test;
 import static org.junit.jupiter.api.Assertions.*;
 
 import main.Constants.Constant.DataType;
-import main.StorageManager.Attribute;
+import main.StorageManager.Data.Attribute;
 import main.StorageManager.Metadata.MetaAttribute;
 import org.junit.jupiter.api.Test;
 

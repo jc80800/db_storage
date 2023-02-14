@@ -1,6 +1,7 @@
-package main.StorageManager;
+package main.StorageManager.Data;
 
 import java.util.ArrayList;
+import main.Constants.Coordinate;
 
 public class Page {
 

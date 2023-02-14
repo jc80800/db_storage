@@ -1,7 +1,5 @@
-package main.StorageManager;
+package main.Constants;
 
-import main.Constants.Constant;
-import main.Constants.Helper;
 import java.util.Arrays;
 import java.util.Objects;
 

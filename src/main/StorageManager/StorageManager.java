@@ -1,7 +1,9 @@
 package main.StorageManager;
 
 import main.Constants.Constant;
+import main.Constants.Coordinate;
 import main.Constants.Helper;
+import main.StorageManager.Data.Page;
 import main.StorageManager.Metadata.MetaAttribute;
 import main.StorageManager.Metadata.Catalog;
 import main.StorageManager.Metadata.MetaTable;

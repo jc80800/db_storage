@@ -2,7 +2,7 @@ package main.StorageManager.Metadata;
 
 import main.Constants.Constant;
 import main.Constants.Helper;
-import main.StorageManager.Coordinate;
+import main.Constants.Coordinate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;

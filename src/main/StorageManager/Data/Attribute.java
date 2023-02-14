@@ -1,4 +1,4 @@
-package main.StorageManager;
+package main.StorageManager.Data;
 
 import java.util.Arrays;
 import java.util.Objects;

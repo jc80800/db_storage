@@ -1,10 +1,7 @@
-package main.StorageManager;
+package main.StorageManager.Data;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import main.Constants.Constant;
-import main.Constants.Constant.DataType;
-import main.Constants.Helper;
+import main.StorageManager.Data.Attribute;
 import main.StorageManager.Metadata.MetaAttribute;
 
 public class Record {

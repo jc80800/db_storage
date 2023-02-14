@@ -1,6 +1,7 @@
 package main.StorageManager;
 
 import java.util.PriorityQueue;
+import main.StorageManager.Data.Page;
 
 public class PageBuffer {
 
