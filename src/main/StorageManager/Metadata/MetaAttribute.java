@@ -13,30 +13,30 @@ public class MetaAttribute {
     private final boolean isPrimaryKey;
     private final String name;
     private final DataType type;
-    private final Integer length;
+    private final Integer maxLength;
     private final int binarySize;
 
     public MetaAttribute(boolean isPrimaryKey, String name, DataType type) {
         this.isPrimaryKey = isPrimaryKey;
         this.name = name;
         this.type = type;
-        this.length = null;
+        this.maxLength = null;
         this.binarySize = calculateBinarySize();
     }
 
-    public MetaAttribute(boolean isPrimaryKey, String name, DataType type, Integer length) {
+    public MetaAttribute(boolean isPrimaryKey, String name, DataType type, Integer maxLength) {
         this.isPrimaryKey = isPrimaryKey;
         this.name = name;
         this.type = type;
-        this.length = length;
+        this.maxLength = maxLength;
         this.binarySize = calculateBinarySize();
     }
 
-    public MetaAttribute(boolean isPrimaryKey, String name, DataType type, Integer length, int binarySize) {
+    public MetaAttribute(boolean isPrimaryKey, String name, DataType type, Integer maxLength, int binarySize) {
         this.isPrimaryKey = isPrimaryKey;
         this.name = name;
         this.type = type;
-        this.length = length;
+        this.maxLength = maxLength;
         this.binarySize = binarySize;
     }
 
@@ -47,7 +47,7 @@ public class MetaAttribute {
         size += name.getBytes().length;
         size += Constant.INTEGER_SIZE;
         size += Constant.BOOLEAN_SIZE;
-        if (length != null) {
+        if (maxLength != null) {
             size += Constant.INTEGER_SIZE;
         }
         return size;
@@ -75,11 +75,11 @@ public class MetaAttribute {
             throw new RuntimeException(e);
         }
         byte[] typeCodeBytes = Helper.convertIntToByteArray(typeCode);
-        boolean isLength = getLength() != null;
+        boolean isLength = getMaxLength() != null;
         byte[] isLengthBytes = new byte[]{
             Helper.convertBooleanToByte(isLength)};
         if (isLength) {
-            byte[] lengthBytes = Helper.convertIntToByteArray(getLength());
+            byte[] lengthBytes = Helper.convertIntToByteArray(getMaxLength());
             return Helper.concatenate(isPrimaryKeyBytes, nameLengthBytes, nameBytes, typeCodeBytes,
                 isLengthBytes, lengthBytes);
         }
@@ -145,8 +145,8 @@ public class MetaAttribute {
         return isPrimaryKey;
     }
 
-    public Integer getLength() {
-        return length;
+    public Integer getMaxLength() {
+        return maxLength;
     }
 
     public int getBinarySize() {
@@ -159,7 +159,7 @@ public class MetaAttribute {
             "isPrimaryKey=" + isPrimaryKey +
             ", name='" + name + '\'' +
             ", type=" + type +
-            ", length=" + length +
+            ", length=" + maxLength +
             ", binarySize=" + binarySize +
             '}';
     }
@@ -174,11 +174,11 @@ public class MetaAttribute {
         }
         MetaAttribute that = (MetaAttribute) o;
         return isPrimaryKey == that.isPrimaryKey && binarySize == that.binarySize && name.equals(
-            that.name) && type == that.type && Objects.equals(length, that.length);
+            that.name) && type == that.type && Objects.equals(maxLength, that.maxLength);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(isPrimaryKey, name, type, length, binarySize);
+        return Objects.hash(isPrimaryKey, name, type, maxLength, binarySize);
     }
 }

@@ -2,20 +2,101 @@ package main.StorageManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import javax.xml.crypto.Data;
 import main.Constants.Constant;
 import main.Constants.Constant.DataType;
 import main.Constants.Helper;
+import main.StorageManager.Metadata.MetaAttribute;
 
 public class Record {
 
     private byte[] byteArray;
     private ArrayList<Attribute> attributes;
+    private ArrayList<MetaAttribute> metaAttributes;
 
-    public Record(ArrayList<Attribute> attributes, byte[] byteArray) {
+    public Record(byte[] byteArray, ArrayList<Attribute> attributes,
+        ArrayList<MetaAttribute> metaAttributes) {
         this.attributes = attributes;
         this.byteArray = byteArray;
+        this.metaAttributes = metaAttributes;
     }
+
+//    public static Record deserialize(byte[] bytes, ArrayList<MetaAttribute> metaAttributes,
+//        int numOfAttributes) {
+//        byte[] fieldBoolean = Arrays.copyOf(bytes, numOfAttributes);
+//        ArrayList<Attribute> attributes = new ArrayList<>();
+//
+//        int index = numOfAttributes;
+//
+//        for (int i = 0; i < fieldBoolean.length; i++) {
+//            byte ifNull = fieldBoolean[i];
+//            MetaAttribute metaAttribute = metaAttributes.get(i);
+//            DataType type = metaAttribute.getType();
+//
+//            if (ifNull == 0) {
+//                attributes.add(new Attribute(metaAttribute, null));
+//            }
+//
+//            switch (type) {
+//                case INTEGER -> {
+//                    byte[] value = Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE);
+//                    index += Constant.INTEGER_SIZE;
+//                    attributes.add(new Attribute(metaAttribute, value));
+//                }
+//
+//                case BOOLEAN -> {
+//                    byte[] value = Arrays.copyOfRange(bytes, index, index + Constant.BOOLEAN_SIZE);
+//                    index += Constant.BOOLEAN_SIZE;
+//                    attributes.add(new Attribute(metaAttribute, value));
+//                }
+//
+//                case DOUBLE -> {
+//                    byte[] value = Arrays.copyOfRange(bytes, index, index + Constant.DOUBLE_SIZE);
+//                    index += Constant.DOUBLE_SIZE;
+//                    attributes.add(new Attribute(metaAttribute, value));
+//                }
+//                // read the next 2 bytes in values
+//
+//                case CHAR -> {
+//                    byte[] value = Arrays.copyOfRange(bytes, index,
+//                        index + metaAttribute.getMaxLength());
+//                    index += metaAttribute.getMaxLength();
+//                    attributes.add()
+//                }
+//                // read in the x amount
+//
+//                case VARCHAR -> {
+//                    int len = Helper.convert
+//                    byte[] value = Arrays.copyOfRange(bytes, index, index + Constant.BOOLEAN_SIZE);
+//                    index += Constant.BOOLEAN_SIZE;
+//                    attributes.add(new Attribute(type, value));
+//                }
+//            }
+//        }
+//        return new Record(null, null);
+//    }
+
+    /**
+     * form: [fieldMap, attributes]
+     *
+     * @return
+     */
+//    public byte[] serialize() {
+//
+//        byte[] fieldBoolean = new byte[this.attributes.size()];
+//        for (int i = 0; i < this.attributes.size(); i++) {
+//            if (this.attributes.get(i).getValue() == null) {
+//                fieldBoolean[i] = 0;
+//            } else {
+//                fieldBoolean[i] = 1;
+//            }
+//        }
+//
+//        for (Attribute attribute : this.attributes) {
+//            fieldBoolean = Helper.concatenate(fieldBoolean, attribute.getValue());
+//        }
+//
+//        return fieldBoolean;
+//    }
 
     public ArrayList<Attribute> getAttributes() {
         return attributes;
@@ -25,56 +106,4 @@ public class Record {
         this.attributes = attributes;
     }
 
-    public byte[] serialize(){
-
-        byte[] fieldBoolean = new byte[this.attributes.size()];
-        for (int i = 0; i < this.attributes.size(); i++){
-            if (this.attributes.get(i).getValue() == null){
-                fieldBoolean[i] = 0;
-            } else {
-                fieldBoolean[i] = 1;
-            }
-        }
-
-        for (int i = 0; i < this.attributes.size(); i ++){
-            fieldBoolean = Helper.concatenate(fieldBoolean, this.attributes.get(i).getValue());
-        }
-
-        return fieldBoolean;
-    }
-
-    public static Record deserialize(byte[] bytes, ArrayList<DataType> dataTypes, int numOfAttributes) {
-        byte[] fieldBoolean = Arrays.copyOf(bytes, numOfAttributes);
-        byte[] values = Arrays.copyOfRange(bytes, numOfAttributes + 1, bytes.length);
-
-        int pointer = 0;
-        for(int i = 0; i < fieldBoolean.length; i++){
-            byte ifNull = fieldBoolean[i];
-            if (ifNull == 0){
-                continue;
-            }
-
-            switch (dataTypes.get(i)) {
-                case INTEGER:
-                    int endPoint = pointer + Constant.INTEGER_SIZE;
-                    // Read from pointer to endPoint
-
-                    // read the next 4 bytes in values
-
-                    break;
-                case BOOLEAN:
-                    // read the next 1 byte in values
-                    break;
-                case DOUBLE:
-                    // read the next 2 bytes in values
-                    break;
-                case CHAR:
-                    // read in the x amount
-                    break;
-                case VARCHAR:
-                    break;
-            }
-        }
-        return new Record(null, null);
-    }
 }
