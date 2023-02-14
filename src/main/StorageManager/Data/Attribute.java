@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import main.Constants.Constant;
 import main.Constants.Helper;
-import main.StorageManager.Metadata.MetaAttribute;
+import main.StorageManager.MetaData.MetaAttribute;
 
 public class Attribute {
 

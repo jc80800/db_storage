@@ -6,17 +6,26 @@ import java.util.Objects;
 import main.Constants.Constant;
 import main.Constants.Constant.DataType;
 import main.Constants.Helper;
-import main.StorageManager.Metadata.MetaAttribute;
+import main.StorageManager.MetaData.MetaAttribute;
 
 public class Record {
 
     private ArrayList<Attribute> attributes;
     private ArrayList<MetaAttribute> metaAttributes;
+    private int binarySize;
 
     public Record(ArrayList<Attribute> attributes,
         ArrayList<MetaAttribute> metaAttributes) {
         this.attributes = attributes;
         this.metaAttributes = metaAttributes;
+        this.binarySize = calculateBinarySize();
+    }
+
+    public Record(ArrayList<Attribute> attributes, ArrayList<MetaAttribute> metaAttributes,
+        int binarySize) {
+        this.attributes = attributes;
+        this.metaAttributes = metaAttributes;
+        this.binarySize = binarySize;
     }
 
     public static Record deserialize(byte[] bytes, ArrayList<MetaAttribute> metaAttributes) {
@@ -35,21 +44,23 @@ public class Record {
 
             switch (type) {
                 case BOOLEAN -> {
-                    byte[] valueBytes = new byte[] {bytes[index]};
+                    byte[] valueBytes = new byte[]{bytes[index]};
                     Attribute attribute = Attribute.deserialize(valueBytes, metaAttribute);
                     index += attribute.getBinarySize();
                     attributes.add(attribute);
                 }
 
                 case INTEGER -> {
-                    byte[] valueBytes = Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE);
+                    byte[] valueBytes = Arrays.copyOfRange(bytes, index,
+                        index + Constant.INTEGER_SIZE);
                     Attribute attribute = Attribute.deserialize(valueBytes, metaAttribute);
                     index += attribute.getBinarySize();
                     attributes.add(attribute);
                 }
 
                 case DOUBLE -> {
-                    byte[] valueBytes = Arrays.copyOfRange(bytes, index, index + Constant.DOUBLE_SIZE);
+                    byte[] valueBytes = Arrays.copyOfRange(bytes, index,
+                        index + Constant.DOUBLE_SIZE);
                     Attribute attribute = Attribute.deserialize(valueBytes, metaAttribute);
                     index += attribute.getBinarySize();
                     attributes.add(attribute);
@@ -74,7 +85,24 @@ public class Record {
                 }
             }
         }
-        return new Record(attributes, metaAttributes);
+        return new Record(attributes, metaAttributes, bytes.length);
+    }
+
+    public int getBinarySize() {
+        return binarySize;
+    }
+
+    private int calculateBinarySize() {
+        int binarySize = attributes.size();
+        for (Attribute attribute : attributes) {
+            // VARCHAR has a leading int indicating the length of the string
+            if (attribute.getMetaAttribute().getType() == DataType.VARCHAR) {
+                binarySize += Constant.INTEGER_SIZE + attribute.getBinarySize();
+            } else {
+                binarySize += attribute.getBinarySize();
+            }
+        }
+        return binarySize;
     }
 
     /**

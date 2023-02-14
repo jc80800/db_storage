@@ -1,13 +1,13 @@
-package test;
+package test.MetaData;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import main.Constants.Constant.DataType;
-import main.StorageManager.Metadata.Catalog;
-import main.StorageManager.Metadata.MetaAttribute;
-import main.StorageManager.Metadata.MetaTable;
+import main.StorageManager.MetaData.Catalog;
+import main.StorageManager.MetaData.MetaAttribute;
+import main.StorageManager.MetaData.MetaTable;
 import org.junit.jupiter.api.Test;
 
 class CatalogTest {

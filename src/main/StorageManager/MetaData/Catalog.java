@@ -1,4 +1,4 @@
-package main.StorageManager.Metadata;
+package main.StorageManager.MetaData;
 
 import java.util.Objects;
 import main.Constants.Constant;

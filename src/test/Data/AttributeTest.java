@@ -1,10 +1,10 @@
-package test;
+package test.Data;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import main.Constants.Constant.DataType;
 import main.StorageManager.Data.Attribute;
-import main.StorageManager.Metadata.MetaAttribute;
+import main.StorageManager.MetaData.MetaAttribute;
 import org.junit.jupiter.api.Test;
 
 class AttributeTest {

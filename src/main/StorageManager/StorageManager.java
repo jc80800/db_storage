@@ -3,10 +3,9 @@ package main.StorageManager;
 import main.Constants.Constant;
 import main.Constants.Coordinate;
 import main.Constants.Helper;
-import main.StorageManager.Data.Page;
-import main.StorageManager.Metadata.MetaAttribute;
-import main.StorageManager.Metadata.Catalog;
-import main.StorageManager.Metadata.MetaTable;
+import main.StorageManager.MetaData.MetaAttribute;
+import main.StorageManager.MetaData.Catalog;
+import main.StorageManager.MetaData.MetaTable;
 
 import java.io.File;
 import java.io.IOException;
@@ -147,7 +146,7 @@ public class StorageManager {
             randomAccessFile.seek(coordinate.getOffset());
             byte[] pageBytes = new byte[coordinate.getLength()];
             randomAccessFile.read(pageBytes);
-            Page currentPage = Page.deserialize(pageBytes);
+//            Page currentPage = Page.deserialize(pageBytes);
 
             //if page can fit another record
             //if(pageSize - coordinate.getLength() >= )

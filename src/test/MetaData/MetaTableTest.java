@@ -1,10 +1,10 @@
-package test;
+package test.MetaData;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import main.Constants.Constant.DataType;
-import main.StorageManager.Metadata.MetaAttribute;
-import main.StorageManager.Metadata.MetaTable;
+import main.StorageManager.MetaData.MetaAttribute;
+import main.StorageManager.MetaData.MetaTable;
 import java.util.ArrayList;
 import org.junit.jupiter.api.Test;
 

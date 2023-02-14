@@ -1,4 +1,4 @@
-package main.StorageManager.Metadata;
+package main.StorageManager.MetaData;
 
 import main.Constants.Constant;
 import main.Constants.Constant.DataType;
