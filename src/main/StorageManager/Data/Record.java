@@ -1,99 +1,109 @@
 package main.StorageManager.Data;
 
 import java.util.ArrayList;
-import main.StorageManager.Data.Attribute;
+import java.util.Arrays;
+import java.util.Objects;
+import main.Constants.Constant;
+import main.Constants.Constant.DataType;
+import main.Constants.Helper;
 import main.StorageManager.Metadata.MetaAttribute;
 
 public class Record {
 
-    private byte[] byteArray;
     private ArrayList<Attribute> attributes;
     private ArrayList<MetaAttribute> metaAttributes;
 
-    public Record(byte[] byteArray, ArrayList<Attribute> attributes,
+    public Record(ArrayList<Attribute> attributes,
         ArrayList<MetaAttribute> metaAttributes) {
         this.attributes = attributes;
-        this.byteArray = byteArray;
         this.metaAttributes = metaAttributes;
     }
 
-//    public static Record deserialize(byte[] bytes, ArrayList<MetaAttribute> metaAttributes,
-//        int numOfAttributes) {
-//        byte[] fieldBoolean = Arrays.copyOf(bytes, numOfAttributes);
-//        ArrayList<Attribute> attributes = new ArrayList<>();
-//
-//        int index = numOfAttributes;
-//
-//        for (int i = 0; i < fieldBoolean.length; i++) {
-//            byte ifNull = fieldBoolean[i];
-//            MetaAttribute metaAttribute = metaAttributes.get(i);
-//            DataType type = metaAttribute.getType();
-//
-//            if (ifNull == 0) {
-//                attributes.add(new Attribute(metaAttribute, null));
-//            }
-//
-//            switch (type) {
-//                case INTEGER -> {
-//                    byte[] value = Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE);
-//                    index += Constant.INTEGER_SIZE;
-//                    attributes.add(new Attribute(metaAttribute, value));
-//                }
-//
-//                case BOOLEAN -> {
-//                    byte[] value = Arrays.copyOfRange(bytes, index, index + Constant.BOOLEAN_SIZE);
-//                    index += Constant.BOOLEAN_SIZE;
-//                    attributes.add(new Attribute(metaAttribute, value));
-//                }
-//
-//                case DOUBLE -> {
-//                    byte[] value = Arrays.copyOfRange(bytes, index, index + Constant.DOUBLE_SIZE);
-//                    index += Constant.DOUBLE_SIZE;
-//                    attributes.add(new Attribute(metaAttribute, value));
-//                }
-//                // read the next 2 bytes in values
-//
-//                case CHAR -> {
-//                    byte[] value = Arrays.copyOfRange(bytes, index,
-//                        index + metaAttribute.getMaxLength());
-//                    index += metaAttribute.getMaxLength();
-//                    attributes.add()
-//                }
-//                // read in the x amount
-//
-//                case VARCHAR -> {
-//                    int len = Helper.convert
-//                    byte[] value = Arrays.copyOfRange(bytes, index, index + Constant.BOOLEAN_SIZE);
-//                    index += Constant.BOOLEAN_SIZE;
-//                    attributes.add(new Attribute(type, value));
-//                }
-//            }
-//        }
-//        return new Record(null, null);
-//    }
+    public static Record deserialize(byte[] bytes, ArrayList<MetaAttribute> metaAttributes) {
+        byte[] fieldBoolean = Arrays.copyOf(bytes, metaAttributes.size());
+        ArrayList<Attribute> attributes = new ArrayList<>();
+
+        int index = metaAttributes.size();
+        for (int i = 0; i < fieldBoolean.length; i++) {
+            byte ifNull = fieldBoolean[i];
+            MetaAttribute metaAttribute = metaAttributes.get(i);
+            DataType type = metaAttribute.getType();
+
+            if (ifNull == 0) {
+                attributes.add(new Attribute(metaAttribute, null));
+            }
+
+            switch (type) {
+                case BOOLEAN -> {
+                    byte[] valueBytes = new byte[] {bytes[index]};
+                    Attribute attribute = Attribute.deserialize(valueBytes, metaAttribute);
+                    index += attribute.getBinarySize();
+                    attributes.add(attribute);
+                }
+
+                case INTEGER -> {
+                    byte[] valueBytes = Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE);
+                    Attribute attribute = Attribute.deserialize(valueBytes, metaAttribute);
+                    index += attribute.getBinarySize();
+                    attributes.add(attribute);
+                }
+
+                case DOUBLE -> {
+                    byte[] valueBytes = Arrays.copyOfRange(bytes, index, index + Constant.DOUBLE_SIZE);
+                    Attribute attribute = Attribute.deserialize(valueBytes, metaAttribute);
+                    index += attribute.getBinarySize();
+                    attributes.add(attribute);
+                }
+
+                case CHAR -> {
+                    byte[] valueBytes = Arrays.copyOfRange(bytes, index,
+                        index + metaAttribute.getMaxLength());
+                    Attribute attribute = Attribute.deserialize(valueBytes, metaAttribute);
+                    index += attribute.getBinarySize();
+                    attributes.add(attribute);
+                }
+
+                case VARCHAR -> {
+                    int valueLen = Helper.convertByteArrayToInt(Arrays.copyOfRange(bytes, index,
+                        index + Constant.INTEGER_SIZE));
+                    index += Constant.INTEGER_SIZE;
+                    Attribute attribute = Attribute.deserialize(
+                        Arrays.copyOfRange(bytes, index, index + valueLen), metaAttribute);
+                    index += attribute.getBinarySize();
+                    attributes.add(attribute);
+                }
+            }
+        }
+        return new Record(attributes, metaAttributes);
+    }
 
     /**
      * form: [fieldMap, attributes]
      *
      * @return
      */
-//    public byte[] serialize() {
-//
-//        byte[] fieldBoolean = new byte[this.attributes.size()];
-//        for (int i = 0; i < this.attributes.size(); i++) {
-//            if (this.attributes.get(i).getValue() == null) {
-//                fieldBoolean[i] = 0;
-//            } else {
-//                fieldBoolean[i] = 1;
-//            }
-//        }
-//
-//        for (Attribute attribute : this.attributes) {
-//            fieldBoolean = Helper.concatenate(fieldBoolean, attribute.getValue());
-//        }
-//
-//        return fieldBoolean;
-//    }
+    public byte[] serialize() {
+
+        byte[] fieldBoolean = new byte[this.attributes.size()];
+        for (int i = 0; i < this.attributes.size(); i++) {
+            if (this.attributes.get(i).getValue() == null) {
+                fieldBoolean[i] = 0;
+            } else {
+                fieldBoolean[i] = 1;
+            }
+        }
+
+        for (Attribute attribute : this.attributes) {
+            if (attribute.getMetaAttribute().getType() == DataType.VARCHAR) {
+                byte[] valueBytes = attribute.serialize();
+                byte[] valueLen = Helper.convertIntToByteArray(valueBytes.length);
+                fieldBoolean = Helper.concatenate(fieldBoolean, valueLen, valueBytes);
+            } else {
+                fieldBoolean = Helper.concatenate(fieldBoolean, attribute.serialize());
+            }
+        }
+        return fieldBoolean;
+    }
 
     public ArrayList<Attribute> getAttributes() {
         return attributes;
@@ -103,4 +113,28 @@ public class Record {
         this.attributes = attributes;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Record record = (Record) o;
+        return attributes.equals(record.attributes) && metaAttributes.equals(record.metaAttributes);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(attributes, metaAttributes);
+    }
+
+    @Override
+    public String toString() {
+        return "Record{" +
+            "attributes=" + attributes +
+            ", metaAttributes=" + metaAttributes +
+            '}';
+    }
 }

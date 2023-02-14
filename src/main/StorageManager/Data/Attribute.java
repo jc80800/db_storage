@@ -10,10 +10,18 @@ public class Attribute {
 
     private final MetaAttribute metaAttribute;
     private Object value;
+    private int binarySize;
 
     public Attribute(MetaAttribute metaAttribute, Object value) {
         this.metaAttribute = metaAttribute;
         this.value = value;
+        this.binarySize = calculateBinarySize();
+    }
+
+    public Attribute(MetaAttribute metaAttribute, Object value, int binarySize) {
+        this.metaAttribute = metaAttribute;
+        this.value = value;
+        this.binarySize = binarySize;
     }
 
     public static Attribute deserialize(byte[] bytes, MetaAttribute metaAttribute) {
@@ -52,6 +60,15 @@ public class Attribute {
         };
     }
 
+    private int calculateBinarySize() {
+        return switch (metaAttribute.getType()) {
+            case BOOLEAN -> Constant.BOOLEAN_SIZE;
+            case INTEGER -> Constant.INTEGER_SIZE;
+            case DOUBLE -> Constant.DOUBLE_SIZE;
+            case CHAR -> Constant.INTEGER_SIZE + metaAttribute.getMaxLength();
+            case VARCHAR -> Helper.convertStringToByteArrays((String) value).length;
+        };
+    }
 
     public Object getValue() {
         return value;
@@ -59,10 +76,15 @@ public class Attribute {
 
     public void setValue(Object value) {
         this.value = value;
+        this.binarySize = calculateBinarySize();
     }
 
     public MetaAttribute getMetaAttribute() {
         return metaAttribute;
+    }
+
+    public int getBinarySize() {
+        return binarySize;
     }
 
     @Override
