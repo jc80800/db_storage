@@ -1,5 +1,6 @@
 package main.SqlParser;
 
+import com.sun.security.jgss.GSSUtil;
 import main.Constants.Constant;
 import main.Constants.Constant.PrepareResult;
 import main.StorageManager.StorageManager;
@@ -20,12 +21,12 @@ public class Statement {
      * @param input
      * @return
      */
-    public Constant.PrepareResult prepareStatement(String input) {
-        String[] tokens = input.split(" ");
+    public Constant.PrepareResult prepareStatement(String input){
+        String[] tokens = input.split("\\s+");
         String type = tokens[0].toUpperCase(Locale.ROOT);
         Constant.PrepareResult result;
         switch (type) {
-            case Constant.CREATE -> result = createCommand(tokens, input);
+            case Constant.CREATE -> result = createCommand(tokens);
             case Constant.DISPLAY -> result = displayCommand(tokens);
             case Constant.INSERT ->
                 result = insertCommand(tokens);
@@ -52,7 +53,7 @@ public class Statement {
             }
             storageManager.executeSelect(tokens[3]);
 
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
 
@@ -67,21 +68,31 @@ public class Statement {
      */
     private Constant.PrepareResult insertCommand(String[] tokens) {
         try {
-            if (tokens.length < 5 || !tokens[1].equals("into") || !tokens[3].equals("values")) {
+            if (tokens.length < 5 || !tokens[1].equals("into") || !tokens[3].contains("values")) {
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
 
             String table_name = tokens[2];
 
-            // Recombining and splitting the values based on comma
+            int index = 0;
+            while(index < tokens[3].length() && !(tokens[3].charAt(index) == '(')){
+                index += 1;
+            }
 
-            tokens = Arrays.copyOfRange(tokens, 4, tokens.length);
+            tokens[3] = tokens[3].substring(index);
+
+            tokens = Arrays.copyOfRange(tokens, 3, tokens.length);
             String combined_values = String.join(" ", tokens);
+            combined_values = combined_values.replace("(", "");
+            System.out.println(combined_values);
             String[] values = combined_values.split(",");
+
+            values[values.length - 1] = values[values.length - 1].substring(0,
+                    values[values.length - 1].length() - 2);
 
             storageManager.executeInsert(table_name, values);
 
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
 
@@ -104,14 +115,14 @@ public class Statement {
             } else {
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
 
         return Constant.PrepareResult.PREPARE_SUCCESS;
     }
 
-    private Constant.PrepareResult createCommand(String[] tokens, String input) {
+    private Constant.PrepareResult createCommand(String[] tokens) {
         // check if second word is "table"
         try {
             String token = tokens[1].toUpperCase();
@@ -121,22 +132,23 @@ public class Statement {
 
             StringBuilder table_name = new StringBuilder();
             int index = 0;
-            while(!(tokens[2].charAt(index) == '(')){
+            while(index < tokens[2].length() && !(tokens[2].charAt(index) == '(')){
                 table_name.append(tokens[2].charAt(index));
                 index += 1;
             }
 
-            tokens[2] = tokens[2].substring(index + 1);
+            tokens[2] = tokens[2].substring(index);
 
             tokens = Arrays.copyOfRange(tokens, 2, tokens.length);
             String combined_values = String.join(" ", tokens);
+            combined_values = combined_values.replace("(", "");
             String[] values = combined_values.split(",");
 
             values[values.length - 1] = values[values.length - 1].substring(0,
                 values[values.length - 1].length() - 2);
 
             storageManager.createTable(table_name.toString(), values);
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
         return PrepareResult.PREPARE_SUCCESS;
