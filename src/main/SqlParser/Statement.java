@@ -89,11 +89,10 @@ public class Statement {
             tokens = Arrays.copyOfRange(tokens, 3, tokens.length);
             String combined_values = String.join(" ", tokens);
             combined_values = combined_values.replace("(", "");
-            System.out.println(combined_values);
             String[] values = combined_values.split(",");
 
             values[values.length - 1] = values[values.length - 1].substring(0,
-                    values[values.length - 1].length() - 2);
+                    values[values.length - 1].length() - 1);
 
             storageManager.executeInsert(table_name, values);
 
@@ -146,12 +145,11 @@ public class Statement {
 
             tokens = Arrays.copyOfRange(tokens, 2, tokens.length);
             String combined_values = String.join(" ", tokens);
-            // TODO: Change it to only replace first '('
-            combined_values = combined_values.replace("(", "");
+            combined_values = combined_values.replaceFirst("\\(", "");
             String[] values = combined_values.split(",");
 
             values[values.length - 1] = values[values.length - 1].substring(0,
-                values[values.length - 1].length() - 2);
+                values[values.length - 1].length() - 1);
 
             storageManager.createTable(table_name.toString(), values);
         } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {

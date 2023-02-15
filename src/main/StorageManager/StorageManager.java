@@ -92,6 +92,7 @@ public class StorageManager {
                         new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, length));
                 } else {
                     System.out.println("ERROR: Invalid attribute type was found!");
+                    System.out.println(valArray[1]);
                     return;
                 }
             }
