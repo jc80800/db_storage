@@ -44,6 +44,28 @@ public class Helper {
         }
     }
 
+    public static boolean checkInteger(String s){
+        try {
+            int i = Integer.parseInt(s);
+            return true;
+        } catch (NumberFormatException e){
+            return false;
+        }
+    }
+
+    public static boolean checkDouble(String s){
+        try {
+            double i = Double.parseDouble(s);
+            return true;
+        } catch (NumberFormatException e){
+            return false;
+        }
+    }
+
+    public static boolean checkBoolean(String s){
+        return s.equals("true") || s.equals("false");
+    }
+
 
 
     /**

@@ -1,31 +1,27 @@
 package main.StorageManager;
 
-import main.Constants.Constant;
-import main.Constants.Coordinate;
-import main.Constants.Helper;
-import main.StorageManager.MetaData.MetaAttribute;
-import main.StorageManager.MetaData.Catalog;
-import main.StorageManager.MetaData.MetaTable;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import main.Constants.Constant;
+import main.StorageManager.Data.Record;
+import main.StorageManager.MetaData.Catalog;
+import main.StorageManager.MetaData.MetaAttribute;
+import main.StorageManager.MetaData.MetaTable;
 
 public class StorageManager {
 
     private final File db;
-    private Catalog catalog;
     private final int pageSize;
     private final int bufferSize;
+    private Catalog catalog;
 
     /**
-     * Phase 1: create table
-     *          insert
-     *          select *
-     *          DisplayInfo()
-     *          DisplaySchema()
+     * Phase 1: create table insert select * DisplayInfo() DisplaySchema()
+     *
      * @param db
      * @param pageSize
      * @param bufferSize
@@ -36,7 +32,7 @@ public class StorageManager {
         this.bufferSize = bufferSize;
     }
 
-    public void createTable(String table_name, String[] values){
+    public void createTable(String table_name, String[] values) {
         // input = create table foo( age char(10), num integer primarykey )
         // values = [ age char(10), num integer primarykey ]
         // table_name = foo
@@ -51,7 +47,8 @@ public class StorageManager {
             if (valArray.length < 2) {
                 System.out.println("ERROR: Missing fields for table attribute!");
                 return;
-            } else if (valArray.length > 3 || (valArray.length == 3 && !valArray[2].equalsIgnoreCase("primarykey"))) {
+            } else if (valArray.length > 3 || (valArray.length == 3
+                && !valArray[2].equalsIgnoreCase("primarykey"))) {
                 System.out.println("ERROR: Too many fields found for table attribute!");
                 return;
             } else {
@@ -84,7 +81,8 @@ public class StorageManager {
                         type = Constant.DataType.VARCHAR;
                     }
                     int length = Integer.parseInt(typeArray[1].replace(")", ""));
-                    attributes.add(new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, length));
+                    attributes.add(
+                        new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, length));
                 } else {
                     System.out.println("ERROR: Invalid attribute type was found!");
                     return;
@@ -106,11 +104,11 @@ public class StorageManager {
         updateCatalog();
     }
 
-    public void executeSelect(String table){
+    public void executeSelect(String table) {
         // Check if the file exist in the directory
 
         File table_file = getTableFile(table);
-        if(table_file.exists()){ // TODO change this to checking the catalog instead
+        if (table_file.exists()) { // TODO change this to checking the catalog instead
             // TODO
         } else {
             System.out.println("File does not exist");
@@ -119,45 +117,25 @@ public class StorageManager {
 
     public void executeInsert(String table, String[] values) {
         File table_file = getTableFile(table);
-        if(table_file.exists()){
-            searchForRecordPlacement(table_file);
-        } else {
+        if (!table_file.exists()) {
             System.out.println("Table doesn't exist");
             return;
         }
-
-        int pageSize = catalog.getPageSize();
-        try{
-            RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(), "rw");
-            randomAccessFile.seek(4);
-
-            //get number of pages in table
-            byte[] numPagesBytes = new byte[4];
-            randomAccessFile.read(numPagesBytes);
-            int numPages = Helper.convertByteArrayToInt(numPagesBytes);
-
-            // Get coordinate object of last page
-            randomAccessFile.seek(12 + (numPages - 1) * 8L);
-            byte[] coordinateBytes = new byte[8];
-            randomAccessFile.read(coordinateBytes);
-            Coordinate coordinate = Coordinate.deserialize(coordinateBytes);
-
-            // Check capacity of page
-            randomAccessFile.seek(coordinate.getOffset());
-            byte[] pageBytes = new byte[coordinate.getLength()];
-            randomAccessFile.read(pageBytes);
-//            Page currentPage = Page.deserialize(pageBytes);
-
-            //if page can fit another record
-            //if(pageSize - coordinate.getLength() >= )
-                // if so, add to page, write new page object to file, update coordinate/pointers
-            //else, make new page object, make and add new coordinate object/ update pointers, write to file
-
-
-            randomAccessFile.close();
-        }catch (IOException e) {
-            e.printStackTrace();
+        /*
+        TableHeader tableHeader = TableHeader.parseTableHeader(table_file);
+        if (tableHeader == null) {
+            System.out.println("Header couldn't be parsed");
+            return;
         }
+
+         */
+
+        System.out.println("Parsing values: " + Arrays.toString(values));
+
+        //ArrayList<Record> records = Record.parseRecords(values, this.catalog.getMetaTable(tableHeader.getTableNumber()));
+        ArrayList<Record> records = Record.parseRecords(values, null);
+
+
         /* Proposed steps for inserting
         1. Get page size from catalog object
         2. Traverse to last page of the table file
@@ -181,13 +159,15 @@ public class StorageManager {
 
     /**
      * TODO need to test if it works after populating with create table and such
+     *
      * @param table
      */
     public void displayInfo(String table) {
         File table_file = getTableFile(table);
-        if(table_file != null){
+        if (table_file != null) {
             try {
-                RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(), "rw");
+                RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(),
+                    "rw");
 
                 // Access file for information
                 randomAccessFile.seek(0);
@@ -222,16 +202,16 @@ public class StorageManager {
 
     }
 
-    public void searchForRecordPlacement(File file){
+    public void searchForRecordPlacement(File file) {
         // TODO loop through and search for the appropriate spot and insert record
 
     }
 
-    public void createNewCatalog(){
+    public void createNewCatalog() {
         this.catalog = new Catalog(this.pageSize);
     }
 
-    public void updateCatalog(){
+    public void updateCatalog() {
         File catalog_file = new File(this.db + "/" + "Catalog");
 
         try {
@@ -259,7 +239,7 @@ public class StorageManager {
         }
     }
 
-    public File getTableFile(String table){
+    public File getTableFile(String table) {
         String table_path = db.getName() + "/" + table;
         return new File(table_path);
     }

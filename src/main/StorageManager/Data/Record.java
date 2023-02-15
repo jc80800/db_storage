@@ -7,6 +7,7 @@ import main.Constants.Constant;
 import main.Constants.Constant.DataType;
 import main.Constants.Helper;
 import main.StorageManager.MetaData.MetaAttribute;
+import main.StorageManager.MetaData.MetaTable;
 
 public class Record {
 
@@ -86,6 +87,68 @@ public class Record {
             }
         }
         return new Record(attributes, metaAttributes, bytes.length);
+    }
+
+    public static ArrayList<Record> parseRecords(String[] values, MetaTable metaTable) {
+        ArrayList<MetaAttribute> metaAttributes = metaTable.metaAttributes();
+
+        ArrayList<Attribute> recordAttribute = new ArrayList<>();
+        ArrayList<Record> result = new ArrayList<>();
+
+        for (String value : values) {
+            value = value.replace("(", "");
+            value = value.replace(")", "");
+            System.out.println(value);
+
+            String[] tokens = value.split(" ");
+            boolean completion = true;
+
+            for (int i = 0; i < metaAttributes.size(); i++) {
+                String object = tokens[i];
+                MetaAttribute metaAttribute = metaAttributes.get(i);
+                DataType dataType = metaAttribute.getType();
+
+                if (object.charAt(0) == '\"' && object.charAt(tokens.length - 1) == '\"') {
+                    if (dataType.equals(DataType.VARCHAR)) {
+                        // check size
+                        if (object.length() - 2 <= metaAttribute.getMaxLength()) {
+                            recordAttribute.add(
+                                new Attribute(metaAttribute, object.substring(1,
+                                    object.length() - 1)));
+                        } else {
+                            System.out.println("String has more character than MetaAttribute");
+                            completion = false;
+                            break;
+                        }
+                    }
+                } else if (Helper.checkInteger(object) && dataType
+                    .equals(DataType.INTEGER)) {
+                    int intObject = Integer.parseInt(object);
+                    recordAttribute.add(new Attribute(metaAttribute, intObject));
+                } else if (Helper.checkDouble(object) && dataType.equals(DataType.DOUBLE)) {
+                    double doubleObject = Double.parseDouble(object);
+                    recordAttribute.add(new Attribute(metaAttribute, doubleObject));
+                } else {
+                    if (!Helper.checkBoolean(tokens[i]) || !dataType.equals(DataType.BOOLEAN)) {
+                        System.out.println("Incorrect data type");
+                        completion = false;
+                        break;
+                    }
+                    boolean boolObject = true;
+                    if(object.equals("false")){
+                        boolObject = false;
+                    }
+                    recordAttribute.add(new Attribute(metaAttribute, boolObject));
+                }
+            }
+            if(completion){
+                result.add(new Record(recordAttribute, metaAttributes));
+                recordAttribute.clear();
+            } else {
+                break;
+            }
+        }
+        return result;
     }
 
     public int getBinarySize() {

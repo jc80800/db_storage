@@ -1,5 +1,6 @@
 package main.Constants;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -27,6 +28,17 @@ public class Coordinate {
         int length = Helper.convertByteArrayToInt(
             Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
         return new Coordinate(offset, length);
+    }
+
+    public static ArrayList<Coordinate> deserializeList(byte[] bytes){
+        int i = 0;
+        ArrayList<Coordinate> arrayList = new ArrayList<>();
+        while (i < bytes.length){
+            byte[] temp = Arrays.copyOfRange(bytes, i, i + getBinarySize());
+            arrayList.add(deserialize(temp));
+            i = i + getBinarySize();
+        }
+        return arrayList;
     }
 
     public static int getBinarySize() {
