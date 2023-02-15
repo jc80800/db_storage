@@ -155,13 +155,17 @@ public class MetaAttribute {
 
     @Override
     public String toString() {
-        return "MetaAttribute{" +
-            "isPrimaryKey=" + isPrimaryKey +
-            ", name='" + name + '\'' +
-            ", type=" + type +
-            ", length=" + maxLength +
-            ", binarySize=" + binarySize +
-            '}';
+        StringBuilder sb = new StringBuilder();
+        sb.append(name + ":");
+        if (type == DataType.CHAR || type == DataType.VARCHAR) {
+            sb.append(type.name() + "(" + maxLength + ")");
+        } else {
+            sb.append(type.name());
+        }
+        if (isPrimaryKey) {
+            sb.append(" primarykey");
+        }
+        return sb.toString();
     }
 
     @Override

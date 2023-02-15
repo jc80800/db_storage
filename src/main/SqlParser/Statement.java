@@ -22,6 +22,11 @@ public class Statement {
      * @return
      */
     public Constant.PrepareResult prepareStatement(String input){
+        char lastChar = input.charAt(input.length() - 1);
+        if (lastChar != ';') {
+            return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+        }
+        input = input.substring(0, input.length() - 1);
         String[] tokens = input.split("\\s+");
         String type = tokens[0].toUpperCase(Locale.ROOT);
         Constant.PrepareResult result;
@@ -107,10 +112,10 @@ public class Statement {
      */
     private Constant.PrepareResult displayCommand(String[] tokens) {
         try {
-            if (tokens.length == 3 && tokens[1].equals(Constant.INFO)) {
+            if (tokens.length == 3 && tokens[1].toUpperCase().equals(Constant.INFO)) {
                 storageManager.displayInfo(tokens[2]);
 
-            } else if (tokens.length == 2 && tokens[1].equals(Constant.SCHEMA)) {
+            } else if (tokens.length == 2 && tokens[1].toUpperCase().equals(Constant.SCHEMA)) {
                 storageManager.displaySchema();
             } else {
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
@@ -141,6 +146,7 @@ public class Statement {
 
             tokens = Arrays.copyOfRange(tokens, 2, tokens.length);
             String combined_values = String.join(" ", tokens);
+            // TODO: Change it to only replace first '('
             combined_values = combined_values.replace("(", "");
             String[] values = combined_values.split(",");
 

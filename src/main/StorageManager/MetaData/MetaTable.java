@@ -130,12 +130,13 @@ public final class MetaTable {
 
     @Override
     public String toString() {
-        return "MetaTable{" +
-            "tableName='" + tableName + '\'' +
-            ", metaAttributes=" + metaAttributes +
-            ", pointers=" + pointers +
-            ", binarySize=" + binarySize +
-            '}';
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n").append("Table name: ").append(tableName).append("\n");
+        sb.append("Table schema: \n");
+        for (MetaAttribute metaAttribute : metaAttributes) {
+            sb.append("\t").append(metaAttribute.toString());
+        }
+        return sb.toString();
     }
 
     @Override

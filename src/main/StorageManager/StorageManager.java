@@ -1,6 +1,7 @@
 package main.StorageManager;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.HashSet;
 import java.util.PriorityQueue;
 
 import main.Constants.Constant;
+import main.Constants.Helper;
 import main.StorageManager.Data.Page;
 import main.StorageManager.Data.Record;
 import main.StorageManager.Data.TableHeader;
@@ -170,8 +172,23 @@ public class StorageManager {
      * @param table
      */
     public void displayInfo(String table) {
+        boolean foundTable = false;
+        for (int i = 1; i <= catalog.getTableSize(); i++) {
+            MetaTable metaTable = catalog.getMetaTable(i);
+            if (metaTable.tableName().equals(table)) {
+                foundTable = true;
+                System.out.println(metaTable);
+                break;
+            }
+        }
+        if (!foundTable) {
+            System.out.format("No such table %s\n", table);
+            return;
+        }
         File table_file = getTableFile(table);
-        if (table_file != null) {
+        int numOfPages = 0;
+        int numOfRecords = 0;
+        if (table_file.exists()) {
             try {
                 RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(),
                     "rw");
@@ -179,19 +196,15 @@ public class StorageManager {
                 // Access file for information
                 randomAccessFile.seek(0);
                 int tableNumber = randomAccessFile.readInt();
-                int numOfPages = randomAccessFile.readInt();
-                int numOfRecords = randomAccessFile.readInt();
-                MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
-                System.out.println(metaTable);
-                System.out.println(tableNumber);
-                System.out.println(numOfPages);
-                System.out.println(numOfRecords);
+                numOfPages = randomAccessFile.readInt();
+                numOfRecords = randomAccessFile.readInt();
                 randomAccessFile.close();
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+        System.out.format("Pages: %d\n", numOfPages);
+        System.out.format("Records: %d\n", numOfRecords);
     }
 
     /**
@@ -205,8 +218,29 @@ public class StorageManager {
         System.out.println(db.getPath());
         System.out.println(this.pageSize);
         System.out.println(this.bufferSize);
-        System.out.println(this.catalog.toString());
-
+        int numOfTables = catalog.getTableSize();
+        if (numOfTables == 0) {
+            System.out.println("No tables to display");
+            return;
+        }
+        System.out.println("Tables:");
+        for (int i = 1; i <= numOfTables; i++) {
+            MetaTable metaTable = catalog.getMetaTable(i);
+            System.out.println(metaTable.toString());
+            File table_file = getTableFile(metaTable.tableName());
+            try {
+                RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(),
+                    "rw");
+                byte[] bytes = new byte[8];
+                randomAccessFile.readFully(bytes, Constant.INTEGER_SIZE, Constant.INTEGER_SIZE * 2);
+                int numOfPages = Helper.convertByteArrayToInt(Arrays.copyOf(bytes, 4));
+                int numOfRecords = Helper.convertByteArrayToInt(Arrays.copyOfRange(bytes, 4, 8));
+                System.out.format("Pages: %s\n", numOfPages);
+                System.out.format("Records: %s\n", numOfRecords);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public void searchForRecordPlacement(File file) {
