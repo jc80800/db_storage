@@ -196,6 +196,15 @@ public class Record {
         return fieldBoolean;
     }
 
+    public Attribute getPrimaryKey(){
+        for(Attribute attribute : this.attributes){
+            if(attribute.checkPrimaryKey()){
+                return attribute;
+            }
+        }
+        return null;
+    }
+
     public ArrayList<Attribute> getAttributes() {
         return attributes;
     }

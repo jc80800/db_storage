@@ -1,15 +1,14 @@
 package main.StorageManager;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.PriorityQueue;
 
 import main.Constants.Constant;
+import main.Constants.Coordinate;
 import main.Constants.Helper;
 import main.StorageManager.Data.Page;
 import main.StorageManager.Data.Record;
@@ -130,40 +129,19 @@ public class StorageManager {
             System.out.println("Table doesn't exist");
             return;
         }
-        /*
         TableHeader tableHeader = TableHeader.parseTableHeader(table_file);
         if (tableHeader == null) {
             System.out.println("Header couldn't be parsed");
             return;
         }
 
-         */
+        int tableNumber = tableHeader.getTableNumber();
+        MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
 
-        System.out.println("Parsing values: " + Arrays.toString(values));
+        ArrayList<Record> records = Record.parseRecords(values, metaTable);
 
-        //ArrayList<Record> records = Record.parseRecords(values, this.catalog.getMetaTable(tableHeader.getTableNumber()));
-        ArrayList<Record> records = Record.parseRecords(values, null);
+        findRecordPlacement(table_file, tableHeader, records, metaTable);
 
-
-        /* Proposed steps for inserting
-        1. Get page size from catalog object
-        2. Traverse to last page of the table file
-        3. Add record if page is not full. Else, split page in half and insert new record
-        4. Update table pointers for new page
-         */
-        /* Example of RandomAccessFile Usage
-        try {
-            RandomAccessFile file = new RandomAccessFile(table_file.getPath(), "rw");
-            file.write("something here".getBytes(StandardCharsets.UTF_8));
-            file.close();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-         */
-
-        // TODO Same as executeSelect
     }
 
     /**
@@ -243,9 +221,77 @@ public class StorageManager {
         }
     }
 
-    public void searchForRecordPlacement(File file) {
-        // TODO loop through and search for the appropriate spot and insert record
+    public void findRecordPlacement(File table_file, TableHeader tableHeader, ArrayList<Record> records, MetaTable metaTable){
+        int tableNumber = tableHeader.getTableNumber();
 
+        try {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(), "rw");
+
+            for(Record record : records){
+                // TODO check if the primary key is boolean
+
+                // loop through each coordinate pointer to find the proper page
+                ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
+                boolean inserted = false;
+
+                for(int j = 0; j < coordinates.size(); j++){
+                    Coordinate coordinate = coordinates.get(j);
+                    randomAccessFile.seek(coordinate.getOffset());
+                    byte[] pageBytes = new byte[coordinate.getLength()];
+                    randomAccessFile.readFully(pageBytes);
+
+                    Page page = Page.deserialize(pageBytes, metaTable, tableNumber);
+                    this.pageBuffer.putPage(page); // not sure if we really need this
+
+                    ArrayList<Record> currentPageRecords = page.getRecords();
+
+                    for(int i = 0; i < currentPageRecords.size(); i++){
+                        Record currentPageRecord = currentPageRecords.get(i);
+                        Object value = currentPageRecord.getPrimaryKey().getValue();
+                        Object recordValue = record.getPrimaryKey().getValue();
+
+                        if (value instanceof String){
+                            if(((String) value).compareTo((String)recordValue) < 0){
+                                // if record's string is greater than current record
+                                insertRecord(record, page, i);
+                                inserted = true;
+                                break;
+                            }
+                        } else if (value instanceof Integer){
+                            if ((int) value < (int) recordValue){
+                                // if record's int is greater than current record
+                                insertRecord(record, page, i);
+                                inserted = true;
+                                break;
+                            }
+                        } else {
+                            if ((double) value < (double) recordValue){
+                                // record's double is bigger
+                                insertRecord(record, page, i);
+                                inserted = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (inserted){
+                        break;
+                    }
+                    if (j == coordinates.size() - 1){
+                        // record is not placed and it's last page
+                        insertRecord(record, page, page.getNumOfRecords());
+                    }
+                }
+            }
+
+            randomAccessFile.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public void insertRecord(Record record, Page page, int index){
+        return;
     }
 
     public void createNewCatalog() {

@@ -83,6 +83,13 @@ public class Attribute {
         return metaAttribute;
     }
 
+    public boolean checkPrimaryKey(){
+        if (metaAttribute.getIsPrimaryKey()){
+            return true;
+        }
+        return false;
+    }
+
     public int getBinarySize() {
         return binarySize;
     }

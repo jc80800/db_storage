@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import main.Constants.Constant;
 import main.Constants.Coordinate;
 import main.Constants.Helper;
 
@@ -81,5 +82,9 @@ public class TableHeader {
 
     public ArrayList<Coordinate> getCoordinates() {
         return this.coordinates;
+    }
+
+    public int getBinarySize(){
+        return (Constant.INTEGER_SIZE * 4) + (8 * coordinates.size());
     }
 }
