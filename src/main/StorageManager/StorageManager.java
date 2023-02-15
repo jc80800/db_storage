@@ -6,8 +6,12 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.PriorityQueue;
+
 import main.Constants.Constant;
+import main.StorageManager.Data.Page;
 import main.StorageManager.Data.Record;
+import main.StorageManager.Data.TableHeader;
 import main.StorageManager.MetaData.Catalog;
 import main.StorageManager.MetaData.MetaAttribute;
 import main.StorageManager.MetaData.MetaTable;
@@ -18,6 +22,7 @@ public class StorageManager {
     private final int pageSize;
     private final int bufferSize;
     private Catalog catalog;
+    private PageBuffer pageBuffer;
 
     /**
      * Phase 1: create table insert select * DisplayInfo() DisplaySchema()
@@ -27,6 +32,7 @@ public class StorageManager {
      * @param bufferSize
      */
     public StorageManager(File db, int pageSize, int bufferSize) {
+        this.pageBuffer = new PageBuffer(bufferSize, pageSize);
         this.db = db;
         this.pageSize = pageSize;
         this.bufferSize = bufferSize;
@@ -108,10 +114,11 @@ public class StorageManager {
         // Check if the file exist in the directory
 
         File table_file = getTableFile(table);
-        if (table_file.exists()) { // TODO change this to checking the catalog instead
-            // TODO
+        if (table_file.exists()) {
+            TableHeader tableHeader = TableHeader.parseTableHeader(table_file);
+
         } else {
-            System.out.println("File does not exist");
+            System.out.println("Table doesn't exist");
         }
     }
 
