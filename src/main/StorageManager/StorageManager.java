@@ -51,15 +51,15 @@ public class StorageManager {
             String[] valArray = value.split(" ");
             boolean isPrimary = false;
             if (valArray.length < 2) {
-                System.err.println("ERROR: Missing fields for table attribute!");
+                System.out.println("ERROR: Missing fields for table attribute!");
                 return;
             } else if (valArray.length > 3 || (valArray.length == 3
                 && !valArray[2].equalsIgnoreCase("primarykey"))) {
-                System.err.println("ERROR: Too many fields found for table attribute!");
+                System.out.println("ERROR: Too many fields found for table attribute!");
                 return;
             } else {
                 if (valArray.length == 3 && foundPrimaryKey) {
-                    System.err.println("ERROR: Found more than one primary key!");
+                    System.out.println("ERROR: Found more than one primary key!");
                     return;
                 } else if (valArray.length == 3) {
                     isPrimary = true;
@@ -67,7 +67,7 @@ public class StorageManager {
                 }
 
                 if (seenAttributeNames.contains(valArray[0].toLowerCase())) {
-                    System.err.println("ERROR: One or more attributes have the same name!");
+                    System.out.println("ERROR: One or more attributes have the same name!");
                     return;
                 } else {
                     seenAttributeNames.add(valArray[0].toLowerCase());
@@ -90,7 +90,7 @@ public class StorageManager {
                     attributes.add(
                         new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, length));
                 } else {
-                    System.err.println("ERROR: Syntax error was found!");
+                    System.out.println("ERROR: Syntax error was found!");
                     return;
                 }
             }

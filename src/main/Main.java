@@ -15,7 +15,7 @@ public class Main {
      */
     public static void main(String[] args) {
         if (args.length != 3) {
-            System.err.println("Argument Length invalid");
+            System.out.println("Argument Length invalid");
             System.exit(1);
         }
 
@@ -59,10 +59,11 @@ public class Main {
                     System.exit(0);
                 }
                 case PREPARE_SUCCESS -> {
-                    System.out.println("Execution Completed");
+                    System.out.println("SUCCESS");
                 }
-                case PREPARE_UNRECOGNIZED_STATEMENT ->
-                    System.out.printf("Unrecognized keyword at \"%s\".\n", command);
+                case PREPARE_UNRECOGNIZED_STATEMENT -> {
+                    System.out.println("ERROR");
+                }
             }
         }
     }
@@ -96,7 +97,7 @@ public class Main {
                     return false;
                 }
             } else {
-                System.err.println("Directory could not be created");
+                System.out.println("Directory could not be created");
             }
         }
         return false;

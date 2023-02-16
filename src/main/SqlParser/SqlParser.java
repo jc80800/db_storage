@@ -20,24 +20,34 @@ public class SqlParser {
      * @param input
      * @return
      */
-    public Constant.PrepareResult prepareStatement(String input) {
+    public PrepareResult prepareStatement(String input) {
+        if (input.charAt(0) == '<') {
+            if (input.charAt(input.length() - 1) != '>' || !input.substring(input.indexOf("<") + 1,
+                input.indexOf(">")).equalsIgnoreCase(Constant.QUIT_CODE)) {
+                System.out.println("ERROR");
+                return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+            }
+            return PrepareResult.PREPARE_QUIT;
+        }
         char lastChar = input.charAt(input.length() - 1);
         if (lastChar != ';') {
+            System.out.println("Invalid format, missing semicolon at the end \";\"");
             return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
         input = input.substring(0, input.length() - 1);
         String[] tokens = input.split("\\s+");
         String type = tokens[0].toUpperCase(Locale.ROOT);
-        Constant.PrepareResult result;
+        PrepareResult result;
         switch (type) {
             case Constant.CREATE -> result = createCommand(tokens);
             case Constant.DISPLAY -> result = displayCommand(tokens);
             case Constant.INSERT -> result = insertCommand(tokens);
             case Constant.SELECT -> result = selectCommand(tokens);
-            case Constant.QUIT_CODE -> result = Constant.PrepareResult.PREPARE_QUIT;
-            default -> result = Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+            default -> {
+                System.out.println("Invalid command");
+                result = PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+            }
         }
-
         return result;
     }
 
