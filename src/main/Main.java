@@ -1,7 +1,7 @@
 package main;
 
 import main.Constants.Constant;
-import main.SqlParser.Statement;
+import main.SqlParser.SqlParser;
 import main.StorageManager.StorageManager;
 import java.io.File;
 import java.io.IOException;
@@ -49,8 +49,8 @@ public class Main {
 
             String command = scanner.nextLine();
 
-            Statement statement = new Statement(storageManager);
-            Constant.PrepareResult prepareResult = statement.prepareStatement(command);
+            SqlParser sqlParser = new SqlParser(storageManager);
+            Constant.PrepareResult prepareResult = sqlParser.prepareStatement(command);
             switch (prepareResult) {
                 case PREPARE_QUIT -> {
                     System.out.println("Closing database");

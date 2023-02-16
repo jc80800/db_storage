@@ -6,7 +6,6 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-
 import main.Constants.Constant;
 import main.Constants.Coordinate;
 import main.Constants.Helper;
@@ -186,16 +185,12 @@ public class StorageManager {
     }
 
     /**
-     * loop through each table schema in catalog and print
+     * prints: database location, page size, buffer size, table schema
      */
     public void displaySchema() {
-        // database location
-        // page size
-        // buffer size
-        // table schema
-        System.out.println(db.getPath());
-        System.out.println(this.pageSize);
-        System.out.println(this.bufferSize);
+        System.out.format("DB location: %s\n", db.getPath());
+        System.out.format("Page size: %s\n", this.pageSize);
+        System.out.format("Buffer size: %s\n", this.bufferSize);
         int numOfTables = catalog.getTableSize();
         if (numOfTables == 0) {
             System.out.println("No tables to display");
@@ -205,36 +200,41 @@ public class StorageManager {
         for (int i = 1; i <= numOfTables; i++) {
             MetaTable metaTable = catalog.getMetaTable(i);
             System.out.println(metaTable.toString());
+            int numOfPages = 0;
+            int numOfRecords = 0;
             File table_file = getTableFile(metaTable.tableName());
-            try {
-                RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(),
-                    "rw");
-                byte[] bytes = new byte[8];
-                randomAccessFile.readFully(bytes, Constant.INTEGER_SIZE, Constant.INTEGER_SIZE * 2);
-                int numOfPages = Helper.convertByteArrayToInt(Arrays.copyOf(bytes, 4));
-                int numOfRecords = Helper.convertByteArrayToInt(Arrays.copyOfRange(bytes, 4, 8));
-                System.out.format("Pages: %s\n", numOfPages);
-                System.out.format("Records: %s\n", numOfRecords);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            if (table_file.exists()) {
+                try (RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(),
+                    "rw")) {
+                    byte[] bytes = new byte[8];
+                    randomAccessFile.readFully(bytes, Constant.INTEGER_SIZE,
+                        Constant.INTEGER_SIZE * 2);
+                    numOfPages = Helper.convertByteArrayToInt(Arrays.copyOf(bytes, 4));
+                    numOfRecords = Helper.convertByteArrayToInt(Arrays.copyOfRange(bytes, 4, 8));
+                } catch (IOException e) {
+                    throw new RuntimeException(String.format("Can not access file %s", table_file.getPath()));
+                }
             }
+            System.out.format("Pages: %s\n", numOfPages);
+            System.out.format("Records: %s\n", numOfRecords);
         }
     }
 
-    public void findRecordPlacement(File table_file, TableHeader tableHeader, ArrayList<Record> records, MetaTable metaTable){
+    public void findRecordPlacement(File table_file, TableHeader tableHeader,
+        ArrayList<Record> records, MetaTable metaTable) {
         int tableNumber = tableHeader.getTableNumber();
 
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(), "rw");
 
-            for(Record record : records){
+            for (Record record : records) {
                 // TODO check if the primary key is boolean
 
                 // loop through each coordinate pointer to find the proper page
                 ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
                 boolean inserted = false;
 
-                for(int j = 0; j < coordinates.size(); j++){
+                for (int j = 0; j < coordinates.size(); j++) {
                     Coordinate coordinate = coordinates.get(j);
                     randomAccessFile.seek(coordinate.getOffset());
                     byte[] pageBytes = new byte[coordinate.getLength()];
@@ -245,27 +245,27 @@ public class StorageManager {
 
                     ArrayList<Record> currentPageRecords = page.getRecords();
 
-                    for(int i = 0; i < currentPageRecords.size(); i++){
+                    for (int i = 0; i < currentPageRecords.size(); i++) {
                         Record currentPageRecord = currentPageRecords.get(i);
                         Object value = currentPageRecord.getPrimaryKey().getValue();
                         Object recordValue = record.getPrimaryKey().getValue();
 
-                        if (value instanceof String){
-                            if(((String) value).compareTo((String)recordValue) < 0){
+                        if (value instanceof String) {
+                            if (((String) value).compareTo((String) recordValue) < 0) {
                                 // if record's string is greater than current record
                                 insertRecord(record, page, i);
                                 inserted = true;
                                 break;
                             }
-                        } else if (value instanceof Integer){
-                            if ((int) value < (int) recordValue){
+                        } else if (value instanceof Integer) {
+                            if ((int) value < (int) recordValue) {
                                 // if record's int is greater than current record
                                 insertRecord(record, page, i);
                                 inserted = true;
                                 break;
                             }
                         } else {
-                            if ((double) value < (double) recordValue){
+                            if ((double) value < (double) recordValue) {
                                 // record's double is bigger
                                 insertRecord(record, page, i);
                                 inserted = true;
@@ -273,10 +273,10 @@ public class StorageManager {
                             }
                         }
                     }
-                    if (inserted){
+                    if (inserted) {
                         break;
                     }
-                    if (j == coordinates.size() - 1){
+                    if (j == coordinates.size() - 1) {
                         // record is not placed and it's last page
                         insertRecord(record, page, page.getNumOfRecords());
                     }
@@ -290,7 +290,7 @@ public class StorageManager {
     }
 
 
-    public void insertRecord(Record record, Page page, int index){
+    public void insertRecord(Record record, Page page, int index) {
         return;
     }
 

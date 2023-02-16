@@ -1,17 +1,16 @@
 package main.SqlParser;
 
-import com.sun.security.jgss.GSSUtil;
+import java.util.Arrays;
+import java.util.Locale;
 import main.Constants.Constant;
 import main.Constants.Constant.PrepareResult;
 import main.StorageManager.StorageManager;
-import java.util.Arrays;
-import java.util.Locale;
 
-public class Statement {
+public class SqlParser {
 
     private final StorageManager storageManager;
 
-    public Statement(StorageManager storageManager) {
+    public SqlParser(StorageManager storageManager) {
         this.storageManager = storageManager;
     }
 
@@ -21,7 +20,7 @@ public class Statement {
      * @param input
      * @return
      */
-    public Constant.PrepareResult prepareStatement(String input){
+    public Constant.PrepareResult prepareStatement(String input) {
         char lastChar = input.charAt(input.length() - 1);
         if (lastChar != ';') {
             return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
@@ -33,12 +32,9 @@ public class Statement {
         switch (type) {
             case Constant.CREATE -> result = createCommand(tokens);
             case Constant.DISPLAY -> result = displayCommand(tokens);
-            case Constant.INSERT ->
-                result = insertCommand(tokens);
-            case Constant.SELECT ->
-                result = selectCommand(tokens);
-            case Constant.QUIT_CODE ->
-                result = Constant.PrepareResult.PREPARE_QUIT;
+            case Constant.INSERT -> result = insertCommand(tokens);
+            case Constant.SELECT -> result = selectCommand(tokens);
+            case Constant.QUIT_CODE -> result = Constant.PrepareResult.PREPARE_QUIT;
             default -> result = Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
 
@@ -80,7 +76,7 @@ public class Statement {
             String table_name = tokens[2];
 
             int index = 0;
-            while(index < tokens[3].length() && !(tokens[3].charAt(index) == '(')){
+            while (index < tokens[3].length() && !(tokens[3].charAt(index) == '(')) {
                 index += 1;
             }
 
@@ -92,7 +88,7 @@ public class Statement {
             String[] values = combined_values.split(",");
 
             values[values.length - 1] = values[values.length - 1].substring(0,
-                    values[values.length - 1].length() - 1);
+                values[values.length - 1].length() - 1);
 
             storageManager.executeInsert(table_name, values);
 
@@ -136,7 +132,7 @@ public class Statement {
 
             StringBuilder table_name = new StringBuilder();
             int index = 0;
-            while(index < tokens[2].length() && !(tokens[2].charAt(index) == '(')){
+            while (index < tokens[2].length() && !(tokens[2].charAt(index) == '(')) {
                 table_name.append(tokens[2].charAt(index));
                 index += 1;
             }
