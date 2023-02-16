@@ -123,6 +123,7 @@ public class SqlParser {
             } else if (tokens.length == 2 && tokens[1].toUpperCase().equals(Constant.SCHEMA)) {
                 storageManager.displaySchema();
             } else {
+                System.out.println("Invalid command");
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
         } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {

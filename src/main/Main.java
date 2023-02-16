@@ -54,7 +54,7 @@ public class Main {
             switch (prepareResult) {
                 case PREPARE_QUIT -> {
                     System.out.println("Closing database");
-                    storageManager.updateCatalog();
+                    storageManager.saveCatalog();
                     scanner.close();
                     System.exit(0);
                 }
@@ -73,8 +73,7 @@ public class Main {
      * exist
      */
     private static Boolean checkDirectory(File f, StorageManager storageManager) {
-
-        File catalog_file = new File(f.getPath() + "/Catalog");
+        File catalog_file = new File(f.getPath() + Constant.CATALOG_FILE);
 
         if (f.exists() && f.isDirectory()) {
             System.out.println("Directory " + f.getName() + " exists");
@@ -89,7 +88,6 @@ public class Main {
                 try {
                     if (catalog_file.createNewFile()) {
                         storageManager.createNewCatalog();
-                        storageManager.updateCatalog();
                         return true;
                     }
                 } catch (IOException e) {

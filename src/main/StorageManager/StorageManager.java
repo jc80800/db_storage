@@ -105,9 +105,6 @@ public class StorageManager {
         this.catalog.putMetaTable(table);
 
         System.out.println("Table created");
-        System.out.println(table);
-
-        updateCatalog();
     }
 
     public void executeSelect(String table) {
@@ -152,7 +149,7 @@ public class StorageManager {
         boolean foundTable = false;
         for (int i = 1; i <= catalog.getTableSize(); i++) {
             MetaTable metaTable = catalog.getMetaTable(i);
-            if (metaTable.tableName().equals(table)) {
+            if (metaTable.tableName().equalsIgnoreCase(table)) {
                 foundTable = true;
                 System.out.println(metaTable);
                 break;
@@ -298,16 +295,15 @@ public class StorageManager {
         this.catalog = new Catalog(this.pageSize);
     }
 
-    public void updateCatalog() {
-        File catalog_file = new File(this.db + "/" + "Catalog");
-
-        try {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(catalog_file,
-                "rw");
+    public void saveCatalog() {
+        System.out.println("Saving catalog...");
+        File catalog_file = new File(this.db + Constant.CATALOG_FILE);
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(catalog_file,
+                "rw")) {
             byte[] bytes = this.catalog.serialize();
+            // erase current content
+            randomAccessFile.setLength(0);
             randomAccessFile.write(bytes);
-            randomAccessFile.close();
-
         } catch (IOException e) {
             e.printStackTrace();
         }
