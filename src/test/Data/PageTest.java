@@ -36,7 +36,7 @@ class PageTest {
         ArrayList<Record> records = new ArrayList<>();
         records.add(record1);
 
-        MetaTable metaTable = new MetaTable("Student", metaAttributes);
+        MetaTable metaTable = new MetaTable(0, "Student", metaAttributes);
         Page page = new Page(1, records);
 
         byte[] bytes = page.serialize();

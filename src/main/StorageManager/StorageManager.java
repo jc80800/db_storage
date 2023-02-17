@@ -101,8 +101,9 @@ public class StorageManager {
             return;
         }
 
-        MetaTable table = new MetaTable(table_name, attributes);
-        this.catalog.putMetaTable(table);
+        // TODO: catalog should be responsible for metatable creation
+//        MetaTable table = new MetaTable(table_name, attributes);
+//        this.catalog.putMetaTable(table);
 
         System.out.println("Table created");
     }

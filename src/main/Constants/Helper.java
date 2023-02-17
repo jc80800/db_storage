@@ -7,7 +7,7 @@ import java.util.Arrays;
 public class Helper {
 
     public static byte[] convertIntToByteArray(int v) {
-        return ByteBuffer.allocate(4).putInt(v).array();
+        return ByteBuffer.allocate(Constant.INTEGER_SIZE).putInt(v).array();
     }
 
     public static int convertByteArrayToInt(byte[] bytes) {
@@ -23,7 +23,7 @@ public class Helper {
     }
 
     public static byte[] convertDoubleToByteArray(double d) {
-        return ByteBuffer.allocate(8).putDouble(d).array();
+        return ByteBuffer.allocate(Constant.DOUBLE_SIZE).putDouble(d).array();
     }
 
     public static double convertByteArrayToDouble(byte[] bytes) {
@@ -36,12 +36,6 @@ public class Helper {
 
     public static String convertByteArrayToString(byte[] bytes) {
         return new String(bytes, Constant.CHARSET);
-    }
-
-    public static void fillSubArray(byte[] array, int start, int end, byte[] subArray) {
-        for (int i = 0; start < end; start++, i++) {
-            array[start] = subArray[i];
-        }
     }
 
     public static boolean checkInteger(String s){

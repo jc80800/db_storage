@@ -16,11 +16,11 @@ class CatalogTest {
     void serialization() {
         ArrayList<MetaAttribute> metaAttributes = new ArrayList<>();
         metaAttributes.add(new MetaAttribute(true, "num", DataType.INTEGER));
-        MetaTable metaTable = new MetaTable("foo", metaAttributes);
+        MetaTable metaTable = new MetaTable(0, "foo", metaAttributes);
 
         ArrayList<MetaAttribute> metaAttributes2 = new ArrayList<>();
         metaAttributes2.add(new MetaAttribute(false, "FirstName", DataType.VARCHAR, 20));
-        MetaTable metaTable2 = new MetaTable("foo", metaAttributes2);
+        MetaTable metaTable2 = new MetaTable(1, "foo", metaAttributes2);
 
         HashMap<Integer, MetaTable> map = new HashMap<>();
         map.put(1, metaTable);

@@ -15,7 +15,7 @@ class MetaTableTest {
         ArrayList<MetaAttribute> metaAttributes = new ArrayList<>();
         metaAttributes.add(new MetaAttribute(true, "num", DataType.INTEGER));
 
-        MetaTable metaTable = new MetaTable("foo", metaAttributes);
+        MetaTable metaTable = new MetaTable(0, "foo", metaAttributes);
 
         byte[] bytes = metaTable.serialize();
         MetaTable deserializedTable = MetaTable.deserialize(bytes);

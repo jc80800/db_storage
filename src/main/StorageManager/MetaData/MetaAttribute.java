@@ -63,10 +63,9 @@ public class MetaAttribute {
     public byte[] serialize() {
         byte[] isPrimaryKeyBytes = new byte[]{
             Helper.convertBooleanToByte(getIsPrimaryKey())};
-        String name = getName();
-        int nameLength = name.length();
-        byte[] nameLengthBytes = Helper.convertIntToByteArray(nameLength);
         byte[] nameBytes = Helper.convertStringToByteArrays(name);
+        int nameLength = nameBytes.length;
+        byte[] nameLengthBytes = Helper.convertIntToByteArray(nameLength);
 
         Integer typeCode;
         try {
@@ -100,15 +99,12 @@ public class MetaAttribute {
         boolean isPrimaryKey = Helper.convertByteToBoolean(bytes[index++]);
 
         int nameLength = Helper.convertByteArrayToInt(
-            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
-        index += Constant.INTEGER_SIZE;
+            Arrays.copyOfRange(bytes, index, index += Constant.INTEGER_SIZE));
         String name = Helper.convertByteArrayToString(
-            Arrays.copyOfRange(bytes, index, index + nameLength));
-        index += nameLength;
+            Arrays.copyOfRange(bytes, index, index += nameLength));
 
         int dataTypeCode = Helper.convertByteArrayToInt(
-            Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
-        index += Constant.INTEGER_SIZE;
+            Arrays.copyOfRange(bytes, index, index += Constant.INTEGER_SIZE));
         DataType dataType = getDataType(dataTypeCode);
 
         boolean isLength = Helper.convertByteToBoolean(bytes[index++]);
