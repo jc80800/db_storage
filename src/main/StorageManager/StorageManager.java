@@ -151,7 +151,7 @@ public class StorageManager {
             MetaTable metaTable = catalog.getMetaTable(i);
             if (metaTable.tableName().equalsIgnoreCase(table)) {
                 foundTable = true;
-                System.out.println(metaTable);
+                System.out.print(metaTable);
                 break;
             }
         }
@@ -187,16 +187,16 @@ public class StorageManager {
     public void displaySchema() {
         System.out.format("DB location: %s\n", db.getPath());
         System.out.format("Page size: %s\n", this.pageSize);
-        System.out.format("Buffer size: %s\n", this.bufferSize);
+        System.out.format("Buffer size: %s\n\n", this.bufferSize);
         int numOfTables = catalog.getTableSize();
         if (numOfTables == 0) {
             System.out.println("No tables to display");
             return;
         }
-        System.out.println("Tables:");
+        System.out.println("Tables:\n");
         for (int i = 1; i <= numOfTables; i++) {
             MetaTable metaTable = catalog.getMetaTable(i);
-            System.out.println(metaTable.toString());
+            System.out.print(metaTable.toString());
             int numOfPages = 0;
             int numOfRecords = 0;
             File table_file = getTableFile(metaTable.tableName());
@@ -213,7 +213,7 @@ public class StorageManager {
                 }
             }
             System.out.format("Pages: %s\n", numOfPages);
-            System.out.format("Records: %s\n", numOfRecords);
+            System.out.format("Records: %s\n\n", numOfRecords);
         }
     }
 

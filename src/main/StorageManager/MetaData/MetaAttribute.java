@@ -165,6 +165,7 @@ public class MetaAttribute {
         if (isPrimaryKey) {
             sb.append(" primarykey");
         }
+        sb.append("\n");
         return sb.toString();
     }
 

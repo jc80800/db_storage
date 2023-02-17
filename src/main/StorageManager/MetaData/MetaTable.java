@@ -131,7 +131,7 @@ public final class MetaTable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("\n").append("Table name: ").append(tableName).append("\n");
+        sb.append("Table name: ").append(tableName).append("\n");
         sb.append("Table schema: \n");
         for (MetaAttribute metaAttribute : metaAttributes) {
             sb.append("\t").append(metaAttribute.toString());
