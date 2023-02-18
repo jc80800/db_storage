@@ -10,24 +10,36 @@ import main.StorageManager.MetaData.MetaTable;
 
 public class Page {
 
+    private final int pageSize;
     private final int tableNumber;
     private ArrayList<Coordinate> recordPointers;
     private ArrayList<Record> records;
+    private final int availableSpace;
 
-    public Page(int tableNumber,
+    public Page(int pageSize, int tableNumber,
         ArrayList<Record> records) {
+        this.pageSize = pageSize;
         this.tableNumber = tableNumber;
         this.records = records;
         this.recordPointers = constructPointers();
+        this.availableSpace = calculateAvailableSpace();
     }
 
-    public Page(int tableNumber, ArrayList<Coordinate> recordPointers, ArrayList<Record> records) {
+    public Page(int pageSize, int tableNumber, ArrayList<Coordinate> recordPointers,
+        ArrayList<Record> records) {
+        this.pageSize = pageSize;
         this.tableNumber = tableNumber;
         this.recordPointers = recordPointers;
         this.records = records;
+        this.availableSpace = calculateAvailableSpace();
     }
 
-    public static Page deserialize(byte[] bytes, MetaTable metaTable, int tableNumber) {
+    public boolean isEnoughSpaceForInsert(Record record) {
+        return availableSpace >= (record.getBinarySize() + Coordinate.getBinarySize());
+    }
+
+    public static Page deserialize(byte[] bytes, MetaTable metaTable, int tableNumber,
+        int pageSize) {
         int index = 0;
         int numOfRecords = Helper.convertByteArrayToInt(
             Arrays.copyOf(bytes, index += Constant.INTEGER_SIZE));
@@ -44,7 +56,7 @@ public class Page {
             records.add(record);
             numOfRecords--;
         }
-        return new Page(tableNumber, pointers, records);
+        return new Page(pageSize, tableNumber, pointers, records);
     }
 
     /***
@@ -62,21 +74,33 @@ public class Page {
         byte[] recordsBytes = new byte[0];
         for (Record record : records) {
             byte[] recordBytes = record.serialize();
-            recordsBytes = Helper.concatenate(recordsBytes, recordBytes);
+            recordsBytes = Helper.concatenate(recordBytes, recordsBytes);
         }
+        byte[] bytes = Helper.concatenate(numOfRecordsBytes, pointersBytes);
 
-        return Helper.concatenate(numOfRecordsBytes, pointersBytes, recordsBytes);
+        // fill 0's between pointers and records
+        bytes = Arrays.copyOf(bytes, pageSize - recordsBytes.length);
+
+        return Helper.concatenate(bytes, recordsBytes);
     }
 
     private ArrayList<Coordinate> constructPointers() {
         ArrayList<Coordinate> pointers = new ArrayList<>();
-        int offset = Constant.INTEGER_SIZE + Coordinate.getBinarySize() * records.size();
+        int offset = pageSize;
         for (Record record : records) {
             int metaTableBinarySize = record.getBinarySize();
-            pointers.add(new Coordinate(offset, metaTableBinarySize));
-            offset += metaTableBinarySize;
+            pointers.add(new Coordinate(offset -= metaTableBinarySize, metaTableBinarySize));
         }
         return pointers;
+    }
+
+    private int calculateAvailableSpace() {
+        int spaceTaken = Constant.INTEGER_SIZE;
+        spaceTaken += Coordinate.getBinarySize() * recordPointers.size();
+        for (Record record : records) {
+            spaceTaken += record.getBinarySize();
+        }
+        return pageSize - spaceTaken;
     }
 
     public int getNumOfRecords() {

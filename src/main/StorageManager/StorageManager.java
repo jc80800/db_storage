@@ -238,7 +238,7 @@ public class StorageManager {
                     byte[] pageBytes = new byte[coordinate.getLength()];
                     randomAccessFile.readFully(pageBytes);
 
-                    Page page = Page.deserialize(pageBytes, metaTable, tableNumber);
+                    Page page = Page.deserialize(pageBytes, metaTable, tableNumber, pageSize);
                     this.pageBuffer.putPage(page); // not sure if we really need this
 
                     ArrayList<Record> currentPageRecords = page.getRecords();
