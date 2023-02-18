@@ -82,11 +82,6 @@ public class Catalog {
         this.pointers = constructPointers();
     }
 
-    public void putMetaTable(MetaTable metaTable) {
-        this.metaTableHashMap.put(getTableSize() + 1, metaTable);
-        this.pointers = constructPointers();
-    }
-
     private ArrayList<Coordinate> constructPointers() {
         ArrayList<Coordinate> pointers = new ArrayList<>();
         int offset =
@@ -128,6 +123,10 @@ public class Catalog {
 
         return Helper.concatenate(pageSizeBytes, numOfMetaTables, nextTableNumberBytes,
             pointersBytes, metaTablesBytes);
+    }
+
+    public HashMap<Integer, MetaTable> getMetaTableHashMap() {
+        return metaTableHashMap;
     }
 
     @Override

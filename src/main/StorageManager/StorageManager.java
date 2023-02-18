@@ -101,10 +101,7 @@ public class StorageManager {
             return;
         }
 
-        // TODO: catalog should be responsible for metatable creation
-//        MetaTable table = new MetaTable(table_name, attributes);
-//        this.catalog.putMetaTable(table);
-
+        this.catalog.addMetaTable(table_name, attributes);
         System.out.println("Table created");
     }
 
@@ -148,8 +145,7 @@ public class StorageManager {
      */
     public void displayInfo(String table) {
         boolean foundTable = false;
-        for (int i = 1; i <= catalog.getTableSize(); i++) {
-            MetaTable metaTable = catalog.getMetaTable(i);
+        for (MetaTable metaTable : catalog.getMetaTableHashMap().values()) {
             if (metaTable.tableName().equalsIgnoreCase(table)) {
                 foundTable = true;
                 System.out.print(metaTable);
@@ -195,8 +191,7 @@ public class StorageManager {
             return;
         }
         System.out.println("Tables:\n");
-        for (int i = 1; i <= numOfTables; i++) {
-            MetaTable metaTable = catalog.getMetaTable(i);
+        for (MetaTable metaTable : catalog.getMetaTableHashMap().values()) {
             System.out.print(metaTable.toString());
             int numOfPages = 0;
             int numOfRecords = 0;

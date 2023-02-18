@@ -40,7 +40,7 @@ public class Main {
         if (!checkDirectory(db, storageManager)) {
             System.exit(1);
         }
-
+        SqlParser sqlParser = new SqlParser(storageManager);
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
@@ -49,7 +49,6 @@ public class Main {
 
             String command = scanner.nextLine();
 
-            SqlParser sqlParser = new SqlParser(storageManager);
             Constant.PrepareResult prepareResult = sqlParser.prepareStatement(command);
             switch (prepareResult) {
                 case PREPARE_QUIT -> {
