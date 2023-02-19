@@ -134,8 +134,9 @@ public class StorageManager {
                 pages.add(pageBuffer.getPage(pageId));
             }
             for(Page page: pages){
-                //print all records in pages
-                System.out.println(page);
+                for(Record record: page.getRecords()){
+                    System.out.println(record);
+                }
             }
         } else {
             System.out.println("Table doesn't exist");
