@@ -1,5 +1,7 @@
 package main.StorageManager.Data;
 
+import static java.lang.Math.max;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -64,6 +66,17 @@ public class TableHeader {
         }
     }
 
+    public void insertNewPage(Page page, int index){
+        int lastOffset = findLastOffset();
+        Coordinate coordinate = new Coordinate(lastOffset + this.pageSize, this.pageSize);
+        this.coordinates.add(index, coordinate);
+    }
+
+    public void createFirstPage(){
+        Page page = new Page(this.pageSize, this.tableNumber, new ArrayList<Record>(), 1);
+        insertNewPage(page, 0);
+    }
+
     public int getTableNumber() {
         return this.tableNumber;
     }
@@ -87,4 +100,14 @@ public class TableHeader {
     public int getBinarySize(){
         return (Constant.INTEGER_SIZE * 4) + (8 * coordinates.size());
     }
+
+    public int findLastOffset(){
+        int result = 16; // first offset after all the 4 other integers in the header
+        for(Coordinate coordinate : this.coordinates){
+            result = max(coordinate.getOffset(), result);
+        }
+        return result;
+    }
+
+
 }
