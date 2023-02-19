@@ -37,10 +37,10 @@ class PageTest {
         records.add(record1);
 
         MetaTable metaTable = new MetaTable(0, "Student", metaAttributes);
-        Page page = new Page(1024,1, records);
+        Page page = new Page(1024,1, records, 0);
 
         byte[] bytes = page.serialize();
-        Page deserialized = Page.deserialize(bytes, metaTable, 1, 1024);
+        Page deserialized = Page.deserialize(bytes, metaTable, 1, 1024, 1);
         assertEquals(page, deserialized);
     }
 }

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import main.Constants.Constant;
 import main.Constants.Coordinate;
@@ -110,8 +111,32 @@ public class StorageManager {
 
         File table_file = getTableFile(table);
         if (table_file.exists()) {
+            ArrayList<Page> pages = new ArrayList<>();
             TableHeader tableHeader = TableHeader.parseTableHeader(table_file);
-
+            assert tableHeader != null;
+            ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
+            for(int i = 0; i < coordinates.size(); i++) {
+                int pageId = i + 1;
+                if (!pageBuffer.pages.containsKey(pageId)) {
+                    //get page from file and put into buffer
+                    try {
+                        RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(), "r");
+                        randomAccessFile.seek(coordinates.get(i).getOffset());
+                        byte[] pageBytes = new byte[catalog.getPageSize()];
+                        randomAccessFile.readFully(pageBytes);
+                        Page page = Page.deserialize(pageBytes, catalog.getMetaTable(tableHeader.getTableNumber()), tableHeader.getTableNumber(), catalog.getPageSize(), pageId);
+                        pageBuffer.putPage(page);
+                        randomAccessFile.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                pages.add(pageBuffer.getPage(pageId));
+            }
+            for(Page page: pages){
+                //print all records in pages
+                System.out.println(page);
+            }
         } else {
             System.out.println("Table doesn't exist");
         }
@@ -233,7 +258,7 @@ public class StorageManager {
                     byte[] pageBytes = new byte[coordinate.getLength()];
                     randomAccessFile.readFully(pageBytes);
 
-                    Page page = Page.deserialize(pageBytes, metaTable, tableNumber, pageSize);
+                    Page page = Page.deserialize(pageBytes, metaTable, tableNumber, pageSize, j + 1);
                     this.pageBuffer.putPage(page); // not sure if we really need this
 
                     ArrayList<Record> currentPageRecords = page.getRecords();

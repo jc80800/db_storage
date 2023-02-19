@@ -10,6 +10,7 @@ import main.StorageManager.MetaData.MetaTable;
 
 public class Page {
 
+    private final int pageId;
     private final int pageSize;
     private final int tableNumber;
     private ArrayList<Coordinate> recordPointers;
@@ -17,21 +18,23 @@ public class Page {
     private final int availableSpace;
 
     public Page(int pageSize, int tableNumber,
-        ArrayList<Record> records) {
+        ArrayList<Record> records, int pageId) {
         this.pageSize = pageSize;
         this.tableNumber = tableNumber;
         this.records = records;
         this.recordPointers = constructPointers();
         this.availableSpace = calculateAvailableSpace();
+        this.pageId = pageId;
     }
 
     public Page(int pageSize, int tableNumber, ArrayList<Coordinate> recordPointers,
-        ArrayList<Record> records) {
+        ArrayList<Record> records, int pageId) {
         this.pageSize = pageSize;
         this.tableNumber = tableNumber;
         this.recordPointers = recordPointers;
         this.records = records;
         this.availableSpace = calculateAvailableSpace();
+        this.pageId = pageId;
     }
 
     public boolean isEnoughSpaceForInsert(Record record) {
@@ -39,7 +42,7 @@ public class Page {
     }
 
     public static Page deserialize(byte[] bytes, MetaTable metaTable, int tableNumber,
-        int pageSize) {
+        int pageSize, int pageId) {
         int index = 0;
         int numOfRecords = Helper.convertByteArrayToInt(
             Arrays.copyOf(bytes, index += Constant.INTEGER_SIZE));
@@ -56,7 +59,7 @@ public class Page {
             records.add(record);
             numOfRecords--;
         }
-        return new Page(pageSize, tableNumber, pointers, records);
+        return new Page(pageSize, tableNumber, pointers, records, pageId);
     }
 
     /***
@@ -125,6 +128,10 @@ public class Page {
 
     public int getTableNumber() {
         return tableNumber;
+    }
+
+    public int getPageId(){
+        return this.pageId;
     }
 
     @Override
