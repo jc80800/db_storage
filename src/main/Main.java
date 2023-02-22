@@ -34,12 +34,14 @@ public class Main {
         // Check if Directory exist, if not create else restart
         File db = new File(dbLoc);
 
-        // Create Storage Manager
-        StorageManager storageManager = new StorageManager(db, pageSize, bufferSize);
-
-        if (!checkDirectory(db, storageManager)) {
+        if (!checkDirectory(db)) {
             System.exit(1);
         }
+
+        // Create Storage Manager
+        StorageManager storageManager = new StorageManager(db, pageSize, bufferSize);
+        checkCatalog(db, storageManager);
+
         SqlParser sqlParser = new SqlParser(storageManager);
         Scanner scanner = new Scanner(System.in);
 
@@ -67,32 +69,38 @@ public class Main {
         }
     }
 
+
+    private static void checkCatalog(File f, StorageManager storageManager){
+        File catalog_file = new File(f.getPath() + Constant.CATALOG_FILE);
+
+        if(catalog_file.exists()){
+            System.out.println("Catalog Exist, parsing");
+            storageManager.parseCatalog(catalog_file);
+        } else {
+            try {
+                System.out.println("Catalog doesn't exist, Creating");
+                if (catalog_file.createNewFile()) {
+                    storageManager.createNewCatalog();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
     /**
      * Helper function for checking directory If directory exist or created, return file else system
      * exist
      */
-    private static Boolean checkDirectory(File f, StorageManager storageManager) {
-        File catalog_file = new File(f.getPath() + Constant.CATALOG_FILE);
+    private static Boolean checkDirectory(File f) {
 
         if (f.exists() && f.isDirectory()) {
             System.out.println("Directory " + f.getName() + " exists");
-            // parse the catalog file
-            // set the catalog in the storage manager
-            storageManager.parseCatalog(catalog_file);
             return true;
         } else {
             // Directory needs to be in the format of ./foo
             if (f.mkdirs()) {
                 System.out.println("Directory " + f.getName() + " has been created");
-                try {
-                    if (catalog_file.createNewFile()) {
-                        storageManager.createNewCatalog();
-                        return true;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return false;
-                }
+                return true;
             } else {
                 System.out.println("Directory could not be created");
             }

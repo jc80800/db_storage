@@ -20,6 +20,14 @@ public class Coordinate {
         return Helper.concatenate(offsetBytes, lengthBytes);
     }
 
+    public static byte[] serializeList(ArrayList<Coordinate> coordinates){
+        byte[] bytes = new byte[0];
+        for(Coordinate coordinate : coordinates){
+            Helper.concatenate(bytes, coordinate.serialize());
+        }
+        return bytes;
+    }
+
     public static Coordinate deserialize(byte[] bytes) {
         int index = 0;
         int offset = Helper.convertByteArrayToInt(

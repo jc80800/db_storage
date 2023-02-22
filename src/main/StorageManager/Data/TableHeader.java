@@ -17,13 +17,15 @@ public class TableHeader {
     private int currentPageSize;
     private int numRecords;
     private ArrayList<Coordinate> coordinates;
+    private File db;
 
-    public TableHeader(int tableNumber, int pageSize, int currentPageSize, int numRecords, ArrayList<Coordinate> coordinates){
+    public TableHeader(int tableNumber, int pageSize, int currentPageSize, int numRecords, ArrayList<Coordinate> coordinates, File db){
         this.tableNumber = tableNumber;
         this.pageSize = pageSize;
         this.currentPageSize = currentPageSize;
         this.numRecords = numRecords;
         this.coordinates = coordinates;
+        this.db = db;
     }
 
     public static TableHeader parseTableHeader(File table_file) {
@@ -58,7 +60,7 @@ public class TableHeader {
             randomAccessFile.readFully(coordinateBytes);
             ArrayList<Coordinate> coordinates = Coordinate.deserializeList(coordinateBytes);
 
-            return new TableHeader(tableNumber, pageCapacity, numPages, numRecords, coordinates);
+            return new TableHeader(tableNumber, pageCapacity, numPages, numRecords, coordinates, table_file);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -68,29 +70,27 @@ public class TableHeader {
 
     public void insertNewPage(Page page, int index){
         int lastOffset = findLastOffset();
-        Coordinate coordinate = new Coordinate(lastOffset + this.pageSize, this.pageSize);
-        this.coordinates.add(index, coordinate);
+        if(this.coordinates.size() > 0){
+            lastOffset += this.pageSize;
+        }
+        Coordinate coordinate = new Coordinate(lastOffset, this.pageSize);
+        if(index < this.coordinates.size()){
+            this.coordinates.add(index, coordinate);
+        } else {
+            this.coordinates.add(coordinate);
+        }
+        this.currentPageSize += 1;
     }
 
-    public void createFirstPage(){
-        Page page = new Page(this.pageSize, this.tableNumber, new ArrayList<Record>(), 1);
+    public Page createFirstPage(){
+        Page page = new Page(this.pageSize, this.tableNumber, new ArrayList<>(), 1);
         insertNewPage(page, 0);
+        this.currentPageSize += 1;
+        return page;
     }
 
     public int getTableNumber() {
         return this.tableNumber;
-    }
-
-    public int getPageSize() {
-        return this.pageSize;
-    }
-
-    public int getCurrentPageSize() {
-        return this.currentPageSize;
-    }
-
-    public int getNumRecords() {
-        return this.numRecords;
     }
 
     public ArrayList<Coordinate> getCoordinates() {
@@ -107,6 +107,42 @@ public class TableHeader {
             result = max(coordinate.getOffset(), result);
         }
         return result;
+    }
+
+    public void updateTableHeader(){
+        try {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(this.db.getPath(), "rw");
+
+            if(this.currentPageSize > this.pageSize){
+                // TODO split the file, make a new file and write everything over
+            } else {
+                randomAccessFile.seek(0);
+                randomAccessFile.write(this.serialize());
+            }
+
+
+            randomAccessFile.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public byte[] serialize(){
+        byte[] bytes = new byte[0];
+
+        byte[] tableNumberByte = Helper.convertIntToByteArray(this.tableNumber);
+        byte[] pageCapacityByte = Helper.convertIntToByteArray(this.pageSize);
+        byte[] currentPageCapacityByte = Helper.convertIntToByteArray(this.currentPageSize);
+        byte[] recordBytes = Helper.convertIntToByteArray(this.numRecords);
+        byte[] coordinateBytes = Coordinate.serializeList(this.coordinates);
+
+        Helper.concatenate(bytes, tableNumberByte);
+        Helper.concatenate(bytes, pageCapacityByte);
+        Helper.concatenate(bytes, currentPageCapacityByte);
+        Helper.concatenate(bytes, recordBytes);
+        Helper.concatenate(bytes, coordinateBytes);
+
+        return bytes;
     }
 
 

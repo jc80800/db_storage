@@ -23,6 +23,7 @@ public class StorageManager {
     private final int bufferSize;
     private Catalog catalog;
     private PageBuffer pageBuffer;
+    private TableHeader tableHeader;
 
     /**
      * Phase 1: create table insert select * DisplayInfo() DisplaySchema()
@@ -32,7 +33,7 @@ public class StorageManager {
      * @param bufferSize
      */
     public StorageManager(File db, int pageSize, int bufferSize) {
-        this.pageBuffer = new PageBuffer(bufferSize, pageSize);
+        this.pageBuffer = new PageBuffer(bufferSize, pageSize, db);
         this.db = db;
         this.pageSize = pageSize;
         this.bufferSize = bufferSize;
@@ -147,22 +148,26 @@ public class StorageManager {
 
     public void executeInsert(String table, String[] values) {
         File table_file = getTableFile(table);
+        this.tableHeader = TableHeader.parseTableHeader(db);
         if (!table_file.exists()) {
             System.out.println("Table doesn't exist");
             return;
         }
-        TableHeader tableHeader = TableHeader.parseTableHeader(table_file);
-        if (tableHeader == null) {
+
+        if (this.tableHeader == null) {
             System.out.println("Header couldn't be parsed");
             return;
         }
 
-        int tableNumber = tableHeader.getTableNumber();
+        // Get the table number and get the schema table from catalog
+        int tableNumber = this.tableHeader.getTableNumber();
         MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
 
+        // Parse the values from user and validate it
         ArrayList<Record> records = Record.parseRecords(values, metaTable);
 
-        findRecordPlacement(table_file, tableHeader, records, metaTable);
+        // Find where to place each record and place it
+        findRecordPlacement(table_file, records, metaTable);
 
         System.out.println("Insertion Completed");
 
@@ -244,18 +249,18 @@ public class StorageManager {
         }
     }
 
-    public void findRecordPlacement(File table_file, TableHeader tableHeader,
+    public void findRecordPlacement(File table_file,
         ArrayList<Record> records, MetaTable metaTable) {
-        int tableNumber = tableHeader.getTableNumber();
+        int tableNumber = this.tableHeader.getTableNumber();
 
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(), "rw");
 
-            if (tableHeader.getCoordinates().size() == 0) {
-                tableHeader.createFirstPage();
+            if (this.tableHeader.getCoordinates().size() == 0) {
+                this.pageBuffer.putPage(this.tableHeader.createFirstPage());
             }
 
-            ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
+            ArrayList<Coordinate> coordinates = this.tableHeader.getCoordinates();
 
             for (Record record : records) {
                 Boolean inserted;
@@ -263,6 +268,7 @@ public class StorageManager {
                 for (int i = 0; i < coordinates.size(); i++) {
                     Page page = pageBuffer.getPage(i);
                     if (page == null) {
+                        // If the page Buffer doesn't have it, go to the file and deserialize
                         byte[] bytes = new byte[this.pageSize];
                         randomAccessFile.seek(coordinates.get(i).getOffset());
                         randomAccessFile.readFully(bytes);
@@ -271,6 +277,8 @@ public class StorageManager {
                     }
 
                     ArrayList<Record> pageRecords = page.getRecords();
+
+                    // Check if record can be placed in this page
                     inserted = checkPlacement(pageRecords, record, page);
                     if (inserted == null) {
                         System.out.println("PK already exist");
@@ -280,10 +288,10 @@ public class StorageManager {
                     }
 
                     if (i == coordinates.size() - 1) {
+                        // If no place, insert at the very end
                         insertRecord(record, page, pageRecords.size() - 1);
                     }
                 }
-
             }
             randomAccessFile.close();
 
@@ -339,12 +347,19 @@ public class StorageManager {
 
 
     public void insertRecord(Record record, Page page, int index) {
-        ArrayList<Record> pageRecords = page.getRecords();
-        pageRecords.add(index, record);
+        Page potentialNewPage = page.insertRecord(record, index, this.tableHeader);
+        if (potentialNewPage != null){
+            this.pageBuffer.putPage(potentialNewPage);
+        }
+    }
+
+    public static void updateFile(Page page){
+
     }
 
     public void createNewCatalog() {
         this.catalog = new Catalog(this.pageSize);
+        saveCatalog();
     }
 
     public void saveCatalog() {

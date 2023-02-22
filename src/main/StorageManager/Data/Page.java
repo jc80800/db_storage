@@ -106,28 +106,26 @@ public class Page {
         return pageSize - spaceTaken;
     }
 
-    public int getNumOfRecords() {
-        return records.size();
-    }
+    public Page insertRecord(Record record, int index, TableHeader tableHeader){
+        boolean canInsert = isEnoughSpaceForInsert(record);
 
-    public ArrayList<Coordinate> getRecordPointers() {
-        return recordPointers;
-    }
+        if(canInsert){
+            this.records.add(index, record);
+            return null;
+        } else {
+            // split the page's record and put into a new page
 
-    public void setRecordPointers(ArrayList<Coordinate> recordPointers) {
-        this.recordPointers = recordPointers;
+            int splittingPoint = this.records.size() / 2;
+            ArrayList<Record> temp = new ArrayList<>(this.records.subList(0, splittingPoint));
+            this.records = new ArrayList<>(this.records.subList(splittingPoint, this.records.size()));
+            Page newPage = new Page(this.pageSize, this.tableNumber, temp, this.pageId + 1);
+            tableHeader.insertNewPage(newPage, this.pageId + 1);
+            return newPage;
+        }
     }
 
     public ArrayList<Record> getRecords() {
         return records;
-    }
-
-    public void setRecords(ArrayList<Record> records) {
-        this.records = records;
-    }
-
-    public int getTableNumber() {
-        return tableNumber;
     }
 
     public int getPageId(){
