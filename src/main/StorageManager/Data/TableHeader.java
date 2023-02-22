@@ -13,16 +13,16 @@ import main.Constants.Helper;
 public class TableHeader {
 
     private int tableNumber;
-    private int pageSize;
-    private int currentPageSize;
+    private int maxPages;
+    private int currentNumOfPages;
     private int numRecords;
     private ArrayList<Coordinate> coordinates;
     private File db;
 
-    public TableHeader(int tableNumber, int pageSize, int currentPageSize, int numRecords, ArrayList<Coordinate> coordinates, File db){
+    public TableHeader(int tableNumber, int maxPages, int currentNumOfPages, int numRecords, ArrayList<Coordinate> coordinates, File db){
         this.tableNumber = tableNumber;
-        this.pageSize = pageSize;
-        this.currentPageSize = currentPageSize;
+        this.maxPages = maxPages;
+        this.currentNumOfPages = currentNumOfPages;
         this.numRecords = numRecords;
         this.coordinates = coordinates;
         this.db = db;
@@ -30,8 +30,8 @@ public class TableHeader {
 
     public TableHeader(int tableNumber, File db){
         this.tableNumber = tableNumber;
-        this.pageSize = 10;
-        this.currentPageSize = 0;
+        this.maxPages = 10;
+        this.currentNumOfPages = 0;
         this.numRecords = 0;
         this.coordinates = new ArrayList<>();
         this.db = db;
@@ -80,21 +80,21 @@ public class TableHeader {
     public void insertNewPage(Page page, int index){
         int lastOffset = findLastOffset();
         if(this.coordinates.size() > 0){
-            lastOffset += this.pageSize;
+            lastOffset += this.maxPages;
         }
-        Coordinate coordinate = new Coordinate(lastOffset, this.pageSize);
+        Coordinate coordinate = new Coordinate(lastOffset, this.maxPages);
         if(index < this.coordinates.size()){
             this.coordinates.add(index, coordinate);
         } else {
             this.coordinates.add(coordinate);
         }
-        this.currentPageSize += 1;
+        this.currentNumOfPages += 1;
     }
 
     public Page createFirstPage(){
-        Page page = new Page(this.pageSize, this.tableNumber, new ArrayList<>(), 0);
+        Page page = new Page(this.maxPages, this.tableNumber, new ArrayList<>(), 0);
         insertNewPage(page, 0);
-        this.currentPageSize += 1;
+        this.currentNumOfPages += 1;
         return page;
     }
 
@@ -107,11 +107,11 @@ public class TableHeader {
     }
 
     public int getBinarySize(){
-        return (Constant.INTEGER_SIZE * 4) + (8 * coordinates.size());
+        return (Constant.INTEGER_SIZE * 4) + (Coordinate.getBinarySize() * coordinates.size());
     }
 
     public int findLastOffset(){
-        int result = 16 + (this.pageSize * 8); // first offset after all the 4 other integers in the header
+        int result = 16 + (this.maxPages * 8); // first offset after all the 4 other integers in the header
         for(Coordinate coordinate : this.coordinates){
             result = max(coordinate.getOffset(), result);
         }
@@ -122,7 +122,7 @@ public class TableHeader {
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(this.db.getPath(), "rw");
 
-            if(this.currentPageSize > this.pageSize){
+            if(this.currentNumOfPages > this.maxPages){
                 // TODO split the file, make a new file and write everything over
             } else {
                 randomAccessFile.seek(0);
@@ -137,21 +137,14 @@ public class TableHeader {
     }
 
     public byte[] serialize(){
-        byte[] bytes = new byte[0];
-
         byte[] tableNumberByte = Helper.convertIntToByteArray(this.tableNumber);
-        byte[] pageCapacityByte = Helper.convertIntToByteArray(this.pageSize);
-        byte[] currentPageCapacityByte = Helper.convertIntToByteArray(this.currentPageSize);
+        byte[] pageCapacityByte = Helper.convertIntToByteArray(this.maxPages);
+        byte[] currentPageCapacityByte = Helper.convertIntToByteArray(this.currentNumOfPages);
         byte[] recordBytes = Helper.convertIntToByteArray(this.numRecords);
         byte[] coordinateBytes = Coordinate.serializeList(this.coordinates);
 
-        bytes = Helper.concatenate(bytes, tableNumberByte);
-        bytes = Helper.concatenate(bytes, pageCapacityByte);
-        bytes = Helper.concatenate(bytes, currentPageCapacityByte);
-        bytes = Helper.concatenate(bytes, recordBytes);
-        bytes = Helper.concatenate(bytes, coordinateBytes);
-
-        return bytes;
+        return Helper.concatenate(tableNumberByte, pageCapacityByte, currentPageCapacityByte,
+            recordBytes, coordinateBytes);
     }
 
 

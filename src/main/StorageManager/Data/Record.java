@@ -92,10 +92,10 @@ public class Record {
     public static ArrayList<Record> parseRecords(String[] values, MetaTable metaTable) {
         ArrayList<MetaAttribute> metaAttributes = metaTable.metaAttributes();
 
-        ArrayList<Attribute> recordAttribute = new ArrayList<>();
         ArrayList<Record> result = new ArrayList<>();
 
         for (String value : values) {
+            ArrayList<Attribute> recordAttribute = new ArrayList<>();
             value = value.replace("(", "");
             value = value.replace(")", "");
             System.out.println(value);
@@ -143,7 +143,6 @@ public class Record {
             }
             if(completion){
                 result.add(new Record(recordAttribute, metaAttributes));
-                recordAttribute.clear();
             } else {
                 break;
             }
