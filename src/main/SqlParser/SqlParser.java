@@ -100,13 +100,11 @@ public class SqlParser {
             values[values.length - 1] = values[values.length - 1].substring(0,
                 values[values.length - 1].length() - 1);
 
-            storageManager.executeInsert(table_name, values);
+            return storageManager.executeInsert(table_name, values);
 
         } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
-
-        return Constant.PrepareResult.PREPARE_SUCCESS;
     }
 
     /**
@@ -158,11 +156,11 @@ public class SqlParser {
             values[values.length - 1] = values[values.length - 1].substring(0,
                 values[values.length - 1].length() - 1);
 
-            storageManager.createTable(table_name.toString(), values);
+            return storageManager.createTable(table_name.toString(), values);
         } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
-        return PrepareResult.PREPARE_SUCCESS;
+
     }
 
 }

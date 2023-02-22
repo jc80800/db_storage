@@ -16,6 +16,9 @@ import main.StorageManager.MetaData.Catalog;
 import main.StorageManager.MetaData.MetaAttribute;
 import main.StorageManager.MetaData.MetaTable;
 
+import static main.Constants.Constant.PrepareResult.PREPARE_SUCCESS;
+import static main.Constants.Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+
 public class StorageManager {
 
     private final File db;
@@ -39,8 +42,7 @@ public class StorageManager {
         this.bufferSize = bufferSize;
     }
 
-    public void createTable(String table_name, String[] values) {
-
+    public Constant.PrepareResult createTable(String table_name, String[] values) {
         ArrayList<MetaAttribute> attributes = new ArrayList<>();
         HashSet<String> seenAttributeNames = new HashSet<>();
         boolean foundPrimaryKey = false;
@@ -50,15 +52,15 @@ public class StorageManager {
             boolean isPrimary = false;
             if (valArray.length < 2) {
                 System.out.println("ERROR: Missing fields for table attribute!");
-                return;
+                return PREPARE_UNRECOGNIZED_STATEMENT;
             } else if (valArray.length > 3 || (valArray.length == 3
                 && !valArray[2].equalsIgnoreCase("primarykey"))) {
                 System.out.println("ERROR: Too many fields found for table attribute!");
-                return;
+                return PREPARE_UNRECOGNIZED_STATEMENT;
             } else {
                 if (valArray.length == 3 && foundPrimaryKey) {
                     System.out.println("ERROR: Found more than one primary key!");
-                    return;
+                    return PREPARE_UNRECOGNIZED_STATEMENT;
                 } else if (valArray.length == 3) {
                     isPrimary = true;
                     foundPrimaryKey = true;
@@ -66,7 +68,7 @@ public class StorageManager {
 
                 if (seenAttributeNames.contains(valArray[0].toLowerCase())) {
                     System.out.println("ERROR: One or more attributes have the same name!");
-                    return;
+                    return PREPARE_UNRECOGNIZED_STATEMENT;
                 } else {
                     seenAttributeNames.add(valArray[0].toLowerCase());
                 }
@@ -89,14 +91,14 @@ public class StorageManager {
                         new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, length));
                 } else {
                     System.out.println("ERROR: Syntax error was found!");
-                    return;
+                    return PREPARE_UNRECOGNIZED_STATEMENT;
                 }
             }
         }
 
         if (!foundPrimaryKey) {
             System.out.println("ERROR: No primary key was specified!");
-            return;
+            return PREPARE_UNRECOGNIZED_STATEMENT;
         }
 
         int tableNumber = this.catalog.getNextTableNumber();
@@ -108,6 +110,7 @@ public class StorageManager {
             System.out.println("Table couldn't be created / Exist already");
         }
 
+        return PREPARE_SUCCESS;
     }
 
     public void executeSelect(String table) {
@@ -150,7 +153,7 @@ public class StorageManager {
         }
     }
 
-    public void executeInsert(String table, String[] values) {
+    public Constant.PrepareResult executeInsert(String table, String[] values) {
 
         values = new String[] { "1" };
 
@@ -158,12 +161,12 @@ public class StorageManager {
         this.tableHeader = TableHeader.parseTableHeader(table_file);
         if (!table_file.exists()) {
             System.out.println("Table doesn't exist");
-            return;
+            return PREPARE_UNRECOGNIZED_STATEMENT;
         }
 
         if (this.tableHeader == null) {
             System.out.println("Header couldn't be parsed");
-            return;
+            return PREPARE_UNRECOGNIZED_STATEMENT;
         }
 
         // Get the table number and get the schema table from catalog
@@ -180,6 +183,7 @@ public class StorageManager {
 
         System.out.println("Insertion Completed");
 
+        return PREPARE_SUCCESS;
     }
 
     /**
