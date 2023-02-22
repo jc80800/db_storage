@@ -67,6 +67,10 @@ public class Catalog {
         return this.metaTableHashMap.get(file_number);
     }
 
+    public int getNextTableNumber(){
+        return this.nextTableNumber;
+    }
+
     public int getPageSize() {
         return this.pageSize;
     }

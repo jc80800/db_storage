@@ -40,9 +40,6 @@ public class StorageManager {
     }
 
     public void createTable(String table_name, String[] values) {
-        // input = create table foo( age char(10), num integer primarykey )
-        // values = [ age char(10), num integer primarykey ]
-        // table_name = foo
 
         ArrayList<MetaAttribute> attributes = new ArrayList<>();
         HashSet<String> seenAttributeNames = new HashSet<>();
@@ -102,8 +99,15 @@ public class StorageManager {
             return;
         }
 
+        int tableNumber = this.catalog.getNextTableNumber();
         this.catalog.addMetaTable(table_name, attributes);
-        System.out.println("Table created");
+
+        if(createFile(table_name, tableNumber)){
+            System.out.println("Table file created");
+        } else {
+            System.out.println("Table couldn't be created / Exist already");
+        }
+
     }
 
     public void executeSelect(String table) {
@@ -147,8 +151,11 @@ public class StorageManager {
     }
 
     public void executeInsert(String table, String[] values) {
+
+        values = new String[] { "1" };
+
         File table_file = getTableFile(table);
-        this.tableHeader = TableHeader.parseTableHeader(db);
+        this.tableHeader = TableHeader.parseTableHeader(table_file);
         if (!table_file.exists()) {
             System.out.println("Table doesn't exist");
             return;
@@ -162,6 +169,8 @@ public class StorageManager {
         // Get the table number and get the schema table from catalog
         int tableNumber = this.tableHeader.getTableNumber();
         MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
+
+        System.out.println(metaTable);
 
         // Parse the values from user and validate it
         ArrayList<Record> records = Record.parseRecords(values, metaTable);
@@ -392,5 +401,26 @@ public class StorageManager {
     public File getTableFile(String table) {
         String table_path = db.getName() + "/" + table;
         return new File(table_path);
+    }
+
+    public boolean createFile(String table, int tableNumber){
+        File file = getTableFile(table);
+
+        TableHeader tableHeader = new TableHeader(tableNumber, file);
+        try {
+            if(file.createNewFile()){
+                RandomAccessFile randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
+                System.out.println("Writing Table Header");
+                randomAccessFile.write(tableHeader.serialize());
+                randomAccessFile.close();
+                return true;
+            } else {
+                return false;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return false;
     }
 }

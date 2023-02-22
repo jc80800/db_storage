@@ -28,6 +28,15 @@ public class TableHeader {
         this.db = db;
     }
 
+    public TableHeader(int tableNumber, File db){
+        this.tableNumber = tableNumber;
+        this.pageSize = 10;
+        this.currentPageSize = 0;
+        this.numRecords = 0;
+        this.coordinates = new ArrayList<>();
+        this.db = db;
+    }
+
     public static TableHeader parseTableHeader(File table_file) {
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(), "rw");
@@ -83,7 +92,7 @@ public class TableHeader {
     }
 
     public Page createFirstPage(){
-        Page page = new Page(this.pageSize, this.tableNumber, new ArrayList<>(), 1);
+        Page page = new Page(this.pageSize, this.tableNumber, new ArrayList<>(), 0);
         insertNewPage(page, 0);
         this.currentPageSize += 1;
         return page;
@@ -102,7 +111,7 @@ public class TableHeader {
     }
 
     public int findLastOffset(){
-        int result = 16; // first offset after all the 4 other integers in the header
+        int result = 16 + (this.pageSize * 8); // first offset after all the 4 other integers in the header
         for(Coordinate coordinate : this.coordinates){
             result = max(coordinate.getOffset(), result);
         }
@@ -136,11 +145,11 @@ public class TableHeader {
         byte[] recordBytes = Helper.convertIntToByteArray(this.numRecords);
         byte[] coordinateBytes = Coordinate.serializeList(this.coordinates);
 
-        Helper.concatenate(bytes, tableNumberByte);
-        Helper.concatenate(bytes, pageCapacityByte);
-        Helper.concatenate(bytes, currentPageCapacityByte);
-        Helper.concatenate(bytes, recordBytes);
-        Helper.concatenate(bytes, coordinateBytes);
+        bytes = Helper.concatenate(bytes, tableNumberByte);
+        bytes = Helper.concatenate(bytes, pageCapacityByte);
+        bytes = Helper.concatenate(bytes, currentPageCapacityByte);
+        bytes = Helper.concatenate(bytes, recordBytes);
+        bytes = Helper.concatenate(bytes, coordinateBytes);
 
         return bytes;
     }
