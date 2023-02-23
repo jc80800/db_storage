@@ -52,15 +52,15 @@ public class StorageManager {
             String[] valArray = value.split(" ");
             boolean isPrimary = false;
             if (valArray.length < 2) {
-                System.out.println("ERROR: Missing fields for table attribute!");
+                System.out.println("Missing fields for table attribute!");
                 return PREPARE_UNRECOGNIZED_STATEMENT;
             } else if (valArray.length > 3 || (valArray.length == 3
                 && !valArray[2].equalsIgnoreCase("primarykey"))) {
-                System.out.println("ERROR: Too many fields found for table attribute!");
+                System.out.println("Too many fields found for table attribute!");
                 return PREPARE_UNRECOGNIZED_STATEMENT;
             } else {
                 if (valArray.length == 3 && foundPrimaryKey) {
-                    System.out.println("ERROR: Found more than one primary key!");
+                    System.out.println("Found more than one primary key!");
                     return PREPARE_UNRECOGNIZED_STATEMENT;
                 } else if (valArray.length == 3) {
                     isPrimary = true;
@@ -68,7 +68,7 @@ public class StorageManager {
                 }
 
                 if (seenAttributeNames.contains(valArray[0].toLowerCase())) {
-                    System.out.println("ERROR: One or more attributes have the same name!");
+                    System.out.println("One or more attributes have the same name!");
                     return PREPARE_UNRECOGNIZED_STATEMENT;
                 } else {
                     seenAttributeNames.add(valArray[0].toLowerCase());
@@ -91,14 +91,14 @@ public class StorageManager {
                     attributes.add(
                         new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, length));
                 } else {
-                    System.out.println("ERROR: Syntax error was found!");
+                    System.out.println("Syntax error was found!");
                     return PREPARE_UNRECOGNIZED_STATEMENT;
                 }
             }
         }
 
         if (!foundPrimaryKey) {
-            System.out.println("ERROR: No primary key was specified!");
+            System.out.println("No primary key was specified!");
             return PREPARE_UNRECOGNIZED_STATEMENT;
         }
 
@@ -117,7 +117,7 @@ public class StorageManager {
         return PREPARE_SUCCESS;
     }
 
-    public void executeSelect(String table) {
+    public Constant.PrepareResult executeSelect(String table) {
         // Check if the file exist in the directory
         File table_file = getTableFile(table);
         if (table_file.exists()) {
@@ -152,20 +152,22 @@ public class StorageManager {
                     System.out.println(record);
                 }
             }
+            return PREPARE_SUCCESS;
         } else {
             System.out.println("Table doesn't exist");
+            return PREPARE_UNRECOGNIZED_STATEMENT;
         }
     }
 
     public Constant.PrepareResult executeInsert(String table, String[] values) {
 
         File table_file = getTableFile(table);
-        TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
         if (!table_file.exists()) {
             System.out.println("Table doesn't exist");
             return PREPARE_UNRECOGNIZED_STATEMENT;
         }
 
+        TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
         if (tableHeader == null) {
             System.out.println("Header couldn't be parsed");
             return PREPARE_UNRECOGNIZED_STATEMENT;
@@ -179,11 +181,8 @@ public class StorageManager {
         ArrayList<Record> records = Record.parseRecords(values, metaTable);
 
         // Find where to place each record and place it
-        findRecordPlacement(table_file, records, metaTable, tableHeader);
+        return findRecordPlacement(table_file, records, metaTable, tableHeader);
 
-        System.out.println("Insertion Completed");
-
-        return PREPARE_SUCCESS;
     }
 
     /**
@@ -191,7 +190,7 @@ public class StorageManager {
      *
      * @param table
      */
-    public void displayInfo(String table) {
+    public Constant.PrepareResult displayInfo(String table) {
         boolean foundTable = false;
         MetaTable foundMetaTable = null;
         for (MetaTable metaTable : catalog.getMetaTableHashMap().values()) {
@@ -204,7 +203,7 @@ public class StorageManager {
         }
         if (!foundTable) {
             System.out.format("No such table %s\n", table);
-            return;
+            return PREPARE_UNRECOGNIZED_STATEMENT;
         }
         File table_file = getTableFile(table);
         TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
@@ -215,19 +214,21 @@ public class StorageManager {
 
         System.out.format("Pages: %d\n", numOfPages);
         System.out.format("Records: %d\n", numOfRecords);
+
+        return PREPARE_SUCCESS;
     }
 
     /**
      * prints: database location, page size, buffer size, table schema
      */
-    public void displaySchema() {
+    public Constant.PrepareResult displaySchema() {
         System.out.format("DB location: %s\n", db.getPath());
         System.out.format("Page size: %s\n", this.pageSize);
         System.out.format("Buffer size: %s\n\n", this.bufferSize);
         int numOfTables = catalog.getTableSize();
         if (numOfTables == 0) {
             System.out.println("No tables to display");
-            return;
+            return PREPARE_SUCCESS;
         }
         System.out.println("Tables:\n");
         for (MetaTable metaTable : catalog.getMetaTableHashMap().values()) {
@@ -244,9 +245,10 @@ public class StorageManager {
             System.out.format("Pages: %s\n", numOfPages);
             System.out.format("Records: %s\n\n", numOfRecords);
         }
+        return PREPARE_SUCCESS;
     }
 
-    public void findRecordPlacement(File table_file,
+    public Constant.PrepareResult findRecordPlacement(File table_file,
         ArrayList<Record> records, MetaTable metaTable, TableHeader tableHeader) {
         int tableNumber = tableHeader.getTableNumber();
 
@@ -279,7 +281,7 @@ public class StorageManager {
                     inserted = checkPlacement(pageRecords, record, page, tableHeader);
                     if (inserted == null) {
                         System.out.println("PK already exist");
-                        return;
+                        return PREPARE_UNRECOGNIZED_STATEMENT;
                     } else if (inserted) {
                         break;
                     }
@@ -295,6 +297,8 @@ public class StorageManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        return PREPARE_UNRECOGNIZED_STATEMENT;
 
     }
 

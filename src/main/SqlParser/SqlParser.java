@@ -62,13 +62,11 @@ public class SqlParser {
             if (tokens.length != 4 || !tokens[1].equals("*") || !tokens[2].equals("from")) {
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
-            storageManager.executeSelect(tokens[3]);
+            return storageManager.executeSelect(tokens[3]);
 
         } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
-
-        return Constant.PrepareResult.PREPARE_SUCCESS;
     }
 
     /**
@@ -114,10 +112,10 @@ public class SqlParser {
     private Constant.PrepareResult displayCommand(String[] tokens) {
         try {
             if (tokens.length == 3 && tokens[1].toUpperCase().equals(Constant.INFO)) {
-                storageManager.displayInfo(tokens[2]);
+                return storageManager.displayInfo(tokens[2]);
 
             } else if (tokens.length == 2 && tokens[1].toUpperCase().equals(Constant.SCHEMA)) {
-                storageManager.displaySchema();
+                return storageManager.displaySchema();
             } else {
                 System.out.println("Invalid command");
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
@@ -125,8 +123,6 @@ public class SqlParser {
         } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
-
-        return Constant.PrepareResult.PREPARE_SUCCESS;
     }
 
     private Constant.PrepareResult createCommand(String[] tokens) {
