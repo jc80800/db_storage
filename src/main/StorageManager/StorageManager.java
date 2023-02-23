@@ -11,6 +11,7 @@ import java.util.HashSet;
 
 import main.Constants.CommandLineTable;
 import main.Constants.Constant;
+import main.Constants.Constant.DataType;
 import main.Constants.Coordinate;
 import main.StorageManager.Data.Attribute;
 import main.StorageManager.Data.Page;
@@ -195,7 +196,7 @@ public class StorageManager {
 
         // Parse the values from user and validate it
         try {
-            ArrayList<Record> records = Record.parseRecords(values, metaTable);
+            ArrayList<Record> records = parseRecords(values, metaTable);
 
             // Find where to place each record and place it
             return findRecordPlacement(table_file, records, metaTable, tableHeader);
@@ -203,6 +204,72 @@ public class StorageManager {
             System.out.println(e.getMessage());
             return PREPARE_UNRECOGNIZED_STATEMENT;
         }
+    }
+
+    private ArrayList<Record> parseRecords(String[] values, MetaTable metaTable) {
+        ArrayList<MetaAttribute> metaAttributes = metaTable.metaAttributes();
+        ArrayList<Record> result = new ArrayList<>();
+
+        int index = 0;
+        while (index < values.length) {
+            ArrayList<Attribute> attributes = new ArrayList<>();
+            for (int i = 0; i < metaTable.metaAttributes().size(); i++) {
+                MetaAttribute metaAttribute = metaTable.metaAttributes().get(i);
+                String object = values[index++];
+                DataType dataType = metaAttribute.getType();
+
+                switch (dataType) {
+                    case INTEGER -> {
+                        int intObject;
+                        try {
+                            intObject = Integer.parseInt(object);
+                        } catch (NumberFormatException e) {
+                            throw new IllegalArgumentException(
+                                String.format("Invalid value: \"%s\" for Integer Type", object));
+                        }
+                        attributes.add(new Attribute(metaAttribute, intObject));
+                    }
+                    case DOUBLE -> {
+                        double doubleObject;
+                        try {
+                            doubleObject = Double.parseDouble(object);
+                        } catch (NumberFormatException e) {
+                            throw new IllegalArgumentException(
+                                String.format("Invalid value: \"%s\" for Double Type", object));
+                        }
+                        attributes.add(new Attribute(metaAttribute, doubleObject));
+                    }
+                    case BOOLEAN -> {
+                        if (object.equalsIgnoreCase("true")) {
+                            attributes.add(new Attribute(metaAttribute, true));
+                        } else if (object.equalsIgnoreCase("false")) {
+                            attributes.add(new Attribute(metaAttribute, false));
+                        } else {
+                            throw new IllegalArgumentException(
+                                String.format("Invalid value: \"%s\" for Boolean Type", object));
+                        }
+                    }
+                    case CHAR, VARCHAR -> {
+                        if (object.charAt(0) != '\"'
+                            || object.charAt(object.length() - 1) != '\"') {
+                            throw new IllegalArgumentException(
+                                String.format("Invalid value: %s, missing quotes", object));
+                        }
+                        object = object.substring(1, object.length() - 1);
+                        if (object.length() > metaAttribute.getMaxLength()) {
+                            throw new IllegalArgumentException(
+                                String.format("\"%s\" length exceeds %s(%d)", object,
+                                    dataType.name(), metaAttribute.getMaxLength()));
+                        }
+                        attributes.add(
+                            new Attribute(metaAttribute, object));
+                    }
+                }
+            }
+            Record record =  new Record(attributes, metaAttributes);
+            result.add(record);
+        }
+        return result;
     }
 
     /**
