@@ -375,6 +375,7 @@ public class StorageManager {
 
                     if (i == coordinates.size() - 1) {
                         // If no place, insert at the very end
+                        // something
                         insertRecord(record, page, pageRecords.size(), tableHeader);
                         break;
                     }
