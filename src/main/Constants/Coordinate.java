@@ -23,7 +23,7 @@ public class Coordinate {
     public static byte[] serializeList(ArrayList<Coordinate> coordinates){
         byte[] bytes = new byte[0];
         for(Coordinate coordinate : coordinates){
-            Helper.concatenate(bytes, coordinate.serialize());
+            bytes = Helper.concatenate(bytes, coordinate.serialize());
         }
         return bytes;
     }
@@ -67,6 +67,10 @@ public class Coordinate {
 
     public void setLength(int length) {
         this.length = length;
+    }
+
+    public void padOffset(int amount){
+        this.offset += amount;
     }
 
     @Override

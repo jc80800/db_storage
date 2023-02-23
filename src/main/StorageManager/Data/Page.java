@@ -38,7 +38,8 @@ public class Page {
     }
 
     public boolean isEnoughSpaceForInsert(Record record) {
-        return availableSpace >= (record.getBinarySize() + Coordinate.getBinarySize());
+        int available = calculateAvailableSpace();
+        return available >= (record.getBinarySize() + Coordinate.getBinarySize());
     }
 
     public static Page deserialize(byte[] bytes, MetaTable metaTable, int tableNumber,
@@ -126,6 +127,10 @@ public class Page {
 
     public ArrayList<Record> getRecords() {
         return records;
+    }
+
+    public int getTableNumber(){
+        return this.tableNumber;
     }
 
     public int getPageId(){

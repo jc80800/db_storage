@@ -47,7 +47,7 @@ public class Catalog {
 
         ArrayList<Coordinate> pointers = new ArrayList<>();
         HashMap<Integer, MetaTable> metaTableHashMap = new HashMap<>();
-        int tableNum = 1;
+        int tableNum = 0;
         while (numOfMetaTables > 0) {
             Coordinate coordinate = Coordinate.deserialize(
                 Arrays.copyOfRange(bytes, index, index + Coordinate.getBinarySize()));
@@ -81,8 +81,8 @@ public class Catalog {
 
     public void addMetaTable(String table_name, ArrayList<MetaAttribute> attributes) {
         MetaTable metaTable = new MetaTable(nextTableNumber, table_name, attributes);
-        nextTableNumber++;
         metaTableHashMap.put(metaTable.getTableNumber(), metaTable);
+        this.nextTableNumber++;
         this.pointers = constructPointers();
     }
 

@@ -55,7 +55,7 @@ public class Main {
             switch (prepareResult) {
                 case PREPARE_QUIT -> {
                     System.out.println("Closing database");
-                    storageManager.saveCatalog();
+                    storageManager.saveData();
                     scanner.close();
                     System.exit(0);
                 }

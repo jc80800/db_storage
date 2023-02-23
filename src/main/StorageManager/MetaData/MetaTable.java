@@ -121,7 +121,7 @@ public final class MetaTable {
         return pointers;
     }
 
-    public String tableName() {
+    public String getTableName() {
         return tableName;
     }
 

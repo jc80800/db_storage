@@ -89,10 +89,11 @@ public class TableHeader {
             this.coordinates.add(coordinate);
         }
         this.currentNumOfPages += 1;
+        updateTableHeader(index);
     }
 
-    public Page createFirstPage(){
-        Page page = new Page(this.maxPages, this.tableNumber, new ArrayList<>(), 0);
+    public Page createFirstPage(int pageSize){
+        Page page = new Page(pageSize, this.tableNumber, new ArrayList<>(), 0);
         insertNewPage(page, 0);
         this.currentNumOfPages += 1;
         return page;
@@ -118,22 +119,82 @@ public class TableHeader {
         return result;
     }
 
-    public void updateTableHeader(){
+    public void updateTableHeader(int newPageIndex){
         try {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(this.db.getPath(), "rw");
 
             if(this.currentNumOfPages > this.maxPages){
-                // TODO split the file, make a new file and write everything over
+                this.maxPages += 10;
+                makeNewFile(this.db.getPath());
             } else {
+                RandomAccessFile randomAccessFile = new RandomAccessFile(this.db.getPath(), "rw");
+
                 randomAccessFile.seek(0);
-                randomAccessFile.write(this.serialize());
+                byte[] bytes = this.serialize();
+                randomAccessFile.write(bytes);
+                Coordinate newCoordinate = this.coordinates.get(newPageIndex);
+                byte[] bytes1 = new byte[newCoordinate.getLength()];
+                randomAccessFile.seek(newCoordinate.getOffset());
+                randomAccessFile.write(bytes1);
+                randomAccessFile.close();
             }
 
-
-            randomAccessFile.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void makeNewFile(String path) {
+
+        // Make the temp file
+        File tempFile = new File(this.db.getPath() + "/temp");
+        File file = new File(path);
+
+        try {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(path, "rw");
+            RandomAccessFile tempRandomAccessFile = new RandomAccessFile(tempFile.getPath(), "rw");
+            if(tempFile.createNewFile()) {
+
+                // Make the new file and write the new header with the coordinate adjusted
+                tempRandomAccessFile.seek(0);
+
+                updateCoordinates();
+                tempRandomAccessFile.write(this.serialize());
+
+                // find the old file's offset where the first page starts
+                int offset = (4 * 4) + ((this.maxPages - 10) * Coordinate.getBinarySize());
+                randomAccessFile.seek(offset);
+
+                // copy the old pages over
+                for (int i = 0; i < coordinates.size() - 1; i++){
+                    byte[] bytes = new byte[coordinates.get(0).getLength()];
+                    randomAccessFile.readFully(bytes);
+                    tempRandomAccessFile.write(bytes);
+                }
+
+                // Write the new page padding
+                byte[] bytes1 = new byte[coordinates.get(0).getLength()];
+                tempRandomAccessFile.write(bytes1);
+
+                // Rename and overwrite old file
+                if(tempFile.renameTo(file)){
+                    System.out.println("File renamed");
+                } else {
+                    System.out.println("File couldn't be renamed");
+                }
+            }
+            randomAccessFile.close();
+            tempRandomAccessFile.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private void updateCoordinates() {
+        for (Coordinate coordinate : this.coordinates){
+            coordinate.padOffset(10 * Coordinate.getBinarySize());
+        }
+
     }
 
     public byte[] serialize(){
@@ -142,10 +203,14 @@ public class TableHeader {
         byte[] currentPageCapacityByte = Helper.convertIntToByteArray(this.currentNumOfPages);
         byte[] recordBytes = Helper.convertIntToByteArray(this.numRecords);
         byte[] coordinateBytes = Coordinate.serializeList(this.coordinates);
+        int pagesLeft = this.maxPages - this.currentNumOfPages;
+        byte[] paddingByte = new byte[pagesLeft * Coordinate.getBinarySize()];
 
         return Helper.concatenate(tableNumberByte, pageCapacityByte, currentPageCapacityByte,
-            recordBytes, coordinateBytes);
+            recordBytes, coordinateBytes, paddingByte);
     }
+
+
 
 
 }
