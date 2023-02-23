@@ -25,6 +25,7 @@ public class Attribute {
     }
 
     public static Attribute deserialize(byte[] bytes, MetaAttribute metaAttribute) {
+
         int index = 0;
         Object value;
         value = switch (metaAttribute.getType()) {

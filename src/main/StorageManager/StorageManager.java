@@ -107,13 +107,12 @@ public class StorageManager {
 
     public void executeSelect(String table) {
         // Check if the file exist in the directory
-
         File table_file = getTableFile(table);
         if (table_file.exists()) {
             ArrayList<Page> pages = new ArrayList<>();
             TableHeader tableHeader = TableHeader.parseTableHeader(table_file);
             ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
-            MetaTable metaTable = this.catalog.getMetaTable(tableHeader.getTableNumber());
+
             for (int i = 0; i < coordinates.size(); i++) {
                 if (!pageBuffer.pages.containsKey(i)) {
                     //get page from file and put into buffer
@@ -123,9 +122,11 @@ public class StorageManager {
                         randomAccessFile.seek(coordinates.get(i).getOffset());
                         byte[] pageBytes = new byte[catalog.getPageSize()];
                         randomAccessFile.readFully(pageBytes);
+
                         Page page = Page.deserialize(pageBytes,
                             catalog.getMetaTable(tableHeader.getTableNumber()),
                             tableHeader.getTableNumber(), catalog.getPageSize(), i);
+
                         pageBuffer.putPage(page);
                         randomAccessFile.close();
                     } catch (IOException e) {
@@ -162,7 +163,6 @@ public class StorageManager {
         int tableNumber = tableHeader.getTableNumber();
         MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
 
-        values = new String[] {"1"};
         // Parse the values from user and validate it
         ArrayList<Record> records = Record.parseRecords(values, metaTable);
 
@@ -181,9 +181,11 @@ public class StorageManager {
      */
     public void displayInfo(String table) {
         boolean foundTable = false;
+        MetaTable foundMetaTable = null;
         for (MetaTable metaTable : catalog.getMetaTableHashMap().values()) {
             if (metaTable.getTableName().equalsIgnoreCase(table)) {
                 foundTable = true;
+                foundMetaTable = metaTable;
                 System.out.print(metaTable);
                 break;
             }
@@ -193,23 +195,11 @@ public class StorageManager {
             return;
         }
         File table_file = getTableFile(table);
-        int numOfPages = 0;
-        int numOfRecords = 0;
-        if (table_file.exists()) {
-            try {
-                RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(),
-                    "rw");
+        TableHeader tableHeader = TableHeader.parseTableHeader(table_file);
 
-                // Access file for information
-                randomAccessFile.seek(0);
-                int tableNumber = randomAccessFile.readInt();
-                numOfPages = randomAccessFile.readInt();
-                numOfRecords = randomAccessFile.readInt();
-                randomAccessFile.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        int numOfPages = tableHeader.getCoordinates().size();
+        int numOfRecords = tableHeader.getTotalRecords(table_file, this.pageBuffer, foundMetaTable, this.pageSize);
+
         System.out.format("Pages: %d\n", numOfPages);
         System.out.format("Records: %d\n", numOfRecords);
     }
@@ -430,6 +420,5 @@ public class StorageManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 }

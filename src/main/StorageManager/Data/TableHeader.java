@@ -3,12 +3,16 @@ package main.StorageManager.Data;
 import static java.lang.Math.max;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import main.Constants.Constant;
 import main.Constants.Coordinate;
 import main.Constants.Helper;
+import main.StorageManager.MetaData.Catalog;
+import main.StorageManager.MetaData.MetaTable;
+import main.StorageManager.PageBuffer;
 
 public class TableHeader {
 
@@ -210,7 +214,36 @@ public class TableHeader {
             recordBytes, coordinateBytes, paddingByte);
     }
 
+    @Override
+    public String toString(){
+        return "Table Number: " + this.tableNumber +
+            " Page Capacity: " + this.maxPages +
+            " Number Of Pages: " + this.currentNumOfPages +
+            " Number of Records" + this.numRecords +
+            " Coordinates: " + this.coordinates;
+    }
 
+    public int getTotalRecords(File file, PageBuffer pageBuffer, MetaTable metaTable, int pageSize) {
+        int total = 0;
+        try {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
+            for(int i = 0; i < this.coordinates.size(); i++){
+                Page page = pageBuffer.getPage(i);
+                if (page == null){
+                    Coordinate coordinate = this.coordinates.get(i);
+                    randomAccessFile.seek(coordinate.getOffset());
+                    byte[] bytes = new byte[coordinate.getLength()];
+                    randomAccessFile.readFully(bytes);
 
-
+                    page = Page.deserialize(bytes, metaTable, metaTable.getTableNumber(), pageSize, i);
+                    total += page.getNumberOfRecords();
+                } else{
+                    total += page.getNumberOfRecords();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return total;
+    }
 }

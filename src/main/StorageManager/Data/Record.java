@@ -54,7 +54,10 @@ public class Record {
                 case INTEGER -> {
                     byte[] valueBytes = Arrays.copyOfRange(bytes, index,
                         index + Constant.INTEGER_SIZE);
+
+                    System.out.println("error here");
                     Attribute attribute = Attribute.deserialize(valueBytes, metaAttribute);
+
                     index += attribute.getBinarySize();
                     attributes.add(attribute);
                 }
@@ -98,7 +101,6 @@ public class Record {
             ArrayList<Attribute> recordAttribute = new ArrayList<>();
             value = value.replace("(", "");
             value = value.replace(")", "");
-            System.out.println(value);
 
             String[] tokens = value.split(" ");
             boolean completion = true;

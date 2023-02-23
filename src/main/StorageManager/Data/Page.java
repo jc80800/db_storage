@@ -51,15 +51,20 @@ public class Page {
         ArrayList<Record> records = new ArrayList<>();
 
         while (numOfRecords > 0) {
+
+
             Coordinate coordinate = Coordinate.deserialize(
                 Arrays.copyOfRange(bytes, index, index += Coordinate.getBinarySize()));
             pointers.add(coordinate);
+
 
             Record record = Record.deserialize(Arrays.copyOfRange(bytes, coordinate.getOffset(),
                 coordinate.getOffset() + coordinate.getLength()), metaTable.metaAttributes());
             records.add(record);
             numOfRecords--;
+
         }
+
         return new Page(pageSize, tableNumber, pointers, records, pageId);
     }
 
@@ -135,6 +140,10 @@ public class Page {
 
     public int getPageId(){
         return this.pageId;
+    }
+
+    public int getNumberOfRecords(){
+        return this.records.size();
     }
 
     @Override

@@ -85,22 +85,20 @@ public class SqlParser {
 
             String table_name = tokens[2];
 
-            int index = 0;
-            while (index < tokens[3].length() && !(tokens[3].charAt(index) == '(')) {
-                index += 1;
+
+            tokens = Arrays.copyOfRange(tokens, 4, tokens.length);
+            String combined_values = String.join(" ", tokens);
+            combined_values = combined_values.trim();
+
+            String[] splitValues = combined_values.split(",");
+
+            for (int i = 0; i < splitValues.length; i++){
+                splitValues[i] = splitValues[i].replace("(", "");
+                splitValues[i] = splitValues[i].replace(")", "");
+                splitValues[i] = splitValues[i].trim();
             }
 
-            tokens[3] = tokens[3].substring(index);
-
-            tokens = Arrays.copyOfRange(tokens, 3, tokens.length);
-            String combined_values = String.join(" ", tokens);
-            combined_values = combined_values.replace("(", "");
-            String[] values = combined_values.split(",");
-
-            values[values.length - 1] = values[values.length - 1].substring(0,
-                values[values.length - 1].length() - 1);
-
-            return storageManager.executeInsert(table_name, values);
+            return storageManager.executeInsert(table_name, splitValues);
 
         } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
