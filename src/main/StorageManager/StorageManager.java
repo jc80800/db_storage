@@ -1,23 +1,21 @@
 package main.StorageManager;
 
+import static main.Constants.Constant.PrepareResult.PREPARE_SUCCESS;
+import static main.Constants.Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import main.Constants.Constant;
 import main.Constants.Coordinate;
-import main.Constants.Helper;
 import main.StorageManager.Data.Page;
 import main.StorageManager.Data.Record;
 import main.StorageManager.Data.TableHeader;
 import main.StorageManager.MetaData.Catalog;
 import main.StorageManager.MetaData.MetaAttribute;
 import main.StorageManager.MetaData.MetaTable;
-
-import static main.Constants.Constant.PrepareResult.PREPARE_SUCCESS;
-import static main.Constants.Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
 
 public class StorageManager {
 
@@ -32,6 +30,17 @@ public class StorageManager {
         this.db = db;
         this.pageSize = pageSize;
         this.bufferSize = bufferSize;
+    }
+
+    public static void checkLength(File file) {
+        RandomAccessFile randomAccessFile = null;
+        try {
+            randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
+            byte[] bytes = new byte[(int) randomAccessFile.length()];
+            randomAccessFile.readFully(bytes);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public Constant.PrepareResult createTable(String table_name, String[] values) {
@@ -93,14 +102,17 @@ public class StorageManager {
             return PREPARE_UNRECOGNIZED_STATEMENT;
         }
 
+        File file = getTableFile(table_name);
+        if (file.exists()) {
+            System.out.println("Table couldn't be created / Exist already");
+            return PREPARE_UNRECOGNIZED_STATEMENT;
+        }
+
         int tableNumber = this.catalog.getNextTableNumber();
         this.catalog.addMetaTable(table_name, attributes);
 
-        if(createFile(table_name, tableNumber)){
-            System.out.println("Table file created");
-        } else {
-            System.out.println("Table couldn't be created / Exist already");
-        }
+        createFile(file, tableNumber);
+        System.out.println("Table file created");
 
         return PREPARE_SUCCESS;
     }
@@ -110,7 +122,7 @@ public class StorageManager {
         File table_file = getTableFile(table);
         if (table_file.exists()) {
             ArrayList<Page> pages = new ArrayList<>();
-            TableHeader tableHeader = TableHeader.parseTableHeader(table_file);
+            TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
             ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
 
             for (int i = 0; i < coordinates.size(); i++) {
@@ -136,7 +148,7 @@ public class StorageManager {
                 pages.add(pageBuffer.getPage(i));
             }
             for (Page page : pages) {
-                for(Record record: page.getRecords()){
+                for (Record record : page.getRecords()) {
                     System.out.println(record);
                 }
             }
@@ -148,7 +160,7 @@ public class StorageManager {
     public Constant.PrepareResult executeInsert(String table, String[] values) {
 
         File table_file = getTableFile(table);
-        TableHeader tableHeader = TableHeader.parseTableHeader(table_file);
+        TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
         if (!table_file.exists()) {
             System.out.println("Table doesn't exist");
             return PREPARE_UNRECOGNIZED_STATEMENT;
@@ -195,10 +207,11 @@ public class StorageManager {
             return;
         }
         File table_file = getTableFile(table);
-        TableHeader tableHeader = TableHeader.parseTableHeader(table_file);
+        TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
 
         int numOfPages = tableHeader.getCoordinates().size();
-        int numOfRecords = tableHeader.getTotalRecords(table_file, this.pageBuffer, foundMetaTable, this.pageSize);
+        int numOfRecords = tableHeader.getTotalRecords(table_file, this.pageBuffer, foundMetaTable,
+            this.pageSize);
 
         System.out.format("Pages: %d\n", numOfPages);
         System.out.format("Records: %d\n", numOfRecords);
@@ -223,17 +236,10 @@ public class StorageManager {
             int numOfRecords = 0;
             File table_file = getTableFile(metaTable.getTableName());
             if (table_file.exists()) {
-                try (RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(),
-                    "rw")) {
-                    byte[] bytes = new byte[8];
-                    randomAccessFile.readFully(bytes, Constant.INTEGER_SIZE,
-                        Constant.INTEGER_SIZE * 2);
-                    numOfPages = Helper.convertByteArrayToInt(Arrays.copyOf(bytes, 4));
-                    numOfRecords = Helper.convertByteArrayToInt(Arrays.copyOfRange(bytes, 4, 8));
-                } catch (IOException e) {
-                    throw new RuntimeException(
-                        String.format("Can not access file %s", table_file.getPath()));
-                }
+                TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
+                numOfPages = tableHeader.getCoordinates().size();
+                numOfRecords = tableHeader.getTotalRecords(table_file, this.pageBuffer, metaTable,
+                    this.pageSize);
             }
             System.out.format("Pages: %s\n", numOfPages);
             System.out.format("Records: %s\n\n", numOfRecords);
@@ -292,7 +298,8 @@ public class StorageManager {
 
     }
 
-    public Boolean checkPlacement(ArrayList<Record> records, Record target, Page page, TableHeader tableHeader) {
+    public Boolean checkPlacement(ArrayList<Record> records, Record target, Page page,
+        TableHeader tableHeader) {
         Object recordValue = target.getPrimaryKey().getValue();
 
         for (int i = 0; i < records.size(); i++) {
@@ -336,10 +343,9 @@ public class StorageManager {
         return false;
     }
 
-
     public void insertRecord(Record record, Page page, int index, TableHeader tableHeader) {
         Page potentialNewPage = page.insertRecord(record, index, tableHeader);
-        if (potentialNewPage != null){
+        if (potentialNewPage != null) {
             this.pageBuffer.putPage(potentialNewPage);
         }
     }
@@ -383,42 +389,22 @@ public class StorageManager {
         return new File(table_path);
     }
 
-    public boolean createFile(String table, int tableNumber){
-        File file = getTableFile(table);
-
-        TableHeader tableHeader = new TableHeader(tableNumber, file);
+    public void createFile(File file, int tableNumber) {
+        TableHeader tableHeader = new TableHeader(tableNumber, file, pageSize);
         try {
-            if(file.createNewFile()){
-                RandomAccessFile randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
-                System.out.println("Writing Table Header");
-                byte[] bytes = tableHeader.serialize();
-                randomAccessFile.write(bytes);
-                randomAccessFile.close();
-                return true;
-            } else {
-                return false;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+            RandomAccessFile randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
+            System.out.println("Writing Table Header");
+            byte[] bytes = tableHeader.serialize();
+            randomAccessFile.write(bytes);
+            randomAccessFile.close();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
-
-        return false;
     }
 
-    public void saveData(){
+    public void saveData() {
         saveCatalog();
         this.pageBuffer.updateAllPage();
         checkLength(new File(this.db.getPath() + "/foo"));
-    }
-
-    public static void checkLength(File file) {
-        RandomAccessFile randomAccessFile = null;
-        try {
-            randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
-            byte[] bytes = new byte[(int) randomAccessFile.length()];
-            randomAccessFile.readFully(bytes);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }

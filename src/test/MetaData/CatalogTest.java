@@ -1,6 +1,6 @@
 package test.MetaData;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,8 +23,8 @@ class CatalogTest {
         MetaTable metaTable2 = new MetaTable(1, "foo", metaAttributes2);
 
         HashMap<Integer, MetaTable> map = new HashMap<>();
-        map.put(1, metaTable);
-        map.put(2, metaTable2);
+        map.put(0, metaTable);
+        map.put(1, metaTable2);
         Catalog catalog = new Catalog(1024, map);
 
         byte[] bytes = catalog.serialize();

@@ -1,15 +1,12 @@
 package main.StorageManager;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
-
 import main.Constants.Coordinate;
 import main.StorageManager.Data.Page;
 import main.StorageManager.Data.TableHeader;
@@ -18,13 +15,12 @@ import main.StorageManager.MetaData.MetaTable;
 
 public class PageBuffer {
 
+    public final HashMap<Integer, Page> pages;
     private final int bufferSize;
     private final int pageSize;
     private final Deque<Page> bufferQueue;
     private final File db;
     private Catalog catalog;
-
-    public final HashMap<Integer, Page> pages;
 
     public PageBuffer(int bufferSize, int pageSize, File db, Catalog catalog) {
         this.pageSize = pageSize;
@@ -35,9 +31,9 @@ public class PageBuffer {
         this.catalog = catalog;
     }
 
-    public Page getPage(int pageId){
+    public Page getPage(int pageId) {
         // If page already in queue, remove it and put it to front of queue
-        if(pages.containsKey(pageId)){
+        if (pages.containsKey(pageId)) {
             bufferQueue.remove(pages.get(pageId));
             Page page = pages.get(pageId);
             bufferQueue.push(page);
@@ -46,8 +42,8 @@ public class PageBuffer {
         return null;
     }
 
-    public void putPage(Page page){
-        if(bufferSize - bufferQueue.size() * pageSize < pageSize){
+    public void putPage(Page page) {
+        if (bufferQueue.size() >= bufferSize) {
             Page removedPage = bufferQueue.removeLast();
             updatePage(removedPage);
             pages.remove(removedPage.getPageId());
@@ -56,13 +52,13 @@ public class PageBuffer {
         pages.put(page.getPageId(), page);
     }
 
-    public void updateAllPage(){
-        for(Page page : this.bufferQueue){
+    public void updateAllPage() {
+        for (Page page : this.bufferQueue) {
             updatePage(page);
         }
     }
 
-    public void updatePage(Page page){
+    public void updatePage(Page page) {
         int pageId = page.getPageId();
         int tableNumber = page.getTableNumber();
 
@@ -71,7 +67,7 @@ public class PageBuffer {
         String table_path = db.getName() + "/" + tableName;
         File file = new File(table_path);
 
-        TableHeader tableHeader = TableHeader.parseTableHeader(file);
+        TableHeader tableHeader = TableHeader.parseTableHeader(file, pageSize);
         ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
         Coordinate coordinate = coordinates.get(pageId);
 

@@ -55,7 +55,6 @@ public class Record {
                     byte[] valueBytes = Arrays.copyOfRange(bytes, index,
                         index + Constant.INTEGER_SIZE);
 
-                    System.out.println("error here");
                     Attribute attribute = Attribute.deserialize(valueBytes, metaAttribute);
 
                     index += attribute.getBinarySize();
@@ -137,13 +136,13 @@ public class Record {
                         break;
                     }
                     boolean boolObject = true;
-                    if(object.equals("false")){
+                    if (object.equals("false")) {
                         boolObject = false;
                     }
                     recordAttribute.add(new Attribute(metaAttribute, boolObject));
                 }
             }
-            if(completion){
+            if (completion) {
                 result.add(new Record(recordAttribute, metaAttributes));
             } else {
                 break;
@@ -197,9 +196,9 @@ public class Record {
         return fieldBoolean;
     }
 
-    public Attribute getPrimaryKey(){
-        for(Attribute attribute : this.attributes){
-            if(attribute.checkPrimaryKey()){
+    public Attribute getPrimaryKey() {
+        for (Attribute attribute : this.attributes) {
+            if (attribute.checkPrimaryKey()) {
                 return attribute;
             }
         }
