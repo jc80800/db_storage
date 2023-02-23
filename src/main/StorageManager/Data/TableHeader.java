@@ -243,10 +243,8 @@ public class TableHeader {
 
                     page = Page.deserialize(bytes, metaTable, metaTable.getTableNumber(), pageSize,
                         i);
-                    total += page.getNumberOfRecords();
-                } else {
-                    total += page.getNumberOfRecords();
                 }
+                total += page.getNumberOfRecords();
             }
         } catch (IOException e) {
             e.printStackTrace();

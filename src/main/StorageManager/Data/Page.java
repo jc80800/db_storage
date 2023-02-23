@@ -113,17 +113,16 @@ public class Page {
     public Page insertRecord(Record record, int index, TableHeader tableHeader) {
         boolean canInsert = isEnoughSpaceForInsert(record);
 
-        if (canInsert) {
-            this.records.add(index, record);
+        this.records.add(index, record);
+        if(canInsert) {
             this.recordPointers = constructPointers();
             return null;
         } else {
             // split the page's record and put into a new page
-
             int splittingPoint = this.records.size() / 2;
-            ArrayList<Record> temp = new ArrayList<>(this.records.subList(0, splittingPoint));
+            ArrayList<Record> temp = new ArrayList<>(this.records.subList(splittingPoint, this.records.size()));
             this.records = new ArrayList<>(
-                this.records.subList(splittingPoint, this.records.size()));
+                this.records.subList(0, splittingPoint));
             Page newPage = new Page(this.pageSize, this.tableNumber, temp, this.pageId + 1);
             tableHeader.insertNewPage(newPage, this.pageId + 1);
             return newPage;

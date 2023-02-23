@@ -309,6 +309,7 @@ public class StorageManager {
                     if (i == coordinates.size() - 1) {
                         // If no place, insert at the very end
                         insertRecord(record, page, pageRecords.size(), tableHeader);
+                        break;
                     }
                 }
             }
@@ -335,8 +336,8 @@ public class StorageManager {
                     return null;
                 }
 
-                if (((String) value).compareTo((String) recordValue) < 0) {
-                    // if record's string is greater than current record
+                if (((String) value).compareTo((String) recordValue) > 0) {
+                    // if record's string is less than current record
                     insertRecord(target, page, i, tableHeader);
                     return true;
                 }
@@ -348,8 +349,8 @@ public class StorageManager {
                 if ((int) value == (int) recordValue) {
                     return null;
                 }
-                if ((int) value < (int) recordValue) {
-                    // if record's int is greater than current record
+                if ((int) value > (int) recordValue) {
+                    // if record's int is less than current record
                     insertRecord(target, page, i, tableHeader);
                     return true;
                 }
@@ -357,8 +358,8 @@ public class StorageManager {
                 if ((double) value == (double) recordValue) {
                     return null;
                 }
-                if ((double) value < (double) recordValue) {
-                    // record's double is bigger
+                if ((double) value > (double) recordValue) {
+                    // record's double is less
                     insertRecord(target, page, i, tableHeader);
                     return true;
                 }
