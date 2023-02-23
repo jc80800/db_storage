@@ -18,12 +18,6 @@ public class Attribute {
         this.binarySize = calculateBinarySize();
     }
 
-    public Attribute(MetaAttribute metaAttribute, Object value, int binarySize) {
-        this.metaAttribute = metaAttribute;
-        this.value = value;
-        this.binarySize = binarySize;
-    }
-
     public static Attribute deserialize(byte[] bytes, MetaAttribute metaAttribute) {
 
         int index = 0;

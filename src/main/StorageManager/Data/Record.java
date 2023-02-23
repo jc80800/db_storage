@@ -93,60 +93,67 @@ public class Record {
 
     public static ArrayList<Record> parseRecords(String[] values, MetaTable metaTable) {
         ArrayList<MetaAttribute> metaAttributes = metaTable.metaAttributes();
-
         ArrayList<Record> result = new ArrayList<>();
 
-        for (String value : values) {
-            ArrayList<Attribute> recordAttribute = new ArrayList<>();
-            value = value.replace("(", "");
-            value = value.replace(")", "");
-
-            String[] tokens = value.split(" ");
-            boolean completion = true;
-
-            for (int i = 0; i < metaAttributes.size(); i++) {
-                String object = tokens[i];
-                MetaAttribute metaAttribute = metaAttributes.get(i);
+        int index = 0;
+        while (index < values.length) {
+            ArrayList<Attribute> attributes = new ArrayList<>();
+            for (int i = 0; i < metaTable.metaAttributes().size(); i++) {
+                MetaAttribute metaAttribute = metaTable.metaAttributes().get(i);
+                String object = values[index++];
                 DataType dataType = metaAttribute.getType();
 
-                if (object.charAt(0) == '\"' && object.charAt(tokens.length - 1) == '\"') {
-                    if (dataType.equals(DataType.VARCHAR)) {
-                        // check size
-                        if (object.length() - 2 <= metaAttribute.getMaxLength()) {
-                            recordAttribute.add(
-                                new Attribute(metaAttribute, object.substring(1,
-                                    object.length() - 1)));
+                switch (dataType) {
+                    case INTEGER -> {
+                        int intObject;
+                        try {
+                            intObject = Integer.parseInt(object);
+                        } catch (NumberFormatException e) {
+                            throw new IllegalArgumentException(
+                                String.format("Invalid value: \"%s\" for Integer Type", object));
+                        }
+                        attributes.add(new Attribute(metaAttribute, intObject));
+                    }
+                    case DOUBLE -> {
+                        double doubleObject;
+                        try {
+                            doubleObject = Double.parseDouble(object);
+                        } catch (NumberFormatException e) {
+                            throw new IllegalArgumentException(
+                                String.format("Invalid value: \"%s\" for Double Type", object));
+                        }
+                        attributes.add(new Attribute(metaAttribute, doubleObject));
+                    }
+                    case BOOLEAN -> {
+                        if (object.equalsIgnoreCase("true")) {
+                            attributes.add(new Attribute(metaAttribute, true));
+                        } else if (object.equalsIgnoreCase("false")) {
+                            attributes.add(new Attribute(metaAttribute, false));
                         } else {
-                            System.out.println("String has more character than MetaAttribute");
-                            completion = false;
-                            break;
+                            throw new IllegalArgumentException(
+                                String.format("Invalid value: \"%s\" for Boolean Type", object));
                         }
                     }
-                } else if (Helper.checkInteger(object) && dataType
-                    .equals(DataType.INTEGER)) {
-                    int intObject = Integer.parseInt(object);
-                    recordAttribute.add(new Attribute(metaAttribute, intObject));
-                } else if (Helper.checkDouble(object) && dataType.equals(DataType.DOUBLE)) {
-                    double doubleObject = Double.parseDouble(object);
-                    recordAttribute.add(new Attribute(metaAttribute, doubleObject));
-                } else {
-                    if (!Helper.checkBoolean(tokens[i]) || !dataType.equals(DataType.BOOLEAN)) {
-                        System.out.println("Incorrect data type");
-                        completion = false;
-                        break;
+                    case CHAR, VARCHAR -> {
+                        if (object.charAt(0) != '\"'
+                            || object.charAt(object.length() - 1) != '\"') {
+                            throw new IllegalArgumentException(
+                                String.format("Invalid value: %s, missing quotes", object)
+                            );
+                        }
+                        object = object.substring(1, object.length() - 1);
+                        if (object.length() > metaAttribute.getMaxLength()) {
+                            throw new IllegalArgumentException(
+                                String.format("\"%s\" length exceeds %s(%d)", object,
+                                    dataType.name(), metaAttribute.getMaxLength()));
+                        }
+                        attributes.add(
+                            new Attribute(metaAttribute, object));
                     }
-                    boolean boolObject = true;
-                    if (object.equals("false")) {
-                        boolObject = false;
-                    }
-                    recordAttribute.add(new Attribute(metaAttribute, boolObject));
                 }
             }
-            if (completion) {
-                result.add(new Record(recordAttribute, metaAttributes));
-            } else {
-                break;
-            }
+            Record record =  new Record(attributes, metaAttributes);
+            result.add(record);
         }
         return result;
     }

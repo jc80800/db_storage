@@ -194,11 +194,15 @@ public class StorageManager {
         MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
 
         // Parse the values from user and validate it
-        ArrayList<Record> records = Record.parseRecords(values, metaTable);
+        try {
+            ArrayList<Record> records = Record.parseRecords(values, metaTable);
 
-        // Find where to place each record and place it
-        return findRecordPlacement(table_file, records, metaTable, tableHeader);
-
+            // Find where to place each record and place it
+            return findRecordPlacement(table_file, records, metaTable, tableHeader);
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
+            return PREPARE_UNRECOGNIZED_STATEMENT;
+        }
     }
 
     /**

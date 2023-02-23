@@ -87,7 +87,7 @@ public class TableHeader {
     public void insertNewPage(Page page, int index) {
         int lastOffset = findLastOffset();
         if (this.coordinates.size() > 0) {
-            lastOffset += this.maxPages;
+            lastOffset += this.pageSize;
         }
         Coordinate coordinate = new Coordinate(lastOffset, this.pageSize);
         if (index < this.coordinates.size()) {
@@ -120,7 +120,8 @@ public class TableHeader {
 
     public int findLastOffset() {
         int result =
-            16 + (this.maxPages * 8); // first offset after all the 4 other integers in the header
+            Constant.INTEGER_SIZE * 4 + maxPages
+                * Coordinate.getBinarySize(); // first offset after all the 4 other integers in the header
         for (Coordinate coordinate : this.coordinates) {
             result = max(coordinate.getOffset(), result);
         }
@@ -169,7 +170,7 @@ public class TableHeader {
                 tempRandomAccessFile.write(this.serialize());
 
                 // find the old file's offset where the first page starts
-                int offset = (4 * 4) + ((this.maxPages - 10) * Coordinate.getBinarySize());
+                int offset = (Constant.INTEGER_SIZE * 4) + ((this.maxPages - 10) * Coordinate.getBinarySize());
                 randomAccessFile.seek(offset);
 
                 // copy the old pages over
