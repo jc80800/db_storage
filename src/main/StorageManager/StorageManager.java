@@ -8,8 +8,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.HashSet;
+
+import main.Constants.CommandLineTable;
 import main.Constants.Constant;
 import main.Constants.Coordinate;
+import main.StorageManager.Data.Attribute;
 import main.StorageManager.Data.Page;
 import main.StorageManager.Data.Record;
 import main.StorageManager.Data.TableHeader;
@@ -147,11 +150,24 @@ public class StorageManager {
                 }
                 pages.add(pageBuffer.getPage(i));
             }
+            CommandLineTable output = new CommandLineTable();
+
+            ArrayList<String> header = new ArrayList<>();
+            for(MetaAttribute attribute : catalog.getMetaTable(tableHeader.getTableNumber()).metaAttributes()){
+                header.add(attribute.getName());
+            }
+            output.setHeaders(header.toArray(new String[0]));
+
             for (Page page : pages) {
                 for (Record record : page.getRecords()) {
-                    System.out.println(record);
+                    ArrayList<String> row = new ArrayList<>();
+                    for (Attribute attribute : record.getAttributes()){
+                        row.add(attribute.getValue().toString());
+                    }
+                    output.addRow(row);
                 }
             }
+            output.print();
             return PREPARE_SUCCESS;
         } else {
             System.out.println("Table doesn't exist");
@@ -298,7 +314,7 @@ public class StorageManager {
             e.printStackTrace();
         }
 
-        return PREPARE_UNRECOGNIZED_STATEMENT;
+        return PREPARE_SUCCESS;
 
     }
 
