@@ -35,7 +35,7 @@ public class TableHeader {
 
     public TableHeader(int tableNumber, File db, int pageSize) {
         this.tableNumber = tableNumber;
-        this.maxPages = 10;
+        this.maxPages = Constant.INITIAL_POINTER_SIZE;
         this.currentNumOfPages = 0;
         this.numRecords = 0;
         this.coordinates = new ArrayList<>();
@@ -131,7 +131,7 @@ public class TableHeader {
         try {
 
             if (this.currentNumOfPages > this.maxPages) {
-                this.maxPages += 10;
+                this.maxPages += Constant.INITIAL_POINTER_SIZE;
                 makeNewFile(this.db.getPath());
             } else {
                 RandomAccessFile randomAccessFile = new RandomAccessFile(this.db.getPath(), "rw");
@@ -170,7 +170,7 @@ public class TableHeader {
                 tempRandomAccessFile.write(this.serialize());
 
                 // find the old file's offset where the first page starts
-                int offset = (Constant.INTEGER_SIZE * 4) + ((this.maxPages - 10) * Coordinate.getBinarySize());
+                int offset = (Constant.INTEGER_SIZE * 4) + ((this.maxPages - Constant.INITIAL_POINTER_SIZE) * Coordinate.getBinarySize());
                 randomAccessFile.seek(offset);
 
                 // copy the old pages over
@@ -201,7 +201,7 @@ public class TableHeader {
 
     private void updateCoordinates() {
         for (Coordinate coordinate : this.coordinates) {
-            coordinate.padOffset(10 * Coordinate.getBinarySize());
+            coordinate.padOffset(Constant.INITIAL_POINTER_SIZE * Coordinate.getBinarySize());
         }
 
     }

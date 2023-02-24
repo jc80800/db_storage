@@ -7,7 +7,6 @@ import main.Constants.Constant;
 import main.Constants.Constant.DataType;
 import main.Constants.Helper;
 import main.StorageManager.MetaData.MetaAttribute;
-import main.StorageManager.MetaData.MetaTable;
 
 public class Record {
 

@@ -7,9 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
-
 import main.Constants.CommandLineTable;
 import main.Constants.Constant;
 import main.Constants.Constant.DataType;
@@ -28,7 +26,7 @@ public class StorageManager {
     private final int pageSize;
     private final int bufferSize;
     private Catalog catalog;
-    private PageBuffer pageBuffer;
+    private final PageBuffer pageBuffer;
 
     public StorageManager(File db, int pageSize, int bufferSize) {
         this.pageBuffer = new PageBuffer(bufferSize, pageSize, db, this.catalog);
@@ -37,16 +35,6 @@ public class StorageManager {
         this.bufferSize = bufferSize;
     }
 
-    public static void checkLength(File file) {
-        RandomAccessFile randomAccessFile = null;
-        try {
-            randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
-            byte[] bytes = new byte[(int) randomAccessFile.length()];
-            randomAccessFile.readFully(bytes);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     public Constant.PrepareResult createTable(String table_name, String[] values) {
         ArrayList<MetaAttribute> attributes = new ArrayList<>();
@@ -155,7 +143,8 @@ public class StorageManager {
             CommandLineTable output = new CommandLineTable();
 
             ArrayList<String> header = new ArrayList<>();
-            for(MetaAttribute attribute : catalog.getMetaTable(tableHeader.getTableNumber()).metaAttributes()){
+            for (MetaAttribute attribute : catalog.getMetaTable(tableHeader.getTableNumber())
+                .metaAttributes()) {
                 header.add(attribute.getName());
             }
             output.setHeaders(header.toArray(new String[0]));
@@ -163,7 +152,7 @@ public class StorageManager {
             for (Page page : pages) {
                 for (Record record : page.getRecords()) {
                     ArrayList<String> row = new ArrayList<>();
-                    for (Attribute attribute : record.getAttributes()){
+                    for (Attribute attribute : record.getAttributes()) {
                         row.add(attribute.getValue().toString());
                     }
                     output.addRow(row);
@@ -200,7 +189,7 @@ public class StorageManager {
             ArrayList<Record> records = parseRecords(values, metaTable);
 
             // Find where to place each record and place it
-            return findRecordPlacement(table_file, records, metaTable, tableHeader);
+            return this.pageBuffer.findRecordPlacement(table_file, records, metaTable, tableHeader);
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
             return PREPARE_UNRECOGNIZED_STATEMENT;
@@ -268,7 +257,7 @@ public class StorageManager {
                     }
                 }
             }
-            Record record =  new Record(attributes, metaAttributes);
+            Record record = new Record(attributes, metaAttributes);
             result.add(record);
         }
         return result;
@@ -337,114 +326,6 @@ public class StorageManager {
         return PREPARE_SUCCESS;
     }
 
-    public Constant.PrepareResult findRecordPlacement(File table_file,
-        ArrayList<Record> records, MetaTable metaTable, TableHeader tableHeader) {
-        int tableNumber = tableHeader.getTableNumber();
-
-        try {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(), "rw");
-
-            if (tableHeader.getCoordinates().size() == 0) {
-                this.pageBuffer.putPage(tableHeader.createFirstPage(this.pageSize));
-            }
-
-            ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
-
-            for (Record record : records) {
-                Boolean inserted;
-
-                for (int i = 0; i < coordinates.size(); i++) {
-                    Page page = pageBuffer.getPage(i);
-                    if (page == null) {
-                        // If the page Buffer doesn't have it, go to the file and deserialize
-                        byte[] bytes = new byte[this.pageSize];
-                        randomAccessFile.seek(coordinates.get(i).getOffset());
-                        randomAccessFile.readFully(bytes);
-                        page = Page.deserialize(bytes, metaTable, tableNumber, this.pageSize, i);
-                        this.pageBuffer.putPage(page);
-                    }
-
-                    ArrayList<Record> pageRecords = page.getRecords();
-
-                    // Check if record can be placed in this page
-                    inserted = checkPlacement(pageRecords, record, page, tableHeader);
-                    if (inserted == null) {
-                        System.out.println("PK already exist");
-                        return PREPARE_UNRECOGNIZED_STATEMENT;
-                    } else if (inserted) {
-                        break;
-                    }
-
-                    if (i == coordinates.size() - 1) {
-                        // If no place, insert at the very end
-                        // something
-                        insertRecord(record, page, pageRecords.size(), tableHeader);
-                        break;
-                    }
-                }
-            }
-            randomAccessFile.close();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return PREPARE_SUCCESS;
-
-    }
-
-    public Boolean checkPlacement(ArrayList<Record> records, Record target, Page page,
-        TableHeader tableHeader) {
-        Object recordValue = target.getPrimaryKey().getValue();
-
-        for (int i = 0; i < records.size(); i++) {
-            Record currentPageRecord = records.get(i);
-            Object value = currentPageRecord.getPrimaryKey().getValue();
-
-            if (value instanceof String) {
-                if (((String) value).compareTo((String) recordValue) == 0) {
-                    return null;
-                }
-
-                if (((String) value).compareTo((String) recordValue) > 0) {
-                    // if record's string is less than current record
-                    insertRecord(target, page, i, tableHeader);
-                    return true;
-                }
-            } else if (value instanceof Boolean) {
-                if ((boolean) value == (boolean) recordValue) {
-                    return null;
-                }
-            } else if (value instanceof Integer) {
-                if ((int) value == (int) recordValue) {
-                    return null;
-                }
-                if ((int) value > (int) recordValue) {
-                    // if record's int is less than current record
-                    insertRecord(target, page, i, tableHeader);
-                    return true;
-                }
-            } else {
-                if ((double) value == (double) recordValue) {
-                    return null;
-                }
-                if ((double) value > (double) recordValue) {
-                    // record's double is less
-                    insertRecord(target, page, i, tableHeader);
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    public void insertRecord(Record record, Page page, int index, TableHeader tableHeader) {
-        Page potentialNewPage = page.insertRecord(record, index, tableHeader);
-        if (potentialNewPage != null) {
-            this.pageBuffer.putPage(potentialNewPage);
-        }
-    }
-
     public void createNewCatalog() {
         this.catalog = new Catalog(this.pageSize);
         this.pageBuffer.updateCatalog(this.catalog);
@@ -500,6 +381,5 @@ public class StorageManager {
     public void saveData() {
         saveCatalog();
         this.pageBuffer.updateAllPage();
-        checkLength(new File(this.db.getPath() + "/foo"));
     }
 }
