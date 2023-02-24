@@ -369,7 +369,6 @@ public class StorageManager {
         TableHeader tableHeader = new TableHeader(tableNumber, file, pageSize);
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
-            System.out.println("Writing Table Header");
             byte[] bytes = tableHeader.serialize();
             randomAccessFile.write(bytes);
             randomAccessFile.close();
