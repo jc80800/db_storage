@@ -102,7 +102,6 @@ public class TableHeader {
     public Page createFirstPage(int pageSize) {
         Page page = new Page(pageSize, this.tableNumber, new ArrayList<>(), 0);
         insertNewPage(page, 0);
-        this.currentNumOfPages += 1;
         return page;
     }
 
@@ -155,13 +154,14 @@ public class TableHeader {
     private void makeNewFile(String path) {
 
         // Make the temp file
-        File tempFile = new File(this.db.getPath() + "/temp");
+        File tempFile = new File("./temp");
         File file = new File(path);
 
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(path, "rw");
-            RandomAccessFile tempRandomAccessFile = new RandomAccessFile(tempFile.getPath(), "rw");
             if (tempFile.createNewFile()) {
+
+                RandomAccessFile tempRandomAccessFile = new RandomAccessFile(tempFile.getPath(), "rw");
 
                 // Make the new file and write the new header with the coordinate adjusted
                 tempRandomAccessFile.seek(0);
@@ -190,9 +190,9 @@ public class TableHeader {
                 } else {
                     System.out.println("File couldn't be renamed");
                 }
+                tempRandomAccessFile.close();
             }
             randomAccessFile.close();
-            tempRandomAccessFile.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -251,4 +251,5 @@ public class TableHeader {
         }
         return total;
     }
+
 }

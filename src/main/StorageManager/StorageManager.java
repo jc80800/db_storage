@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 
 import main.Constants.CommandLineTable;
@@ -207,6 +208,7 @@ public class StorageManager {
     }
 
     private ArrayList<Record> parseRecords(String[] values, MetaTable metaTable) {
+
         ArrayList<MetaAttribute> metaAttributes = metaTable.metaAttributes();
         ArrayList<Record> result = new ArrayList<>();
 
@@ -224,8 +226,8 @@ public class StorageManager {
                         try {
                             intObject = Integer.parseInt(object);
                         } catch (NumberFormatException e) {
-                            throw new IllegalArgumentException(
-                                String.format("Invalid value: \"%s\" for Integer Type", object));
+                            System.out.printf("Invalid value: \"%s\" for Integer Type%n", object);
+                            return result;
                         }
                         attributes.add(new Attribute(metaAttribute, intObject));
                     }
@@ -234,8 +236,8 @@ public class StorageManager {
                         try {
                             doubleObject = Double.parseDouble(object);
                         } catch (NumberFormatException e) {
-                            throw new IllegalArgumentException(
-                                String.format("Invalid value: \"%s\" for Double Type", object));
+                            System.out.printf("Invalid value: \"%s\" for Double Type%n", object);
+                            return result;
                         }
                         attributes.add(new Attribute(metaAttribute, doubleObject));
                     }
@@ -245,21 +247,21 @@ public class StorageManager {
                         } else if (object.equalsIgnoreCase("false")) {
                             attributes.add(new Attribute(metaAttribute, false));
                         } else {
-                            throw new IllegalArgumentException(
-                                String.format("Invalid value: \"%s\" for Boolean Type", object));
+                            System.out.printf("Invalid value: \"%s\" for Boolean Type%n", object);
+                            return result;
                         }
                     }
                     case CHAR, VARCHAR -> {
                         if (object.charAt(0) != '\"'
                             || object.charAt(object.length() - 1) != '\"') {
-                            throw new IllegalArgumentException(
-                                String.format("Invalid value: %s, missing quotes", object));
+                            System.out.printf("Invalid value: %s, missing quotes%n", object);
+                            return result;
                         }
                         object = object.substring(1, object.length() - 1);
                         if (object.length() > metaAttribute.getMaxLength()) {
-                            throw new IllegalArgumentException(
-                                String.format("\"%s\" length exceeds %s(%d)", object,
-                                    dataType.name(), metaAttribute.getMaxLength()));
+                            System.out.printf("\"%s\" length exceeds %s(%d)%n", object,
+                                dataType.name(), metaAttribute.getMaxLength());
+                            return result;
                         }
                         attributes.add(
                             new Attribute(metaAttribute, object));
