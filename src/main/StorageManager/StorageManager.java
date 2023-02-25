@@ -238,7 +238,14 @@ public class StorageManager {
             ArrayList<Record> records = parseRecords(values, metaTable);
 
             // Find where to place each record and place it
-            return this.pageBuffer.findRecordPlacement(table_file, records, metaTable, tableHeader);
+            Constant.PrepareResult result = this.pageBuffer.findRecordPlacement(table_file, records, metaTable, tableHeader);
+
+            if(records.size() != values.length || result.equals(PREPARE_UNRECOGNIZED_STATEMENT)){
+                return PREPARE_UNRECOGNIZED_STATEMENT;
+            }
+            else{
+                return PREPARE_SUCCESS;
+            }
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
             return PREPARE_UNRECOGNIZED_STATEMENT;
@@ -253,9 +260,11 @@ public class StorageManager {
         int index = 0;
         while (index < values.length) {
             ArrayList<Attribute> attributes = new ArrayList<>();
+            String[] retrievedAttributes = values[index++].trim().split("\\s+");
             for (int i = 0; i < metaTable.metaAttributes().size(); i++) {
                 MetaAttribute metaAttribute = metaTable.metaAttributes().get(i);
-                String object = values[index++];
+                String object = retrievedAttributes[i];
+                System.out.println(object);
                 DataType dataType = metaAttribute.getType();
 
                 switch (dataType) {

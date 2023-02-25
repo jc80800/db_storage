@@ -21,10 +21,12 @@ public class SqlParser {
      * @return
      */
     public PrepareResult prepareStatement(String input) {
+        if (input.length() == 0) {
+            return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+        }
         if (input.charAt(0) == '<') {
             if (input.charAt(input.length() - 1) != '>' || !input.substring(input.indexOf("<") + 1,
                 input.indexOf(">")).equalsIgnoreCase(Constant.QUIT_CODE)) {
-                System.out.println("ERROR");
                 return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
             return PrepareResult.PREPARE_QUIT;
@@ -95,7 +97,7 @@ public class SqlParser {
                 splitValues[i] = splitValues[i].replace(")", "");
                 splitValues[i] = splitValues[i].trim();
             }
-
+            System.out.println(Arrays.toString(splitValues));
             return storageManager.executeInsert(table_name, splitValues);
 
         } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
