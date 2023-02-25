@@ -48,7 +48,8 @@ public class StorageManager {
             if (db.mkdirs()) {
                 System.out.println("New db created successfully");
             } else {
-                System.out.println("Directory could not be created");
+                System.out.printf("Database could not be created at %s\n", db.getPath());
+                System.exit(1);
             }
         } else {
             System.out.println("Database found...");
