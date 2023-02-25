@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Objects;
 import main.Constants.Constant;
 import main.Constants.Coordinate;
 import main.StorageManager.Data.Page;
@@ -25,7 +26,7 @@ public class PageBuffer {
     private final int pageSize;
     private final Deque<Page> bufferQueue;
     private final File db;
-    private Catalog catalog;
+    private final Catalog catalog;
 
     public PageBuffer(int bufferSize, int pageSize, File db, Catalog catalog) {
         this.pageSize = pageSize;
@@ -73,7 +74,7 @@ public class PageBuffer {
         File file = new File(table_path);
 
         TableHeader tableHeader = TableHeader.parseTableHeader(file, pageSize);
-        ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
+        ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader).getCoordinates();
         Coordinate coordinate = coordinates.get(pageId);
 
         try {
@@ -85,11 +86,6 @@ public class PageBuffer {
             e.printStackTrace();
         }
     }
-
-    public void updateCatalog(Catalog catalog) {
-        this.catalog = catalog;
-    }
-
 
     public Constant.PrepareResult findRecordPlacement(File table_file,
         ArrayList<Record> records, MetaTable metaTable, TableHeader tableHeader) {
@@ -123,7 +119,8 @@ public class PageBuffer {
                     // Check if record can be placed in this page
                     inserted = checkPlacement(pageRecords, record, page, tableHeader);
                     if (inserted == null) {
-                        System.out.println("PK already exist");
+                        System.out.printf("Duplicate primary key %s\n",
+                            record.getPrimaryKey().getValue());
                         return PREPARE_UNRECOGNIZED_STATEMENT;
                     } else if (inserted) {
                         break;

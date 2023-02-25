@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Objects;
 import main.Constants.CommandLineTable;
 import main.Constants.Constant;
 import main.Constants.Constant.DataType;
@@ -23,16 +24,64 @@ import main.StorageManager.MetaData.MetaTable;
 public class StorageManager {
 
     private final File db;
-    private final int pageSize;
+    private int pageSize;
     private final int bufferSize;
     private Catalog catalog;
-    private final PageBuffer pageBuffer;
+    private PageBuffer pageBuffer;
 
     public StorageManager(File db, int pageSize, int bufferSize) {
-        this.pageBuffer = new PageBuffer(bufferSize, pageSize, db, this.catalog);
         this.db = db;
         this.pageSize = pageSize;
         this.bufferSize = bufferSize;
+    }
+
+    /**
+     * Helper function for checking directory If directory exist or created, return file else system
+     * exist
+     */
+    public void initializeDB() {
+        System.out.println("Welcome to simpleDB");
+        System.out.printf("Looking at %s for existing db....\n", db.getPath());
+        if (!(db.exists() && db.isDirectory())) {
+            System.out.println("No existing db found");
+            System.out.printf("Creating new db at %s\n", db.getPath());
+            if (db.mkdirs()) {
+                System.out.println("New db created successfully");
+            } else {
+                System.out.println("Directory could not be created");
+            }
+        } else {
+            System.out.println("Database found...");
+            System.out.println("Restarting the database...");
+        }
+        checkCatalog();
+        System.out.println("\nPlease enter commands, enter <quit> to shutdown the db\n");
+    }
+
+    private void checkCatalog() {
+        File catalog_file = new File(db.getPath() + Constant.CATALOG_FILE);
+        boolean restart = catalog_file.exists();
+        if (restart) {
+            catalog = parseCatalog(catalog_file);
+            if (pageSize != catalog.getPageSize()) {
+                pageSize = catalog.getPageSize();
+                System.out.println("\tIgnoring provided pages size, using stored page size");
+            }
+        } else {
+            try {
+                if (catalog_file.createNewFile()) {
+                    catalog = createNewCatalog();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        pageBuffer = new PageBuffer(bufferSize, pageSize, db, catalog);
+        System.out.printf("Page size: %s\n", pageSize);
+        System.out.printf("Buffer size: %s\n", bufferSize);
+        if (restart) {
+            System.out.println("\nDatabase restarted successfully");
+        }
     }
 
 
@@ -97,7 +146,7 @@ public class StorageManager {
 
         File file = getTableFile(table_name);
         if (file.exists()) {
-            System.out.println("Table couldn't be created / Exist already");
+            System.out.printf("Table of name %s already exists\n", table_name);
             return PREPARE_UNRECOGNIZED_STATEMENT;
         }
 
@@ -105,7 +154,6 @@ public class StorageManager {
         this.catalog.addMetaTable(table_name, attributes);
 
         createFile(file, tableNumber);
-        System.out.println("Table file created");
 
         return PREPARE_SUCCESS;
     }
@@ -116,7 +164,7 @@ public class StorageManager {
         if (table_file.exists()) {
             ArrayList<Page> pages = new ArrayList<>();
             TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
-            ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
+            ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader).getCoordinates();
 
             for (int i = 0; i < coordinates.size(); i++) {
                 if (!pageBuffer.pages.containsKey(i)) {
@@ -161,7 +209,7 @@ public class StorageManager {
             output.print();
             return PREPARE_SUCCESS;
         } else {
-            System.out.println("Table doesn't exist");
+            System.out.printf("No such table %s\n", table);
             return PREPARE_UNRECOGNIZED_STATEMENT;
         }
     }
@@ -170,7 +218,7 @@ public class StorageManager {
 
         File table_file = getTableFile(table);
         if (!table_file.exists()) {
-            System.out.println("Table doesn't exist");
+            System.out.printf("No such table %s\n", table);
             return PREPARE_UNRECOGNIZED_STATEMENT;
         }
 
@@ -215,7 +263,7 @@ public class StorageManager {
                         try {
                             intObject = Integer.parseInt(object);
                         } catch (NumberFormatException e) {
-                            System.out.printf("Invalid value: \"%s\" for Integer Type%n", object);
+                            System.out.printf("Invalid value: \"%s\" for Integer Type\n", object);
                             return result;
                         }
                         attributes.add(new Attribute(metaAttribute, intObject));
@@ -225,7 +273,7 @@ public class StorageManager {
                         try {
                             doubleObject = Double.parseDouble(object);
                         } catch (NumberFormatException e) {
-                            System.out.printf("Invalid value: \"%s\" for Double Type%n", object);
+                            System.out.printf("Invalid value: \"%s\" for Double Type\n", object);
                             return result;
                         }
                         attributes.add(new Attribute(metaAttribute, doubleObject));
@@ -236,19 +284,19 @@ public class StorageManager {
                         } else if (object.equalsIgnoreCase("false")) {
                             attributes.add(new Attribute(metaAttribute, false));
                         } else {
-                            System.out.printf("Invalid value: \"%s\" for Boolean Type%n", object);
+                            System.out.printf("Invalid value: \"%s\" for Boolean Type\n", object);
                             return result;
                         }
                     }
                     case CHAR, VARCHAR -> {
                         if (object.charAt(0) != '\"'
                             || object.charAt(object.length() - 1) != '\"') {
-                            System.out.printf("Invalid value: %s, missing quotes%n", object);
+                            System.out.printf("Invalid value: %s, missing quotes\n", object);
                             return result;
                         }
                         object = object.substring(1, object.length() - 1);
                         if (object.length() > metaAttribute.getMaxLength()) {
-                            System.out.printf("\"%s\" length exceeds %s(%d)%n", object,
+                            System.out.printf("\"%s\" length exceeds %s(%d)\n", object,
                                 dataType.name(), metaAttribute.getMaxLength());
                             return result;
                         }
@@ -264,9 +312,9 @@ public class StorageManager {
     }
 
     /**
-     * TODO need to test if it works after populating with create table and such
+     * Prints specified table schema.
      *
-     * @param table
+     * @param table - table name
      */
     public Constant.PrepareResult displayInfo(String table) {
         boolean foundTable = false;
@@ -286,7 +334,7 @@ public class StorageManager {
         File table_file = getTableFile(table);
         TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
 
-        int numOfPages = tableHeader.getCoordinates().size();
+        int numOfPages = Objects.requireNonNull(tableHeader).getCoordinates().size();
         int numOfRecords = tableHeader.getTotalRecords(table_file, this.pageBuffer, foundMetaTable,
             this.pageSize);
 
@@ -308,32 +356,29 @@ public class StorageManager {
             System.out.println("No tables to display");
             return PREPARE_SUCCESS;
         }
-        System.out.println("Tables:\n");
+        System.out.println("Tables:");
         for (MetaTable metaTable : catalog.getMetaTableHashMap().values()) {
-            System.out.print(metaTable.toString());
+            System.out.print("\n" + metaTable.toString());
             int numOfPages = 0;
             int numOfRecords = 0;
             File table_file = getTableFile(metaTable.getTableName());
             if (table_file.exists()) {
                 TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
-                numOfPages = tableHeader.getCoordinates().size();
+                numOfPages = Objects.requireNonNull(tableHeader).getCoordinates().size();
                 numOfRecords = tableHeader.getTotalRecords(table_file, this.pageBuffer, metaTable,
                     this.pageSize);
             }
             System.out.format("Pages: %s\n", numOfPages);
-            System.out.format("Records: %s\n\n", numOfRecords);
+            System.out.format("Records: %s\n", numOfRecords);
         }
         return PREPARE_SUCCESS;
     }
 
-    public void createNewCatalog() {
-        this.catalog = new Catalog(this.pageSize);
-        this.pageBuffer.updateCatalog(this.catalog);
-        saveCatalog();
+    public Catalog createNewCatalog() {
+        return new Catalog(this.pageSize);
     }
 
     public void saveCatalog() {
-        System.out.println("Saving catalog...");
         File catalog_file = new File(this.db + Constant.CATALOG_FILE);
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(catalog_file,
             "rw")) {
@@ -346,15 +391,13 @@ public class StorageManager {
         }
     }
 
-    public void parseCatalog(File catalog_file) {
+    private Catalog parseCatalog(File catalog_file) {
         // Deserialize the file and return a catalog
-
         try (RandomAccessFile raf = new RandomAccessFile(catalog_file, "rw")) {
             int fileLength = (int) raf.length();
             byte[] bytes = new byte[fileLength];
             raf.readFully(bytes);
-            this.catalog = Catalog.deserialize(bytes);
-            this.pageBuffer.updateCatalog(this.catalog);
+            return Catalog.deserialize(bytes);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -378,7 +421,10 @@ public class StorageManager {
     }
 
     public void saveData() {
-        saveCatalog();
+        System.out.println("Purging page buffer...");
         this.pageBuffer.updateAllPage();
+
+        System.out.println("Saving catalog...");
+        saveCatalog();
     }
 }
