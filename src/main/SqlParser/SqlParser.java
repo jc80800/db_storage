@@ -97,7 +97,7 @@ public class SqlParser {
                 splitValues[i] = splitValues[i].replace(")", "");
                 splitValues[i] = splitValues[i].trim();
             }
-            System.out.println(Arrays.toString(splitValues));
+
             return storageManager.executeInsert(table_name, splitValues);
 
         } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {

@@ -264,7 +264,6 @@ public class StorageManager {
             for (int i = 0; i < metaTable.metaAttributes().size(); i++) {
                 MetaAttribute metaAttribute = metaTable.metaAttributes().get(i);
                 String object = retrievedAttributes[i];
-                System.out.println(object);
                 DataType dataType = metaAttribute.getType();
 
                 switch (dataType) {
