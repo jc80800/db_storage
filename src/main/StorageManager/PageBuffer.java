@@ -21,7 +21,7 @@ import main.StorageManager.MetaData.MetaTable;
 
 public class PageBuffer {
 
-    public final HashMap<Integer, Page> pages;
+    public final HashMap<PageKey, Page> pages;
     private final int bufferSize;
     private final int pageSize;
     private final Deque<Page> bufferQueue;
@@ -37,25 +37,34 @@ public class PageBuffer {
         this.catalog = catalog;
     }
 
-    public Page getPage(int pageId) {
+    public Page getPage(int pageId, int tableNumber) {
+        System.out.println("Getting Page: " + pageId + " and " + tableNumber);
+        PageKey pageKey = new PageKey(pageId, tableNumber);
         // If page already in queue, remove it and put it to front of queue
-        if (pages.containsKey(pageId)) {
-            bufferQueue.remove(pages.get(pageId));
-            Page page = pages.get(pageId);
+        if (pages.containsKey(pageKey)){
+            bufferQueue.remove(pages.get(pageKey));
+            Page page = pages.get(pageKey);
             bufferQueue.push(page);
             return page;
         }
+        System.out.println("No Page found");
         return null;
     }
 
     public void putPage(Page page) {
+        System.out.println("Printing Hashmap");
+        for(PageKey pageKey : this.pages.keySet()){
+            System.out.println(pageKey.pageId + " " + pageKey.tableNumber + " " + this.pages.get(pageKey));
+        }
         if (bufferQueue.size() >= bufferSize) {
             Page removedPage = bufferQueue.removeLast();
             updatePage(removedPage);
-            pages.remove(removedPage.getPageId());
+            pages.remove(new PageKey(removedPage.getPageId(), removedPage.getTableNumber()));
         }
+
+        System.out.println("Putting Page: " + page.getPageId() + " and " + page.getTableNumber());
         bufferQueue.push(page);
-        pages.put(page.getPageId(), page);
+        pages.put(new PageKey(page.getPageId(), page.getTableNumber()), page);
     }
 
     public void updateAllPage() {
@@ -104,7 +113,7 @@ public class PageBuffer {
                 Boolean inserted;
 
                 for (int i = 0; i < coordinates.size(); i++) {
-                    Page page = getPage(i);
+                    Page page = getPage(i, tableNumber);
                     if (page == null) {
                         // If the page Buffer doesn't have it, go to the file and deserialize
                         byte[] bytes = new byte[this.pageSize];
@@ -194,6 +203,26 @@ public class PageBuffer {
             }
         }
         return false;
+    }
+
+    private class PageKey{
+
+        private int pageId;
+        private int tableNumber;
+
+        private PageKey(int pageId, int tableNumber){
+            this.pageId = pageId;
+            this.tableNumber = tableNumber;
+        }
+
+        @Override
+        public boolean equals(Object other){
+            if (other instanceof PageKey){
+                return this.pageId == ((PageKey) other).pageId && this.tableNumber == ((((PageKey) other).tableNumber));
+            } else {
+                return false;
+            }
+        }
     }
 }
 

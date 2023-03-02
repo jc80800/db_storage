@@ -168,7 +168,11 @@ public class StorageManager {
             ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader).getCoordinates();
 
             for (int i = 0; i < coordinates.size(); i++) {
-                if (!pageBuffer.pages.containsKey(i)) {
+                System.out.println("Processing index " + i);
+
+                if (pageBuffer.getPage(i, tableHeader.getTableNumber()) == null) {
+
+                    System.out.println("Page Buffer does not contain " + i + " and " + tableHeader.getTableNumber() );
                     //get page from file and put into buffer
                     try {
                         RandomAccessFile randomAccessFile = new RandomAccessFile(
@@ -187,7 +191,7 @@ public class StorageManager {
                         e.printStackTrace();
                     }
                 }
-                pages.add(pageBuffer.getPage(i));
+                pages.add(pageBuffer.getPage(i, tableHeader.getTableNumber()));
             }
             CommandLineTable output = new CommandLineTable();
 

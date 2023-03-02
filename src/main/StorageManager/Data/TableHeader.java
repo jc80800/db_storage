@@ -234,7 +234,7 @@ public class TableHeader {
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
             for (int i = 0; i < this.coordinates.size(); i++) {
-                Page page = pageBuffer.getPage(i);
+                Page page = pageBuffer.getPage(i, tableNumber);
                 if (page == null) {
                     Coordinate coordinate = this.coordinates.get(i);
                     randomAccessFile.seek(coordinate.getOffset());
