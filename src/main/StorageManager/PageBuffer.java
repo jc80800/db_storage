@@ -223,6 +223,11 @@ public class PageBuffer {
                 return false;
             }
         }
+
+        @Override
+        public int hashCode() {
+            return (int)(Math.pow(3,tableNumber) + Math.pow(2, pageId));
+        }
     }
 }
 
