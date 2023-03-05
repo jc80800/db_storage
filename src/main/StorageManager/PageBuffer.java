@@ -21,7 +21,7 @@ import main.StorageManager.MetaData.MetaTable;
 
 public class PageBuffer {
 
-    public final HashMap<PageKey, Page> pages;
+    private final HashMap<PageKey, Page> pages;
     private final int bufferSize;
     private final int pageSize;
     private final Deque<Page> bufferQueue;
