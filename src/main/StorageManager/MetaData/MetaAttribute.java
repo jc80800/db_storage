@@ -1,5 +1,7 @@
 package main.StorageManager.MetaData;
 
+import java.util.HashSet;
+import java.util.Set;
 import main.Constants.Constant;
 import main.Constants.Constant.DataType;
 import main.Constants.Helper;
@@ -15,29 +17,33 @@ public class MetaAttribute {
     private final DataType type;
     private final Integer maxLength;
     private final int binarySize;
+    private Set<String> constraints;
 
-    public MetaAttribute(boolean isPrimaryKey, String name, DataType type) {
+    public MetaAttribute(boolean isPrimaryKey, String name, DataType type, Set<String> constraints) {
         this.isPrimaryKey = isPrimaryKey;
         this.name = name;
         this.type = type;
         this.maxLength = null;
+        this.constraints = constraints;
         this.binarySize = calculateBinarySize();
     }
 
-    public MetaAttribute(boolean isPrimaryKey, String name, DataType type, Integer maxLength) {
+    public MetaAttribute(boolean isPrimaryKey, String name, DataType type, Integer maxLength, Set<String> constraints) {
         this.isPrimaryKey = isPrimaryKey;
         this.name = name;
         this.type = type;
         this.maxLength = maxLength;
+        this.constraints = constraints;
         this.binarySize = calculateBinarySize();
     }
 
-    public MetaAttribute(boolean isPrimaryKey, String name, DataType type, Integer maxLength, int binarySize) {
+    public MetaAttribute(boolean isPrimaryKey, String name, DataType type, Integer maxLength, int binarySize, Set<String> constraints) {
         this.isPrimaryKey = isPrimaryKey;
         this.name = name;
         this.type = type;
         this.maxLength = maxLength;
         this.binarySize = binarySize;
+        this.constraints = constraints;
     }
 
 
@@ -50,6 +56,10 @@ public class MetaAttribute {
         if (maxLength != null) {
             size += Constant.INTEGER_SIZE;
         }
+        size += Constant.INTEGER_SIZE; // numOfConstraint
+        if (this.constraints != null){
+            size += (Constant.INTEGER_SIZE * this.constraints.size());
+        }
         return size;
     }
 
@@ -61,6 +71,7 @@ public class MetaAttribute {
      * @return byte arrays
      */
     public byte[] serialize() {
+        byte[] result;
         byte[] isPrimaryKeyBytes = new byte[]{
             Helper.convertBooleanToByte(getIsPrimaryKey())};
         byte[] nameBytes = Helper.convertStringToByteArrays(name);
@@ -79,11 +90,24 @@ public class MetaAttribute {
             Helper.convertBooleanToByte(isLength)};
         if (isLength) {
             byte[] lengthBytes = Helper.convertIntToByteArray(getMaxLength());
-            return Helper.concatenate(isPrimaryKeyBytes, nameLengthBytes, nameBytes, typeCodeBytes,
+            result = Helper.concatenate(isPrimaryKeyBytes, nameLengthBytes, nameBytes, typeCodeBytes,
                 isLengthBytes, lengthBytes);
+        } else {
+            result = Helper.concatenate(isPrimaryKeyBytes, nameLengthBytes, nameBytes, typeCodeBytes,
+                isLengthBytes);
         }
-        return Helper.concatenate(isPrimaryKeyBytes, nameLengthBytes, nameBytes, typeCodeBytes,
-            isLengthBytes);
+        byte[] numOfConstraintsByte = Helper.convertIntToByteArray(this.constraints.size());
+        result = Helper.concatenate(result, numOfConstraintsByte);
+        for (String constraint : this.constraints){
+            if (constraint.equals("notnull")){
+                // if not null constraint
+                result = Helper.concatenate(result, Helper.convertIntToByteArray(1));
+            } else {
+                // else it's unique
+                result = Helper.concatenate(result, Helper.convertIntToByteArray(2));
+            }
+        }
+        return result;
     }
 
     /**
@@ -108,13 +132,34 @@ public class MetaAttribute {
         DataType dataType = getDataType(dataTypeCode);
 
         boolean isLength = Helper.convertByteToBoolean(bytes[index++]);
+        int length = 0;
+
         if (isLength) {
-            int length = Helper.convertByteArrayToInt(
-                Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
-            return new MetaAttribute(isPrimaryKey, name, dataType, length, bytes.length);
+            length = Helper.convertByteArrayToInt(
+                Arrays.copyOfRange(bytes, index, index += Constant.INTEGER_SIZE));
         }
-        return new MetaAttribute(isPrimaryKey, name, dataType);
+        int numOfConstraint = Helper.convertByteArrayToInt(
+            Arrays.copyOfRange(bytes, index, index += Constant.INTEGER_SIZE));
+
+        Set<String> constraints = new HashSet<>();
+        for(int i = 0; i < numOfConstraint; i++){
+            int constraint = Helper.convertByteArrayToInt(
+                Arrays.copyOfRange(bytes, index, index += Constant.INTEGER_SIZE));
+
+            if(constraint == 1){
+                constraints.add("notnull");
+            } else if (constraint == 2){
+                constraints.add("unique");
+            }
+        }
+
+        if (isLength){
+            return new MetaAttribute(isPrimaryKey, name, dataType, length, bytes.length, constraints);
+        } else {
+            return new MetaAttribute(isPrimaryKey, name, dataType, constraints);
+        }
     }
+
 
     private static DataType getDataType(int code) {
         return Constant.DATA_TYPE_MAP.get(code);
@@ -161,7 +206,15 @@ public class MetaAttribute {
         if (isPrimaryKey) {
             sb.append(" primarykey");
         }
+        sb.append(" ");
+        if (this.constraints != null){
+            for(String constraint : this.constraints){
+                sb.append(constraint);
+                sb.append(" ");
+            }
+        }
         sb.append("\n");
+
         return sb.toString();
     }
 
@@ -173,6 +226,7 @@ public class MetaAttribute {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
+
         MetaAttribute that = (MetaAttribute) o;
         return isPrimaryKey == that.isPrimaryKey && binarySize == that.binarySize && name.equals(
             that.name) && type == that.type && Objects.equals(maxLength, that.maxLength);

@@ -2,6 +2,8 @@ package test.MetaData;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.HashSet;
+import java.util.Set;
 import main.Constants.Constant.DataType;
 import main.StorageManager.MetaData.MetaAttribute;
 import org.junit.jupiter.api.Test;
@@ -11,8 +13,13 @@ class MetaAttributeTest {
 
     @Test
     void serialization() {
-        MetaAttribute metaAttribute1 = new MetaAttribute(true, "num", DataType.INTEGER);
-        MetaAttribute metaAttribute2 = new MetaAttribute(false, "Firstname", DataType.VARCHAR, 10);
+        Set<String> constraints = new HashSet<>();
+        constraints.add("notnull");
+        constraints.add("unique");
+
+
+        MetaAttribute metaAttribute1 = new MetaAttribute(true, "num", DataType.INTEGER, constraints);
+        MetaAttribute metaAttribute2 = new MetaAttribute(false, "Firstname", DataType.VARCHAR, 10, constraints);
 
         byte[] bytes1 = metaAttribute1.serialize();
         MetaAttribute deserialized1 = MetaAttribute.deserialize(bytes1);

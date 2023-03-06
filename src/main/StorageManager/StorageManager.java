@@ -7,12 +7,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import main.Constants.CommandLineTable;
 import main.Constants.Constant;
 import main.Constants.Constant.DataType;
 import main.Constants.Coordinate;
+import main.Constants.Helper;
 import main.StorageManager.Data.Attribute;
 import main.StorageManager.Data.Page;
 import main.StorageManager.Data.Record;
@@ -87,29 +90,38 @@ public class StorageManager {
 
 
     public Constant.PrepareResult createTable(String table_name, String[] values) {
+        Set<String> possible_constraints = Constant.getConstraints();
+
         ArrayList<MetaAttribute> attributes = new ArrayList<>();
         HashSet<String> seenAttributeNames = new HashSet<>();
         boolean foundPrimaryKey = false;
         for (String value : values) {
+            Set<String> constraints = new HashSet<>();
             value = value.trim();
             String[] valArray = value.split(" ");
             boolean isPrimary = false;
             if (valArray.length < 2) {
                 System.out.println("Missing fields for table attribute!");
                 return PREPARE_UNRECOGNIZED_STATEMENT;
-            } else if (valArray.length > 3 || (valArray.length == 3
-                && !valArray[2].equalsIgnoreCase("primarykey"))) {
-                System.out.println("Too many fields found for table attribute!");
-                return PREPARE_UNRECOGNIZED_STATEMENT;
             } else {
-                if (valArray.length == 3 && foundPrimaryKey) {
-                    System.out.println("Found more than one primary key!");
-                    return PREPARE_UNRECOGNIZED_STATEMENT;
-                } else if (valArray.length == 3) {
-                    isPrimary = true;
-                    foundPrimaryKey = true;
-                }
+                for(int i = 2; i < valArray.length; i++){
+                    if(!possible_constraints.contains(valArray[i]) && !valArray[i].equals("primarykey")){
+                        System.out.println("Duplicate/Invalid Field for attribute");
+                        return PREPARE_UNRECOGNIZED_STATEMENT;
+                    }
 
+                    if(valArray[i].equals("primarykey")){
+                        if(foundPrimaryKey){
+                            System.out.println("Found more than one primary key!");
+                            return PREPARE_UNRECOGNIZED_STATEMENT;
+                        }
+                        isPrimary = true;
+                        foundPrimaryKey = true;
+                    } else {
+                        possible_constraints.remove(valArray[i]);
+                        constraints.add(valArray[i]);
+                    }
+                }
                 if (seenAttributeNames.contains(valArray[0].toLowerCase())) {
                     System.out.println("One or more attributes have the same name!");
                     return PREPARE_UNRECOGNIZED_STATEMENT;
@@ -123,7 +135,7 @@ public class StorageManager {
                     } else if (valArray[1].equalsIgnoreCase("BOOLEAN")) {
                         type = Constant.DataType.BOOLEAN;
                     }
-                    attributes.add(new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type));
+                    attributes.add(new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, constraints));
                 } else if (valArray[1].matches("(?i)CHAR\\([0-9]+\\)|VARCHAR\\([0-9]+\\)")) {
                     String[] typeArray = valArray[1].split("\\(");
                     Constant.DataType type = Constant.DataType.CHAR;
@@ -132,7 +144,7 @@ public class StorageManager {
                     }
                     int length = Integer.parseInt(typeArray[1].replace(")", ""));
                     attributes.add(
-                        new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, length));
+                        new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, length, constraints));
                 } else {
                     System.out.println("Syntax error was found!");
                     return PREPARE_UNRECOGNIZED_STATEMENT;

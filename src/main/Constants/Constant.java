@@ -3,6 +3,8 @@ package main.Constants;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Class to store src.main.Constants.main.Constants needed for the program
@@ -53,5 +55,13 @@ public final class Constant {
         BOOLEAN,
         CHAR,
         VARCHAR
+    }
+
+    public static Set<String> getConstraints(){
+        Set<String> possible_constraints = new HashSet<>();
+
+        possible_constraints.add("notnull");
+        possible_constraints.add("unique");
+        return possible_constraints;
     }
 }

@@ -3,6 +3,8 @@ package test.Data;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import main.Constants.Constant.DataType;
 import main.StorageManager.Data.Attribute;
 import main.StorageManager.Data.Page;
@@ -15,11 +17,15 @@ class PageTest {
 
     @Test
     void serialization() {
-        MetaAttribute metaAttribute1 = new MetaAttribute(true, "id", DataType.INTEGER);
+        Set<String> constraints = new HashSet<>();
+        constraints.add("notnull");
+        constraints.add("unique");
+
+        MetaAttribute metaAttribute1 = new MetaAttribute(true, "id", DataType.INTEGER, constraints);
         Attribute attribute1 = new Attribute(metaAttribute1, 100);
-        MetaAttribute metaAttribute2 = new MetaAttribute(false, "FirstName", DataType.CHAR, 10);
+        MetaAttribute metaAttribute2 = new MetaAttribute(false, "FirstName", DataType.CHAR, 10, constraints);
         Attribute attribute2 = new Attribute(metaAttribute2, "Eldon");
-        MetaAttribute metaAttribute3 = new MetaAttribute(false, "LastName", DataType.VARCHAR, 20);
+        MetaAttribute metaAttribute3 = new MetaAttribute(false, "LastName", DataType.VARCHAR, 20, constraints);
         Attribute attribute3 = new Attribute(metaAttribute3, "Lin");
         ArrayList<Attribute> attributes = new ArrayList<>();
         attributes.add(attribute1);
