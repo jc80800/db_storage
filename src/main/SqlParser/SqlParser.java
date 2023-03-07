@@ -45,6 +45,7 @@ public class SqlParser {
             case Constant.DISPLAY -> result = displayCommand(tokens);
             case Constant.INSERT -> result = insertCommand(tokens);
             case Constant.SELECT -> result = selectCommand(tokens);
+            case Constant.DROP -> result = dropCommand(tokens);
             default -> {
                 System.out.println("Invalid command");
                 result = PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
@@ -68,6 +69,24 @@ public class SqlParser {
 
         } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+        }
+    }
+
+    /**
+     * Function to check if Drop command is properly formatted
+     * @param tokens User command
+     * @return
+     */
+    private Constant.PrepareResult dropCommand(String[] tokens) {
+        try {
+            String token = tokens[1].toUpperCase();
+            if (tokens.length != 3 || !token.equals(Constant.TABLE)) {
+                return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+            }
+            return storageManager.executeDrop(tokens[2]);
+
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
     }
 
