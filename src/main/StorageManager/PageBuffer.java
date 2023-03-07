@@ -205,6 +205,21 @@ public class PageBuffer {
         return false;
     }
 
+    /**
+     * Check if pages that belong to table that's to be dropped
+     * Remove pages from buffer queue and hash map (pages)
+     * @param tableNumber table number for table to be dropped
+     */
+    public void deletePage(int tableNumber) {
+        for (Page page: bufferQueue) {
+            if (page.getTableNumber() == tableNumber) {
+                bufferQueue.remove(page);
+                PageKey pageKey = new PageKey(page.getPageId(), tableNumber);
+                pages.remove(pageKey);
+            }
+        }
+    }
+
     private class PageKey{
 
         private int pageId;

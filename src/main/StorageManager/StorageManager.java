@@ -268,6 +268,39 @@ public class StorageManager {
         }
     }
 
+    /**
+     * Function to execute the drop table command.
+     * Verify of table exists then delete pointers and from catalog
+     * @param table table name from user command
+     * @return
+     */
+    public Constant.PrepareResult executeDrop(String table) {
+
+        File table_file = getTableFile(table);
+        if (!table_file.exists()) {
+            System.out.printf("No such table %s\n", table);
+            return PREPARE_UNRECOGNIZED_STATEMENT;
+        }
+
+        TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
+        if (tableHeader == null) {
+            System.out.println("Header couldn't be parsed");
+            return PREPARE_UNRECOGNIZED_STATEMENT;
+        }
+
+        // Get the table number and get the schema table from catalog
+        int tableNumber = tableHeader.getTableNumber();
+        this.catalog.deleteMetaTable(tableNumber);
+        this.pageBuffer.deletePage(tableNumber);
+
+        // Delete file
+        if (table_file.delete()) {
+            System.out.println("Table is dropped");
+        } else {
+            System.err.println("Problem dropping table");
+        }
+        return PREPARE_SUCCESS;
+    }
     private ArrayList<Record> parseRecords(String[] values, MetaTable metaTable) {
 
         ArrayList<MetaAttribute> metaAttributes = metaTable.metaAttributes();

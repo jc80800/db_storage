@@ -86,6 +86,14 @@ public class Catalog {
         this.pointers = constructPointers();
     }
 
+    /**
+     * Remove MetaTable by table number
+     * @param tableNumber table number for table to be dropped
+     */
+    public void deleteMetaTable(int tableNumber) {
+        metaTableHashMap.remove(tableNumber);
+    }
+
     private ArrayList<Coordinate> constructPointers() {
         ArrayList<Coordinate> pointers = new ArrayList<>();
         int offset =
