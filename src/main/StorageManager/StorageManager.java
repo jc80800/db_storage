@@ -281,6 +281,8 @@ public class StorageManager {
                 MetaAttribute metaAttribute = metaTable.metaAttributes().get(i);
                 String object = retrievedAttributes[i];
                 DataType dataType = metaAttribute.getType();
+                Set<String> constraints = metaAttribute.getConstraints();
+                // TODO check unique and notnull, if unique, check if the value exist, if not null check if it's a null
 
                 switch (dataType) {
                     case INTEGER -> {

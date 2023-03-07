@@ -194,6 +194,10 @@ public class MetaAttribute {
         return binarySize;
     }
 
+    public Set<String> getConstraints(){
+        return constraints;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
