@@ -17,6 +17,7 @@ public final class Constant {
     public static final String SELECT = "SELECT";
     public static final String DISPLAY = "DISPLAY";
     public static final String CREATE = "CREATE";
+    public static final String DROP = "DROP";
     public static final String TABLE = "TABLE";
     public static final String SCHEMA = "SCHEMA";
     public static final String INFO = "INFO";
