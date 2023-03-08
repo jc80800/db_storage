@@ -268,7 +268,11 @@ public class StorageManager {
                 for (Record record : page.getRecords()) {
                     ArrayList<String> row = new ArrayList<>();
                     for (Attribute attribute : record.getAttributes()) {
-                        row.add(attribute.getValue().toString());
+                        if(attribute.getValue() == null){
+                            row.add("null");
+                        } else {
+                            row.add(attribute.getValue().toString());
+                        }
                     }
                     output.addRow(row);
                 }
@@ -365,93 +369,111 @@ public class StorageManager {
                 String object = retrievedAttributes[i];
                 DataType dataType = metaAttribute.getType();
                 Set<String> constraints = metaAttribute.getConstraints();
-                // TODO allow null values
                 boolean unique = false;
 
-                if(constraints.contains("notnull") && object.equals("null")){
+                if (constraints.contains("notnull") && object.equals("null")) {
                     System.out.println("Invalid value: value can't be null for this column");
                     return result;
                 }
 
-                if(constraints.contains("unique")){
+                if (constraints.contains("unique")) {
                     unique = true;
                 }
 
-                switch (dataType) {
-                    case INTEGER -> {
-                        int intObject;
-                        try {
-                            intObject = Integer.parseInt(object);
-                        } catch (NumberFormatException e) {
-                            System.out.printf("Invalid value: \"%s\" for Integer Type\n", object);
-                            return result;
-                        }
-                        if(unique){
-                            if(!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()), intObject, metaTable, i)){
-                                System.out.println("Invalid value: value is unique and already exist");
+                if (object.equalsIgnoreCase("null")) {
+                    attributes.add(new Attribute(metaAttribute, null));
+                } else {
+                    switch (dataType) {
+                        case INTEGER -> {
+                            int intObject;
+                            try {
+                                intObject = Integer.parseInt(object);
+                            } catch (NumberFormatException e) {
+                                System.out.printf("Invalid value: \"%s\" for Integer Type\n",
+                                    object);
                                 return result;
                             }
-                        }
-                        attributes.add(new Attribute(metaAttribute, intObject));
-                    }
-                    case DOUBLE -> {
-                        double doubleObject;
-                        try {
-                            doubleObject = Double.parseDouble(object);
-                        } catch (NumberFormatException e) {
-                            System.out.printf("Invalid value: \"%s\" for Double Type\n", object);
-                            return result;
-                        }
-                        if(unique){
-                            if(!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()), doubleObject, metaTable, i)){
-                                System.out.println("Invalid value: value is unique and already exist");
-                                return result;
-                            }
-                        }
-                        attributes.add(new Attribute(metaAttribute, doubleObject));
-                    }
-                    case BOOLEAN -> {
-                        if (object.equalsIgnoreCase("true")) {
-                            if(unique){
-                                if(!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()), true, metaTable, i)){
-                                    System.out.println("Invalid value: value is unique and already exist");
+                            if (unique) {
+                                if (!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()),
+                                    intObject, metaTable, i)) {
+                                    System.out.println(
+                                        "Invalid value: value is unique and already exist");
                                     return result;
                                 }
                             }
-                            attributes.add(new Attribute(metaAttribute, true));
-                        } else if (object.equalsIgnoreCase("false")) {
-                            if(unique){
-                                if(!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()), false, metaTable, i)){
-                                    System.out.println("Invalid value: value is unique and already exist");
+                            attributes.add(new Attribute(metaAttribute, intObject));
+                        }
+                        case DOUBLE -> {
+                            double doubleObject;
+                            try {
+                                doubleObject = Double.parseDouble(object);
+                            } catch (NumberFormatException e) {
+                                System.out.printf("Invalid value: \"%s\" for Double Type\n",
+                                    object);
+                                return result;
+                            }
+                            if (unique) {
+                                if (!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()),
+                                    doubleObject, metaTable, i)) {
+                                    System.out.println(
+                                        "Invalid value: value is unique and already exist");
                                     return result;
                                 }
                             }
-                            attributes.add(new Attribute(metaAttribute, false));
-                        } else {
-                            System.out.printf("Invalid value: \"%s\" for Boolean Type\n", object);
-                            return result;
+                            attributes.add(new Attribute(metaAttribute, doubleObject));
                         }
-                    }
-                    case CHAR, VARCHAR -> {
-                        if (object.charAt(0) != '\"'
-                            || object.charAt(object.length() - 1) != '\"') {
-                            System.out.printf("Invalid value: %s, missing quotes\n", object);
-                            return result;
-                        }
-                        object = object.substring(1, object.length() - 1);
-                        if (object.length() > metaAttribute.getMaxLength()) {
-                            System.out.printf("\"%s\" length exceeds %s(%d)\n", object,
-                                dataType.name(), metaAttribute.getMaxLength());
-                            return result;
-                        }
-                        if(unique){
-                            if(!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()), object, metaTable, i)){
-                                System.out.println("Invalid value: value is unique and already exist");
+                        case BOOLEAN -> {
+                            if (object.equalsIgnoreCase("true")) {
+                                if (unique) {
+                                    if (!pageBuffer.checkUnique(
+                                        getTableFile(metaTable.getTableName()),
+                                        true, metaTable, i)) {
+                                        System.out.println(
+                                            "Invalid value: value is unique and already exist");
+                                        return result;
+                                    }
+                                }
+                                attributes.add(new Attribute(metaAttribute, true));
+                            } else if (object.equalsIgnoreCase("false")) {
+                                if (unique) {
+                                    if (!pageBuffer.checkUnique(
+                                        getTableFile(metaTable.getTableName()),
+                                        false, metaTable, i)) {
+                                        System.out.println(
+                                            "Invalid value: value is unique and already exist");
+                                        return result;
+                                    }
+                                }
+                                attributes.add(new Attribute(metaAttribute, false));
+                            } else {
+                                System.out.printf("Invalid value: \"%s\" for Boolean Type\n",
+                                    object);
                                 return result;
                             }
                         }
-                        attributes.add(
-                            new Attribute(metaAttribute, object));
+                        case CHAR, VARCHAR -> {
+                            if (object.charAt(0) != '\"'
+                                || object.charAt(object.length() - 1) != '\"') {
+                                System.out.printf("Invalid value: %s, missing quotes\n", object);
+                                return result;
+                            }
+                            object = object.substring(1, object.length() - 1);
+                            if (object.length() > metaAttribute.getMaxLength()) {
+                                System.out.printf("\"%s\" length exceeds %s(%d)\n", object,
+                                    dataType.name(), metaAttribute.getMaxLength());
+                                return result;
+                            }
+                            if (unique) {
+                                if (!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()),
+                                    object, metaTable, i)) {
+                                    System.out.println(
+                                        "Invalid value: value is unique and already exist");
+                                    return result;
+                                }
+                            }
+                            attributes.add(
+                                new Attribute(metaAttribute, object));
+                        }
                     }
                 }
             }
