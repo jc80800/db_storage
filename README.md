@@ -22,3 +22,4 @@
 - display info \<table name>;
 - insert into \<table name> values (list of values[comma seperated]);
 - create table \<table name> (\<attribute name> \<attribute type> ?\<isPrimary>)
+- drop table \<table name> 
