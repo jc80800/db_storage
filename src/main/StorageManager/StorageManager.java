@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -15,7 +14,6 @@ import main.Constants.CommandLineTable;
 import main.Constants.Constant;
 import main.Constants.Constant.DataType;
 import main.Constants.Coordinate;
-import main.Constants.Helper;
 import main.StorageManager.Data.Attribute;
 import main.StorageManager.Data.Page;
 import main.StorageManager.Data.Record;
@@ -315,8 +313,17 @@ public class StorageManager {
                 String object = retrievedAttributes[i];
                 DataType dataType = metaAttribute.getType();
                 Set<String> constraints = metaAttribute.getConstraints();
+                // TODO allow null values
+                boolean unique = false;
 
-                // TODO check unique and notnull, if unique, check if the value exist, if not null check if it's a null
+                if(constraints.contains("notnull") && object.equals("null")){
+                    System.out.println("Invalid value: value can't be null for this column");
+                    return result;
+                }
+
+                if(constraints.contains("unique")){
+                    unique = true;
+                }
 
                 switch (dataType) {
                     case INTEGER -> {
@@ -326,6 +333,12 @@ public class StorageManager {
                         } catch (NumberFormatException e) {
                             System.out.printf("Invalid value: \"%s\" for Integer Type\n", object);
                             return result;
+                        }
+                        if(unique){
+                            if(!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()), intObject, metaTable, i)){
+                                System.out.println("Invalid value: value is unique and already exist");
+                                return result;
+                            }
                         }
                         attributes.add(new Attribute(metaAttribute, intObject));
                     }
@@ -337,12 +350,30 @@ public class StorageManager {
                             System.out.printf("Invalid value: \"%s\" for Double Type\n", object);
                             return result;
                         }
+                        if(unique){
+                            if(!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()), doubleObject, metaTable, i)){
+                                System.out.println("Invalid value: value is unique and already exist");
+                                return result;
+                            }
+                        }
                         attributes.add(new Attribute(metaAttribute, doubleObject));
                     }
                     case BOOLEAN -> {
                         if (object.equalsIgnoreCase("true")) {
+                            if(unique){
+                                if(!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()), true, metaTable, i)){
+                                    System.out.println("Invalid value: value is unique and already exist");
+                                    return result;
+                                }
+                            }
                             attributes.add(new Attribute(metaAttribute, true));
                         } else if (object.equalsIgnoreCase("false")) {
+                            if(unique){
+                                if(!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()), false, metaTable, i)){
+                                    System.out.println("Invalid value: value is unique and already exist");
+                                    return result;
+                                }
+                            }
                             attributes.add(new Attribute(metaAttribute, false));
                         } else {
                             System.out.printf("Invalid value: \"%s\" for Boolean Type\n", object);
@@ -360,6 +391,12 @@ public class StorageManager {
                             System.out.printf("\"%s\" length exceeds %s(%d)\n", object,
                                 dataType.name(), metaAttribute.getMaxLength());
                             return result;
+                        }
+                        if(unique){
+                            if(!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()), object, metaTable, i)){
+                                System.out.println("Invalid value: value is unique and already exist");
+                                return result;
+                            }
                         }
                         attributes.add(
                             new Attribute(metaAttribute, object));

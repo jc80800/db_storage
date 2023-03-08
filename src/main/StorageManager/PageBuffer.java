@@ -4,6 +4,7 @@ import static main.Constants.Constant.PrepareResult.PREPARE_SUCCESS;
 import static main.Constants.Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -38,7 +39,6 @@ public class PageBuffer {
     }
 
     public Page getPage(int pageId, int tableNumber) {
-        System.out.println("Getting Page: " + pageId + " and " + tableNumber);
         PageKey pageKey = new PageKey(pageId, tableNumber);
         // If page already in queue, remove it and put it to front of queue
         if (pages.containsKey(pageKey)){
@@ -218,6 +218,39 @@ public class PageBuffer {
                 pages.remove(pageKey);
             }
         }
+    }
+
+    public boolean checkUnique(File table_file, Object value, MetaTable metaTable, int index){
+        TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
+        int tableNumber = tableHeader.getTableNumber();
+
+        ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
+
+        try {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(table_file, "r");
+            for (int i = 0; i < coordinates.size(); i++) {
+                Page page = getPage(i, tableNumber);
+                if (page == null) {
+                    // If the page Buffer doesn't have it, go to the file and deserialize
+                    byte[] bytes = new byte[this.pageSize];
+                    randomAccessFile.seek(coordinates.get(i).getOffset());
+                    randomAccessFile.readFully(bytes);
+                    page = Page.deserialize(bytes, metaTable, tableNumber, this.pageSize, i);
+                    putPage(page);
+                }
+
+                ArrayList<Record> pageRecords = page.getRecords();
+                for (Record record : pageRecords){
+                    if((record.getAttributes().get(index).getValue()).equals(value) || record.getAttributes().get(index).getValue() == value ){
+                        System.out.println("Exists");
+                        return false;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return true;
     }
 
     private class PageKey{
