@@ -46,12 +46,35 @@ public class SqlParser {
             case Constant.INSERT -> result = insertCommand(tokens);
             case Constant.SELECT -> result = selectCommand(tokens);
             case Constant.DROP -> result = dropCommand(tokens);
+            case Constant.ALTER -> result = alterCommand(tokens);
             default -> {
                 System.out.println("Invalid command");
                 result = PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
         }
         return result;
+    }
+
+    /**
+     * Function to check if Alter command is properly formatted
+     *
+     * @param tokens user command
+     * @return PrepareResult
+     */
+    private Constant.PrepareResult alterCommand(String[] tokens) {
+        try {
+            String token = tokens[1].toUpperCase();
+            String tableName = tokens[2];
+            String action = tokens[3].toUpperCase();
+
+            if (!token.equals(Constant.TABLE) || (!action.equals("DROP") && !action.equals("ADD"))) {
+                return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+            }
+
+            return storageManager.executeAlter(tableName, action, Arrays.copyOfRange(tokens,4, tokens.length));
+        } catch(ArrayIndexOutOfBoundsException e) {
+            return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+        }
     }
 
     /**

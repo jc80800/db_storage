@@ -6,6 +6,7 @@ import static main.Constants.Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEME
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -88,7 +89,58 @@ public class StorageManager {
         }
     }
 
+    public Constant.PrepareResult executeAlter(String tableName, String action, String[] values){
+        // Check if the file exist in the directory
+        File table_file = getTableFile(tableName);
+        if (!table_file.exists()) {
+            System.out.printf("No such table %s\n", tableName);
+            return PREPARE_UNRECOGNIZED_STATEMENT;
+        }
 
+        if(values.length > 4 || values.length == 0 || values.length == 3 || (action.equals("DROP") && values.length != 1)){
+            System.out.println("Incorrect number of arguments!");
+            return PREPARE_UNRECOGNIZED_STATEMENT;
+        }
+
+        String aName = values[0];
+        TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
+        assert tableHeader != null;
+        MetaAttribute attribute = null;
+        for(MetaAttribute a : catalog.getMetaTable(tableHeader.getTableNumber()).metaAttributes()){
+            if(a.getName().equals(aName)){
+                attribute = a;
+            }
+        }
+
+        if(action.equals("DROP")){
+            if(attribute == null || attribute.getIsPrimaryKey()){
+                System.out.println("Attribute to drop doesn't exist or it is a primary key");
+                return PREPARE_UNRECOGNIZED_STATEMENT;
+            }
+
+
+        }
+        else{
+            String type = values[1];
+            if(values.length > 2 && !values[2].equals("default")){
+                return PREPARE_UNRECOGNIZED_STATEMENT;
+            }
+
+            if(type.matches("(?i)INTEGER|DOUBLE|BOOLEAN")){
+
+            }
+            else if(type.matches("(?i)CHAR\\([0-9]+\\)|VARCHAR\\([0-9]+\\)")){
+
+            }
+            else{
+                System.out.println("Invalid Type for attribute!");
+                return PREPARE_UNRECOGNIZED_STATEMENT;
+            }
+
+        }
+
+        return PREPARE_SUCCESS;
+    }
     public Constant.PrepareResult createTable(String table_name, String[] values) {
         Set<String> possible_constraints = Constant.getConstraints();
 
