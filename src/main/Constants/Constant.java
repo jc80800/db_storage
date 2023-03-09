@@ -27,7 +27,9 @@ public final class Constant {
     public static final Integer BOOLEAN_SIZE = 1;
     public static final Integer INTEGER_SIZE = Integer.BYTES;
     public static final Integer DOUBLE_SIZE = Double.BYTES;
-    public static final int INITIAL_POINTER_SIZE = 10;
+    public static final Integer INITIAL_POINTER_SIZE = 10;
+    public static final Integer NOT_NULL_CODE = 1;
+    public static final Integer UNIQUE_CODE = 2;
     public static final HashMap<Integer, DataType> DATA_TYPE_MAP = new HashMap<>(){{
         put(1, DataType.INTEGER);
         put(2, DataType.DOUBLE);
