@@ -95,7 +95,7 @@ public class StorageManager {
             return PREPARE_UNRECOGNIZED_STATEMENT;
         }
 
-        if(values.length > 4 || values.length == 0 || values.length == 3 || (action.equals("DROP") && values.length != 1)){
+        if(values.length > 4 || values.length == 0 || values.length == 3 || (action.equals(Constant.DROP) && values.length != 1)){
             System.out.println("Incorrect number of arguments!");
             return PREPARE_UNRECOGNIZED_STATEMENT;
         }
@@ -110,31 +110,34 @@ public class StorageManager {
             }
         }
 
-        if(action.equals("DROP")){
+        if(action.equals(Constant.DROP)){
             if(attribute == null || attribute.getIsPrimaryKey()){
                 System.out.println("Attribute to drop doesn't exist or it is a primary key");
                 return PREPARE_UNRECOGNIZED_STATEMENT;
             }
-
+            else {
+                //TODO: create temporary table with remaining attributes, drop the original and rename new table
+            }
 
         }
         else{
             String type = values[1];
-            if(values.length > 2 && !values[2].equals("default")){
+            if(values.length > 2 && !values[2].toUpperCase().equals(Constant.DEFAULT)){
                 return PREPARE_UNRECOGNIZED_STATEMENT;
             }
+            else if(values.length == 2){
+                //TODO: add new column with null values
+                }
+            else {
+                if (type.matches("(?i)INTEGER|DOUBLE|BOOLEAN")) {
 
-            if(type.matches("(?i)INTEGER|DOUBLE|BOOLEAN")){
-
+                } else if (type.matches("(?i)CHAR\\([0-9]+\\)|VARCHAR\\([0-9]+\\)")) {
+                    //TODO: concatenate the rest of values to form string. Validate string
+                } else {
+                    System.out.println("Invalid Type for attribute!");
+                    return PREPARE_UNRECOGNIZED_STATEMENT;
+                }
             }
-            else if(type.matches("(?i)CHAR\\([0-9]+\\)|VARCHAR\\([0-9]+\\)")){
-
-            }
-            else{
-                System.out.println("Invalid Type for attribute!");
-                return PREPARE_UNRECOGNIZED_STATEMENT;
-            }
-
         }
 
         return PREPARE_SUCCESS;
