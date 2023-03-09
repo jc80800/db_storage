@@ -50,7 +50,6 @@ public class Main {
 
             command.append(line);
 
-            System.out.println(command);
             Constant.PrepareResult prepareResult = sqlParser.prepareStatement(command.toString());
             switch (prepareResult) {
                 case PREPARE_QUIT -> {
