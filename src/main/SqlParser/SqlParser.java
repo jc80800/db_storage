@@ -21,6 +21,8 @@ public class SqlParser {
      * @return
      */
     public PrepareResult prepareStatement(String input) {
+        // accounts for multi-line commands
+        input = input.replace("\n", " ");
         if (input.length() == 0) {
             return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }

@@ -1,6 +1,7 @@
 package main;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Scanner;
 import main.Constants.Constant;
 import main.SqlParser.SqlParser;
@@ -39,9 +40,18 @@ public class Main {
             // while running command
             System.out.print(Constant.PROMPT);
 
-            String command = scanner.nextLine();
+            StringBuilder command = new StringBuilder();
 
-            Constant.PrepareResult prepareResult = sqlParser.prepareStatement(command);
+            String line = scanner.nextLine();
+            while(!line.contains(";")){
+                command.append(line);
+                line = scanner.nextLine();
+            }
+
+            command.append(line);
+
+            System.out.println(command);
+            Constant.PrepareResult prepareResult = sqlParser.prepareStatement(command.toString());
             switch (prepareResult) {
                 case PREPARE_QUIT -> {
                     System.out.println("\nSafely shutting down the database...");
