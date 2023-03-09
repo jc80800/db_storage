@@ -69,7 +69,7 @@ public class SqlParser {
             String tableName = tokens[2];
             String action = tokens[3].toUpperCase();
 
-            if (!token.equals(Constant.TABLE) || (!action.equals("DROP") && !action.equals("ADD"))) {
+            if (!token.equals(Constant.TABLE) || (!action.equals(Constant.DROP) && !action.equals(Constant.ADD))) {
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
 
