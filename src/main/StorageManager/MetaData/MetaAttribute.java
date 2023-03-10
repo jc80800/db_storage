@@ -174,6 +174,17 @@ public class MetaAttribute {
         throw new InvalidKeyException();
     }
 
+    public String convertString(){
+        String s = this.name + " " + this.getType().toString().toLowerCase();
+        if(this.type.equals(DataType.VARCHAR) || this.type.equals(DataType.CHAR)){
+            s += "(" + this.maxLength + ")";
+        }
+        if(isPrimaryKey){
+            s += " primarykey";
+        }
+        return s;
+    }
+
     public String getName() {
         return name;
     }

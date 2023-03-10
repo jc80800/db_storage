@@ -148,6 +148,8 @@ public class Record {
         return attributes;
     }
 
+    public ArrayList<MetaAttribute> getMetaAttributes(){return metaAttributes;}
+
     public void setAttributes(ArrayList<Attribute> attributes) {
         this.attributes = attributes;
     }

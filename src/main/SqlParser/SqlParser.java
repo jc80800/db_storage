@@ -183,6 +183,10 @@ public class SqlParser {
                 table_name.append(tokens[2].charAt(index));
                 index += 1;
             }
+            if(table_name.toString().equals("temp")){
+                System.out.println("Do not name table as \" temp \"");
+                return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+            }
 
             tokens[2] = tokens[2].substring(index);
 
