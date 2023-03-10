@@ -7,10 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.sql.SQLOutput;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+
 import main.Constants.CommandLineTable;
 import main.Constants.Constant;
 import main.Constants.Constant.DataType;
@@ -94,54 +92,108 @@ public class StorageManager {
             System.out.printf("No such table %s\n", tableName);
             return PREPARE_UNRECOGNIZED_STATEMENT;
         }
-
-        if(values.length > 4 || values.length == 0 || values.length == 3 || (action.equals(Constant.DROP) && values.length != 1)){
-            System.out.println("Incorrect number of arguments!");
-            return PREPARE_UNRECOGNIZED_STATEMENT;
-        }
-
-        String aName = values[0];
-        TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
-        assert tableHeader != null;
+        // Attribute in question to be added or dropped
         MetaAttribute attribute = null;
-        for(MetaAttribute a : catalog.getMetaTable(tableHeader.getTableNumber()).metaAttributes()){
-            if(a.getName().equals(aName)){
-                attribute = a;
-            }
-        }
-
-        if(action.equals(Constant.DROP)){
-            if(attribute == null || attribute.getIsPrimaryKey()){
-                System.out.println("Attribute to drop doesn't exist or it is a primary key");
+        Object defaultValue = null;
+        if (action.equals(Constant.DROP)){
+            if (values.length != 1){
+                System.out.println("Incorrect number of arguments!");
                 return PREPARE_UNRECOGNIZED_STATEMENT;
             }
-            else {
-                //TODO: create temporary table with remaining attributes, drop the original and rename new table
-            }
-
-        }
-        else{
-            String type = values[1];
-            if(values.length > 2 && !values[2].toUpperCase().equals(Constant.DEFAULT)){
-                return PREPARE_UNRECOGNIZED_STATEMENT;
-            }
-            else if(values.length == 2){
-                //TODO: add new column with null values
+            String aName = values[0];
+            TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
+            assert tableHeader != null;
+            for(MetaAttribute a : catalog.getMetaTable(tableHeader.getTableNumber()).metaAttributes()){
+                if(a.getName().equals(aName)){
+                    if (a.getIsPrimaryKey()){
+                        System.out.println("Can't drop primarykey");
+                        return PREPARE_UNRECOGNIZED_STATEMENT;
+                    }
+                    attribute = a;
                 }
-            else {
-                if (type.matches("(?i)INTEGER|DOUBLE|BOOLEAN")) {
-
-                } else if (type.matches("(?i)CHAR\\([0-9]+\\)|VARCHAR\\([0-9]+\\)")) {
-                    //TODO: concatenate the rest of values to form string. Validate string
-                } else {
-                    System.out.println("Invalid Type for attribute!");
+            }
+        } else {
+            String aName = values[0]; // attribute name
+            if (values[1].toUpperCase().contains(DataType.VARCHAR.toString()) || values[1].toUpperCase().contains(DataType.CHAR.toString())){
+                DataType dataType = DataType.VARCHAR;
+                if(values[1].toUpperCase().equals(DataType.CHAR.toString())){
+                    dataType = DataType.CHAR;
+                }
+                String s = String.join(" ", Arrays.copyOfRange(values, 1, values.length));
+                int openIndex = s.indexOf('(');
+                int closeIndex = s.indexOf(')');
+                if (openIndex == -1 || closeIndex == -1){
+                    System.out.println("Missing Parenthesis");
                     return PREPARE_UNRECOGNIZED_STATEMENT;
                 }
+
+                // varchar( 20 )
+                String typeSize = s.substring(openIndex + 1, closeIndex).trim();
+                int typeLength;
+                try {
+                    typeLength = Integer.parseInt(typeSize);
+                } catch (NumberFormatException e){
+                    System.out.println("Invalid Length for Varchar || char");
+                    return PREPARE_UNRECOGNIZED_STATEMENT;
+                }
+                attribute = new MetaAttribute(false, aName, dataType, typeLength, null);
+                s = s.substring(closeIndex + 1).trim();
+                if (!s.equals("")) {
+                    String[] field = s.split(" ");
+                    // "hello world"
+                    if (field[0].equalsIgnoreCase(Constant.DEFAULT)) {
+                        s = String.join(" ", field);
+                        s = s.substring(8).trim();
+                        int openQuote = s.indexOf("\"");
+                        int closeQuote = s.lastIndexOf("\"");
+                        if(!(openQuote == 0 && closeQuote == s.length() - 1)){
+                            System.out.println("Invalid Default value");
+                            return PREPARE_UNRECOGNIZED_STATEMENT;
+                        }
+                        // Everything inside the quotation (exclude the quote)
+                        defaultValue = s.substring(openQuote, closeQuote + 1);
+                    }
+                }
+            } else {
+                // TODO NON VARCHAR CHAR
+
             }
         }
+
+        TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
+        MetaTable metaTable = this.catalog.getMetaTable(tableHeader.getTableNumber());
+        ArrayList<MetaAttribute> metaAttributes = new ArrayList<>(metaTable.metaAttributes());
+
+        if(action.equals(Constant.DROP)){
+            metaAttributes.remove(attribute);
+        } else {
+            metaAttributes.add(attribute);
+        }
+
+        String[] newAttribute = new String[metaAttributes.size()];
+        for(int i = 0; i < newAttribute.length; i++){
+            newAttribute[i] = metaAttributes.get(i).convertString();
+        }
+
+        createTable(Constant.TEMP, newAttribute);
+        ArrayList<String[]> results = pageBuffer.copyRecords(table_file, attribute, defaultValue, action, metaTable);
+        for(String[] result : results){
+            executeInsert(Constant.TEMP, result);
+        }
+        executeDrop(tableName);
+        /*
+        if (getTableFile(Constant.TEMP).renameTo(table_file)) {
+            System.out.println("File renamed");
+        } else {
+            System.out.println("File couldn't be renamed");
+        }
+
+         */
 
         return PREPARE_SUCCESS;
     }
+
+    // create table foo( num integer primarykey, name varchar(1));
     public Constant.PrepareResult createTable(String table_name, String[] values) {
         Set<String> possible_constraints = Constant.getConstraints();
 
@@ -289,6 +341,8 @@ public class StorageManager {
     }
 
     public Constant.PrepareResult executeInsert(String table, String[] values) {
+
+        System.out.println("Testing: " + table + " " + Arrays.toString(values));
 
         File table_file = getTableFile(table);
         if (!table_file.exists()) {
