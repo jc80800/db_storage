@@ -10,7 +10,7 @@ import main.Constants.Helper;
 public final class MetaTable {
 
     private final int tableNumber;
-    private final String tableName;
+    private String tableName;
     private final ArrayList<MetaAttribute> metaAttributes;
     private final ArrayList<Coordinate> pointers;
     private final int binarySize;
@@ -78,6 +78,10 @@ public final class MetaTable {
             binarySize += metaAttribute.calculateBinarySize();
         }
         return binarySize;
+    }
+
+    public void changeName(String name){
+        this.tableName = name;
     }
 
     /**

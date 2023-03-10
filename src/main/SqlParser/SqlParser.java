@@ -1,9 +1,15 @@
 package main.SqlParser;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import main.Constants.Constant;
 import main.Constants.Constant.PrepareResult;
+import main.StorageManager.Data.Attribute;
 import main.StorageManager.StorageManager;
 
 public class SqlParser {
@@ -65,6 +71,7 @@ public class SqlParser {
      */
     private Constant.PrepareResult alterCommand(String[] tokens) {
         try {
+
             String token = tokens[1].toUpperCase();
             String tableName = tokens[2];
             String action = tokens[3].toUpperCase();

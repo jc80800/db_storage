@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.sql.SQLOutput;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import main.Constants.CommandLineTable;
 import main.Constants.Constant;
@@ -86,6 +88,8 @@ public class StorageManager {
     }
 
     public Constant.PrepareResult executeAlter(String tableName, String action, String[] values){
+        System.out.println(Arrays.toString(values));
+
         // Check if the file exist in the directory
         File table_file = getTableFile(tableName);
         if (!table_file.exists()) {
@@ -152,10 +156,22 @@ public class StorageManager {
                         }
                         // Everything inside the quotation (exclude the quote)
                         defaultValue = s.substring(openQuote, closeQuote + 1);
+                    } else {
+                        System.out.println("Incorrect Default syntax");
+                        return PREPARE_UNRECOGNIZED_STATEMENT;
                     }
                 }
             } else {
-                // TODO NON VARCHAR CHAR
+                String type = values[1];
+                if (!type.matches("(?i)INTEGER|DOUBLE|BOOLEAN")) {
+                    System.out.println("Invalid Datatype");
+                    return PREPARE_UNRECOGNIZED_STATEMENT;
+                }
+                attribute = new MetaAttribute(false, aName, DataType.valueOf(type.toUpperCase()), null);
+
+                if(values.length > 2 && values[2].equalsIgnoreCase(Constant.DEFAULT) && values.length == 4){
+                    defaultValue = values[3];
+                }
 
             }
         }
@@ -176,19 +192,20 @@ public class StorageManager {
         }
 
         createTable(Constant.TEMP, newAttribute);
+        System.out.println(defaultValue);
         ArrayList<String[]> results = pageBuffer.copyRecords(table_file, attribute, defaultValue, action, metaTable);
         for(String[] result : results){
             executeInsert(Constant.TEMP, result);
         }
         executeDrop(tableName);
-        /*
+        TableHeader tableHeader1 = TableHeader.parseTableHeader(getTableFile(Constant.TEMP), pageSize);
+        int tempNumber = tableHeader1.getTableNumber();
+        this.catalog.getMetaTable(tempNumber).changeName(table_file.getName());
         if (getTableFile(Constant.TEMP).renameTo(table_file)) {
             System.out.println("File renamed");
         } else {
             System.out.println("File couldn't be renamed");
         }
-
-         */
 
         return PREPARE_SUCCESS;
     }
@@ -285,7 +302,6 @@ public class StorageManager {
             ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader).getCoordinates();
 
             for (int i = 0; i < coordinates.size(); i++) {
-                System.out.println("Processing index " + i);
 
                 if (pageBuffer.getPage(i, tableHeader.getTableNumber()) == null) {
 
@@ -341,8 +357,6 @@ public class StorageManager {
     }
 
     public Constant.PrepareResult executeInsert(String table, String[] values) {
-
-        System.out.println("Testing: " + table + " " + Arrays.toString(values));
 
         File table_file = getTableFile(table);
         if (!table_file.exists()) {
@@ -420,7 +434,15 @@ public class StorageManager {
         int index = 0;
         while (index < values.length) {
             ArrayList<Attribute> attributes = new ArrayList<>();
-            String[] retrievedAttributes = values[index++].trim().split("\\s+");
+            List<String> matchList = new ArrayList<String>();
+            Pattern regex = Pattern.compile("[^\\s\"']+|\"[^\"]*\"|'[^']*'");
+            Matcher regexMatcher = regex.matcher(values[index++]);
+            while (regexMatcher.find()) {
+                matchList.add(regexMatcher.group());
+            }
+            String[] retrievedAttributes = new String[matchList.size()];
+            retrievedAttributes = matchList.toArray(retrievedAttributes);
+
             for (int i = 0; i < metaTable.metaAttributes().size(); i++) {
                 MetaAttribute metaAttribute = metaTable.metaAttributes().get(i);
                 String object = retrievedAttributes[i];
