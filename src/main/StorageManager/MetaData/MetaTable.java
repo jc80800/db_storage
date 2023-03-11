@@ -12,8 +12,8 @@ public final class MetaTable {
     private final int tableNumber;
     private String tableName;
     private final ArrayList<MetaAttribute> metaAttributes;
-    private final ArrayList<Coordinate> pointers;
-    private final int binarySize;
+    private ArrayList<Coordinate> pointers;
+    private int binarySize;
 
     public MetaTable(int tableNumber, String tableName,
         ArrayList<MetaAttribute> metaAttributes) {
@@ -85,6 +85,8 @@ public final class MetaTable {
 
     public void changeName(String name){
         this.tableName = name;
+        this.pointers = constructPointers();
+        this.binarySize = calculateBinarySize();
     }
 
     /**
