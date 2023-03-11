@@ -40,9 +40,17 @@ public class Main {
             // while running command
             System.out.print(Constant.PROMPT);
 
-            String command = scanner.nextLine();
+            StringBuilder command = new StringBuilder();
 
-            Constant.PrepareResult prepareResult = sqlParser.prepareStatement(command);
+            String line = scanner.nextLine();
+            while(!line.contains(";") && !line.equals("<quit>")){
+                command.append(line);
+                line = scanner.nextLine();
+            }
+
+            command.append(line);
+
+            Constant.PrepareResult prepareResult = sqlParser.prepareStatement(command.toString());
 
             switch (prepareResult) {
                 case PREPARE_QUIT -> {
