@@ -207,6 +207,10 @@ public class StorageManager {
             System.out.println("File couldn't be renamed");
         }
 
+        for (Integer key : catalog.getMetaTableHashMap().keySet()) {
+            System.out.println(catalog.getMetaTableHashMap().get(key));
+        }
+
         return PREPARE_SUCCESS;
     }
 

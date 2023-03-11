@@ -45,9 +45,11 @@ public final class MetaTable {
             Arrays.copyOf(bytes, index += Constant.INTEGER_SIZE));
         int nameLength = Helper.convertByteArrayToInt(
             Arrays.copyOfRange(bytes, index, index += Constant.INTEGER_SIZE));
+        System.out.println(nameLength);
         String name = Helper.convertByteArrayToString(
             Arrays.copyOfRange(bytes, index, index += nameLength));
 
+        System.out.println(name);
         int numOfMetaAttributes = Helper.convertByteArrayToInt(
             Arrays.copyOfRange(bytes, index, index += Constant.INTEGER_SIZE));
 
@@ -59,6 +61,7 @@ public final class MetaTable {
                 Arrays.copyOfRange(bytes, index, index += Coordinate.getBinarySize()));
             pointers.add(coordinate);
 
+            System.out.println("Problem arised here");
             MetaAttribute metaAttribute = MetaAttribute.deserialize(
                 Arrays.copyOfRange(bytes, coordinate.getOffset(),
                     coordinate.getOffset() + coordinate.getLength()));
@@ -91,6 +94,11 @@ public final class MetaTable {
      * @return byte array
      */
     public byte[] serialize() {
+        System.out.println(tableNumber);
+        System.out.println(tableName);
+        System.out.println(tableName.length());
+        System.out.println(metaAttributes.size());
+
         byte[] tableNumberBytes = Helper.convertIntToByteArray(tableNumber);
         byte[] nameLengthBytes = Helper.convertIntToByteArray(tableName.length());
         byte[] nameBytes = Helper.convertStringToByteArrays(tableName);
@@ -98,6 +106,7 @@ public final class MetaTable {
 
         byte[] pointersBytes = new byte[0];
         for (Coordinate pointer : pointers) {
+            System.out.println(pointer);
             byte[] pointerBytes = pointer.serialize();
             pointersBytes = Helper.concatenate(pointersBytes, pointerBytes);
         }
