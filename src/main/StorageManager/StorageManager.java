@@ -91,8 +91,6 @@ public class StorageManager {
     }
 
     public Constant.PrepareResult executeAlter(String tableName, String action, String[] values) {
-        System.out.println(Arrays.toString(values));
-
         // Check if the file exist in the directory
         File table_file = getTableFile(tableName);
         if (!table_file.exists()) {
@@ -199,7 +197,6 @@ public class StorageManager {
         }
 
         createTable(Constant.TEMP, newAttribute);
-        System.out.println(defaultValue);
         ArrayList<String[]> results = pageBuffer.copyRecords(table_file, attribute, defaultValue,
             action, metaTable);
         for (String[] result : results) {
@@ -210,15 +207,7 @@ public class StorageManager {
             pageSize);
         int tempNumber = tableHeader1.getTableNumber();
         this.catalog.getMetaTable(tempNumber).changeName(table_file.getName());
-        if (getTableFile(Constant.TEMP).renameTo(table_file)) {
-            System.out.println("File renamed");
-        } else {
-            System.out.println("File couldn't be renamed");
-        }
-
-        for (Integer key : catalog.getMetaTableHashMap().keySet()) {
-            System.out.println(catalog.getMetaTableHashMap().get(key));
-        }
+        getTableFile(Constant.TEMP).renameTo(table_file);
 
         return PREPARE_SUCCESS;
     }
@@ -438,11 +427,7 @@ public class StorageManager {
         this.pageBuffer.deletePage(tableNumber);
 
         // Delete file
-        if (table_file.delete()) {
-            System.out.println("Table is dropped");
-        } else {
-            System.err.println("Problem dropping table");
-        }
+        table_file.delete();
         return PREPARE_SUCCESS;
     }
 

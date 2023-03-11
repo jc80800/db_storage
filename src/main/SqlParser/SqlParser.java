@@ -32,7 +32,6 @@ public class SqlParser {
             return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
         if (input.charAt(0) == '<') {
-            System.out.println("something");
             if (input.charAt(input.length() - 1) != '>' || !input.substring(input.indexOf("<") + 1,
                 input.indexOf(">")).equalsIgnoreCase(Constant.QUIT_CODE)) {
                 return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;

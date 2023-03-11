@@ -190,7 +190,6 @@ public class MetaAttribute {
         if(isPrimaryKey){
             s += " primarykey";
         }
-        System.out.println(s);
         return s;
     }
 

@@ -185,11 +185,7 @@ public class TableHeader {
                 tempRandomAccessFile.write(bytes1);
 
                 // Rename and overwrite old file
-                if (tempFile.renameTo(file)) {
-                    System.out.println("File renamed");
-                } else {
-                    System.out.println("File couldn't be renamed");
-                }
+                tempFile.renameTo(file);
                 tempRandomAccessFile.close();
             }
             randomAccessFile.close();

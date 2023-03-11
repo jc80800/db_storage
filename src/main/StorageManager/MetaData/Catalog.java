@@ -123,7 +123,6 @@ public class Catalog {
         byte[] pointersBytes = new byte[0];
 
         for (Coordinate pointer : pointers) {
-            System.out.println(pointer);
             byte[] pointerBytes = pointer.serialize();
             pointersBytes = Helper.concatenate(pointersBytes, pointerBytes);
         }
