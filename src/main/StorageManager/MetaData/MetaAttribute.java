@@ -63,6 +63,7 @@ public class MetaAttribute {
 
         int nameLength = Helper.convertByteArrayToInt(
             Arrays.copyOfRange(bytes, index, index += Constant.INTEGER_SIZE));
+
         String name = Helper.convertByteArrayToString(
             Arrays.copyOfRange(bytes, index, index += nameLength));
 
@@ -128,6 +129,7 @@ public class MetaAttribute {
      * @return byte arrays
      */
     public byte[] serialize() {
+
         byte[] result;
         byte[] isPrimaryKeyBytes = new byte[]{
             Helper.convertBooleanToByte(getIsPrimaryKey())};
@@ -188,6 +190,7 @@ public class MetaAttribute {
         if(isPrimaryKey){
             s += " primarykey";
         }
+        System.out.println(s);
         return s;
     }
 

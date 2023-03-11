@@ -247,7 +247,14 @@ public class PageBuffer {
                         metaAttributes.remove(metaAttribute);
                     }
                     for(int j = 0; j < metaAttributes.size(); j++){
-                        value.append(attributes.get(j).getValue().toString()).append(" ");
+                        if(metaAttributes.get(j).getType().equals(Constant.DataType.VARCHAR) ||
+                                metaAttributes.get(j).getType().equals(Constant.DataType.CHAR)){
+                            value.append("\"");
+                            value.append(attributes.get(j).getValue().toString()).append(" ");
+                            value.append("\"");
+                        } else {
+                            value.append(attributes.get(j).getValue().toString()).append(" ");
+                        }
                     }
                     if(action.equals(Constant.ADD)){
                         value.append(defaultValue);
