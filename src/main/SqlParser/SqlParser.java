@@ -28,11 +28,11 @@ public class SqlParser {
      */
     public PrepareResult prepareStatement(String input) {
         // accounts for multi-line commands
-        input = input.replace("\n", " ");
         if (input.length() == 0) {
             return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
         if (input.charAt(0) == '<') {
+            System.out.println("something");
             if (input.charAt(input.length() - 1) != '>' || !input.substring(input.indexOf("<") + 1,
                 input.indexOf(">")).equalsIgnoreCase(Constant.QUIT_CODE)) {
                 return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
