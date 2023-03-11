@@ -40,6 +40,7 @@ public class Record {
 
             if (ifNull == 0) {
                 attributes.add(new Attribute(metaAttribute, null));
+                continue;
             }
 
             switch (type) {
@@ -97,6 +98,9 @@ public class Record {
     private int calculateBinarySize() {
         int binarySize = attributes.size();
         for (Attribute attribute : attributes) {
+            if (attribute.getValue() == null) {
+                continue;
+            }
             // VARCHAR has a leading int indicating the length of the string
             if (attribute.getMetaAttribute().getType() == DataType.VARCHAR) {
                 binarySize += Constant.INTEGER_SIZE + attribute.getBinarySize();
@@ -124,6 +128,9 @@ public class Record {
         }
 
         for (Attribute attribute : this.attributes) {
+            if (attribute.getValue() == null) {
+                continue;
+            }
             if (attribute.getMetaAttribute().getType() == DataType.VARCHAR) {
                 byte[] valueBytes = attribute.serialize();
                 byte[] valueLen = Helper.convertIntToByteArray(valueBytes.length);
@@ -147,6 +154,8 @@ public class Record {
     public ArrayList<Attribute> getAttributes() {
         return attributes;
     }
+
+    public ArrayList<MetaAttribute> getMetaAttributes(){return metaAttributes;}
 
     public void setAttributes(ArrayList<Attribute> attributes) {
         this.attributes = attributes;

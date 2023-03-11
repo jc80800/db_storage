@@ -56,6 +56,9 @@ public class Attribute {
     }
 
     private int calculateBinarySize() {
+        if (value == null) {
+            return 0;
+        }
         return switch (metaAttribute.getType()) {
             case BOOLEAN -> Constant.BOOLEAN_SIZE;
             case INTEGER -> Constant.INTEGER_SIZE;
@@ -98,7 +101,8 @@ public class Attribute {
             return false;
         }
         Attribute attribute = (Attribute) o;
-        return metaAttribute.equals(attribute.metaAttribute) && value.equals(attribute.value);
+        return binarySize == attribute.binarySize && metaAttribute.equals(attribute.metaAttribute)
+            && Objects.equals(value, attribute.value);
     }
 
     @Override

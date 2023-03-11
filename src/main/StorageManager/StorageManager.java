@@ -6,11 +6,14 @@ import static main.Constants.Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEME
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.sql.SQLOutput;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import main.Constants.CommandLineTable;
 import main.Constants.Constant;
 import main.Constants.Constant.DataType;
@@ -26,8 +29,8 @@ import main.StorageManager.MetaData.MetaTable;
 public class StorageManager {
 
     private final File db;
-    private int pageSize;
     private final int bufferSize;
+    private int pageSize;
     private Catalog catalog;
     private PageBuffer pageBuffer;
 
@@ -87,58 +90,140 @@ public class StorageManager {
         }
     }
 
-    public Constant.PrepareResult executeAlter(String tableName, String action, String[] values){
+    public Constant.PrepareResult executeAlter(String tableName, String action, String[] values) {
+        System.out.println(Arrays.toString(values));
+
         // Check if the file exist in the directory
         File table_file = getTableFile(tableName);
         if (!table_file.exists()) {
             System.out.printf("No such table %s\n", tableName);
             return PREPARE_UNRECOGNIZED_STATEMENT;
         }
-
-        if(values.length > 4 || values.length == 0 || values.length == 3 || (action.equals("DROP") && values.length != 1)){
-            System.out.println("Incorrect number of arguments!");
-            return PREPARE_UNRECOGNIZED_STATEMENT;
-        }
-
-        String aName = values[0];
-        TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
-        assert tableHeader != null;
+        // Attribute in question to be added or dropped
         MetaAttribute attribute = null;
-        for(MetaAttribute a : catalog.getMetaTable(tableHeader.getTableNumber()).metaAttributes()){
-            if(a.getName().equals(aName)){
-                attribute = a;
+        Object defaultValue = null;
+        if (action.equals(Constant.DROP)) {
+            if (values.length != 1) {
+                System.out.println("Incorrect number of arguments!");
+                return PREPARE_UNRECOGNIZED_STATEMENT;
+            }
+            String aName = values[0];
+            TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
+            assert tableHeader != null;
+            for (MetaAttribute a : catalog.getMetaTable(tableHeader.getTableNumber())
+                .metaAttributes()) {
+                if (a.getName().equals(aName)) {
+                    if (a.getIsPrimaryKey()) {
+                        System.out.println("Can't drop primarykey");
+                        return PREPARE_UNRECOGNIZED_STATEMENT;
+                    }
+                    attribute = a;
+                }
+            }
+        } else {
+            String aName = values[0]; // attribute name
+            if (values[1].toUpperCase().contains(DataType.VARCHAR.toString())
+                || values[1].toUpperCase().contains(DataType.CHAR.toString())) {
+                DataType dataType = DataType.CHAR;
+                if (values[1].toUpperCase().equals(DataType.VARCHAR.toString())) {
+                    dataType = DataType.VARCHAR;
+                }
+                String s = String.join(" ", Arrays.copyOfRange(values, 1, values.length));
+                int openIndex = s.indexOf('(');
+                int closeIndex = s.indexOf(')');
+                if (openIndex == -1 || closeIndex == -1) {
+                    System.out.println("Missing Parenthesis");
+                    return PREPARE_UNRECOGNIZED_STATEMENT;
+                }
+
+                // varchar( 20 )
+                String typeSize = s.substring(openIndex + 1, closeIndex).trim();
+                int typeLength;
+                try {
+                    typeLength = Integer.parseInt(typeSize);
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid Length for Varchar || char");
+                    return PREPARE_UNRECOGNIZED_STATEMENT;
+                }
+                attribute = new MetaAttribute(false, aName, dataType, typeLength, null);
+                s = s.substring(closeIndex + 1).trim();
+                if (!s.equals("")) {
+                    String[] field = s.split(" ");
+                    // "hello world"
+                    if (field[0].equalsIgnoreCase(Constant.DEFAULT)) {
+                        s = String.join(" ", field);
+                        s = s.substring(8).trim();
+                        int openQuote = s.indexOf("\"");
+                        int closeQuote = s.lastIndexOf("\"");
+                        if (!(openQuote == 0 && closeQuote == s.length() - 1)) {
+                            System.out.println("Invalid Default value");
+                            return PREPARE_UNRECOGNIZED_STATEMENT;
+                        }
+                        // Everything inside the quotation (exclude the quote)
+                        defaultValue = s.substring(openQuote, closeQuote + 1);
+                    } else {
+                        System.out.println("Incorrect Default syntax");
+                        return PREPARE_UNRECOGNIZED_STATEMENT;
+                    }
+                }
+            } else {
+                String type = values[1];
+                if (!type.matches("(?i)INTEGER|DOUBLE|BOOLEAN")) {
+                    System.out.println("Invalid Datatype");
+                    return PREPARE_UNRECOGNIZED_STATEMENT;
+                }
+                attribute = new MetaAttribute(false, aName, DataType.valueOf(type.toUpperCase()),
+                    null);
+
+                if (values.length > 2 && values[2].equalsIgnoreCase(Constant.DEFAULT)
+                    && values.length == 4) {
+                    defaultValue = values[3];
+                }
+
             }
         }
 
-        if(action.equals("DROP")){
-            if(attribute == null || attribute.getIsPrimaryKey()){
-                System.out.println("Attribute to drop doesn't exist or it is a primary key");
-                return PREPARE_UNRECOGNIZED_STATEMENT;
-            }
+        TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
+        MetaTable metaTable = this.catalog.getMetaTable(tableHeader.getTableNumber());
+        ArrayList<MetaAttribute> metaAttributes = new ArrayList<>(metaTable.metaAttributes());
 
-
+        if (action.equals(Constant.DROP)) {
+            metaAttributes.remove(attribute);
+        } else {
+            metaAttributes.add(attribute);
         }
-        else{
-            String type = values[1];
-            if(values.length > 2 && !values[2].equals("default")){
-                return PREPARE_UNRECOGNIZED_STATEMENT;
-            }
 
-            if(type.matches("(?i)INTEGER|DOUBLE|BOOLEAN")){
+        String[] newAttribute = new String[metaAttributes.size()];
+        for (int i = 0; i < newAttribute.length; i++) {
+            newAttribute[i] = metaAttributes.get(i).convertString();
+        }
 
-            }
-            else if(type.matches("(?i)CHAR\\([0-9]+\\)|VARCHAR\\([0-9]+\\)")){
+        createTable(Constant.TEMP, newAttribute);
+        System.out.println(defaultValue);
+        ArrayList<String[]> results = pageBuffer.copyRecords(table_file, attribute, defaultValue,
+            action, metaTable);
+        for (String[] result : results) {
+            executeInsert(Constant.TEMP, result);
+        }
+        executeDrop(tableName);
+        TableHeader tableHeader1 = TableHeader.parseTableHeader(getTableFile(Constant.TEMP),
+            pageSize);
+        int tempNumber = tableHeader1.getTableNumber();
+        this.catalog.getMetaTable(tempNumber).changeName(table_file.getName());
+        if (getTableFile(Constant.TEMP).renameTo(table_file)) {
+            System.out.println("File renamed");
+        } else {
+            System.out.println("File couldn't be renamed");
+        }
 
-            }
-            else{
-                System.out.println("Invalid Type for attribute!");
-                return PREPARE_UNRECOGNIZED_STATEMENT;
-            }
-
+        for (Integer key : catalog.getMetaTableHashMap().keySet()) {
+            System.out.println(catalog.getMetaTableHashMap().get(key));
         }
 
         return PREPARE_SUCCESS;
     }
+
+    // create table foo( num integer primarykey, name varchar(1));
     public Constant.PrepareResult createTable(String table_name, String[] values) {
         Set<String> possible_constraints = Constant.getConstraints();
 
@@ -154,14 +239,15 @@ public class StorageManager {
                 System.out.println("Missing fields for table attribute!");
                 return PREPARE_UNRECOGNIZED_STATEMENT;
             } else {
-                for(int i = 2; i < valArray.length; i++){
-                    if(!possible_constraints.contains(valArray[i]) && !valArray[i].equals("primarykey")){
+                for (int i = 2; i < valArray.length; i++) {
+                    if (!possible_constraints.contains(valArray[i]) && !valArray[i].equals(
+                        "primarykey")) {
                         System.out.println("Duplicate/Invalid Field for attribute");
                         return PREPARE_UNRECOGNIZED_STATEMENT;
                     }
 
-                    if(valArray[i].equals("primarykey")){
-                        if(foundPrimaryKey){
+                    if (valArray[i].equals("primarykey")) {
+                        if (foundPrimaryKey) {
                             System.out.println("Found more than one primary key!");
                             return PREPARE_UNRECOGNIZED_STATEMENT;
                         }
@@ -185,7 +271,8 @@ public class StorageManager {
                     } else if (valArray[1].equalsIgnoreCase("BOOLEAN")) {
                         type = Constant.DataType.BOOLEAN;
                     }
-                    attributes.add(new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, constraints));
+                    attributes.add(
+                        new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, constraints));
                 } else if (valArray[1].matches("(?i)CHAR\\([0-9]+\\)|VARCHAR\\([0-9]+\\)")) {
                     String[] typeArray = valArray[1].split("\\(");
                     Constant.DataType type = Constant.DataType.CHAR;
@@ -194,7 +281,8 @@ public class StorageManager {
                     }
                     int length = Integer.parseInt(typeArray[1].replace(")", ""));
                     attributes.add(
-                        new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, length, constraints));
+                        new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, length,
+                            constraints));
                 } else {
                     System.out.println("Syntax error was found!");
                     return PREPARE_UNRECOGNIZED_STATEMENT;
@@ -227,14 +315,15 @@ public class StorageManager {
         if (table_file.exists()) {
             ArrayList<Page> pages = new ArrayList<>();
             TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
-            ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader).getCoordinates();
+            ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader)
+                .getCoordinates();
 
             for (int i = 0; i < coordinates.size(); i++) {
-                System.out.println("Processing index " + i);
 
                 if (pageBuffer.getPage(i, tableHeader.getTableNumber()) == null) {
 
-                    System.out.println("Page Buffer does not contain " + i + " and " + tableHeader.getTableNumber() );
+                    System.out.println("Page Buffer does not contain " + i + " and "
+                        + tableHeader.getTableNumber());
                     //get page from file and put into buffer
                     try {
                         RandomAccessFile randomAccessFile = new RandomAccessFile(
@@ -268,7 +357,7 @@ public class StorageManager {
                 for (Record record : page.getRecords()) {
                     ArrayList<String> row = new ArrayList<>();
                     for (Attribute attribute : record.getAttributes()) {
-                        if(attribute.getValue() == null){
+                        if (attribute.getValue() == null) {
                             row.add("null");
                         } else {
                             row.add(attribute.getValue().toString());
@@ -308,12 +397,12 @@ public class StorageManager {
             ArrayList<Record> records = parseRecords(values, metaTable);
 
             // Find where to place each record and place it
-            Constant.PrepareResult result = this.pageBuffer.findRecordPlacement(table_file, records, metaTable, tableHeader);
+            Constant.PrepareResult result = this.pageBuffer.findRecordPlacement(table_file, records,
+                metaTable, tableHeader);
 
-            if(records.size() != values.length || result.equals(PREPARE_UNRECOGNIZED_STATEMENT)){
+            if (records.size() != values.length || result.equals(PREPARE_UNRECOGNIZED_STATEMENT)) {
                 return PREPARE_UNRECOGNIZED_STATEMENT;
-            }
-            else{
+            } else {
                 return PREPARE_SUCCESS;
             }
         } catch (IllegalArgumentException e) {
@@ -323,8 +412,9 @@ public class StorageManager {
     }
 
     /**
-     * Function to execute the drop table command.
-     * Verify of table exists then delete pointers and from catalog
+     * Function to execute the drop table command. Verify of table exists then delete pointers and
+     * from catalog
+     *
      * @param table table name from user command
      * @return
      */
@@ -355,6 +445,7 @@ public class StorageManager {
         }
         return PREPARE_SUCCESS;
     }
+
     private ArrayList<Record> parseRecords(String[] values, MetaTable metaTable) {
 
         ArrayList<MetaAttribute> metaAttributes = metaTable.metaAttributes();
@@ -363,7 +454,15 @@ public class StorageManager {
         int index = 0;
         while (index < values.length) {
             ArrayList<Attribute> attributes = new ArrayList<>();
-            String[] retrievedAttributes = values[index++].trim().split("\\s+");
+            List<String> matchList = new ArrayList<String>();
+            Pattern regex = Pattern.compile("[^\\s\"']+|\"[^\"]*\"|'[^']*'");
+            Matcher regexMatcher = regex.matcher(values[index++]);
+            while (regexMatcher.find()) {
+                matchList.add(regexMatcher.group());
+            }
+            String[] retrievedAttributes = new String[matchList.size()];
+            retrievedAttributes = matchList.toArray(retrievedAttributes);
+
             for (int i = 0; i < metaTable.metaAttributes().size(); i++) {
                 MetaAttribute metaAttribute = metaTable.metaAttributes().get(i);
                 String object = retrievedAttributes[i];

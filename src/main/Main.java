@@ -40,17 +40,10 @@ public class Main {
             // while running command
             System.out.print(Constant.PROMPT);
 
-            StringBuilder command = new StringBuilder();
+            String command = scanner.nextLine();
 
-            String line = scanner.nextLine();
-            while(!line.contains(";")){
-                command.append(line);
-                line = scanner.nextLine();
-            }
+            Constant.PrepareResult prepareResult = sqlParser.prepareStatement(command);
 
-            command.append(line);
-
-            Constant.PrepareResult prepareResult = sqlParser.prepareStatement(command.toString());
             switch (prepareResult) {
                 case PREPARE_QUIT -> {
                     System.out.println("\nSafely shutting down the database...");

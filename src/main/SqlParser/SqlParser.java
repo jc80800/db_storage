@@ -1,9 +1,15 @@
 package main.SqlParser;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import main.Constants.Constant;
 import main.Constants.Constant.PrepareResult;
+import main.StorageManager.Data.Attribute;
 import main.StorageManager.StorageManager;
 
 public class SqlParser {
@@ -22,11 +28,11 @@ public class SqlParser {
      */
     public PrepareResult prepareStatement(String input) {
         // accounts for multi-line commands
-        input = input.replace("\n", " ");
         if (input.length() == 0) {
             return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
         if (input.charAt(0) == '<') {
+            System.out.println("something");
             if (input.charAt(input.length() - 1) != '>' || !input.substring(input.indexOf("<") + 1,
                 input.indexOf(">")).equalsIgnoreCase(Constant.QUIT_CODE)) {
                 return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
@@ -65,11 +71,12 @@ public class SqlParser {
      */
     private Constant.PrepareResult alterCommand(String[] tokens) {
         try {
+
             String token = tokens[1].toUpperCase();
             String tableName = tokens[2];
             String action = tokens[3].toUpperCase();
 
-            if (!token.equals(Constant.TABLE) || (!action.equals("DROP") && !action.equals("ADD"))) {
+            if (!token.equals(Constant.TABLE) || (!action.equals(Constant.DROP) && !action.equals(Constant.ADD))) {
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
 
@@ -184,6 +191,10 @@ public class SqlParser {
             while (index < tokens[2].length() && !(tokens[2].charAt(index) == '(')) {
                 table_name.append(tokens[2].charAt(index));
                 index += 1;
+            }
+            if(table_name.toString().equals("temp")){
+                System.out.println("Do not name table as \" temp \"");
+                return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
 
             tokens[2] = tokens[2].substring(index);

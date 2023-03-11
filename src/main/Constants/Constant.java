@@ -19,10 +19,13 @@ public final class Constant {
     public static final String CREATE = "CREATE";
     public static final String ALTER = "ALTER";
     public static final String DROP = "DROP";
+    public static final String ADD = "ADD";
     public static final String TABLE = "TABLE";
+    public static final String DEFAULT = "DEFAULT";
     public static final String SCHEMA = "SCHEMA";
     public static final String INFO = "INFO";
     public static final String CATALOG_FILE = "/Catalog";
+    public static final String TEMP = "TEMP";
     public static final Charset CHARSET = StandardCharsets.UTF_8;
     public static final Integer BOOLEAN_SIZE = 1;
     public static final Integer INTEGER_SIZE = Integer.BYTES;

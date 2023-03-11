@@ -7,17 +7,16 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Objects;
+import java.util.*;
+
 import main.Constants.Constant;
 import main.Constants.Coordinate;
+import main.StorageManager.Data.Attribute;
 import main.StorageManager.Data.Page;
 import main.StorageManager.Data.Record;
 import main.StorageManager.Data.TableHeader;
 import main.StorageManager.MetaData.Catalog;
+import main.StorageManager.MetaData.MetaAttribute;
 import main.StorageManager.MetaData.MetaTable;
 
 public class PageBuffer {
@@ -218,6 +217,58 @@ public class PageBuffer {
                 pages.remove(pageKey);
             }
         }
+    }
+
+    public ArrayList<String[]> copyRecords(File table_file, MetaAttribute metaAttribute, Object defaultValue, String action, MetaTable metaTable){
+        TableHeader  tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
+        int tableNumber = tableHeader.getTableNumber();
+        ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
+        ArrayList<String[]> result = new ArrayList<>();
+
+        try {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(table_file, "r");
+            for (int i = 0; i < coordinates.size(); i++) {
+                Page page = getPage(i, tableNumber);
+                if (page == null) {
+                    // If the page Buffer doesn't have it, go to the file and deserialize
+                    byte[] bytes = new byte[this.pageSize];
+                    randomAccessFile.seek(coordinates.get(i).getOffset());
+                    randomAccessFile.readFully(bytes);
+                    page = Page.deserialize(bytes, metaTable, tableNumber, this.pageSize, i);
+                    putPage(page);
+                }
+
+                ArrayList<Record> pageRecords = page.getRecords();
+                for(Record record : pageRecords){
+                    StringBuilder value = new StringBuilder();
+                    ArrayList<MetaAttribute> metaAttributes = record.getMetaAttributes();
+                    ArrayList<Attribute> attributes = record.getAttributes();
+                    if(action.equals(Constant.DROP)){
+                        metaAttributes.remove(metaAttribute);
+                    }
+                    for(int j = 0; j < metaAttributes.size(); j++){
+                        if(metaAttributes.get(j).getType().equals(Constant.DataType.VARCHAR) ||
+                                metaAttributes.get(j).getType().equals(Constant.DataType.CHAR)){
+                            value.append("\"");
+                            value.append(attributes.get(j).getValue().toString()).append(" ");
+                            value.append("\"");
+                        } else {
+                            value.append(attributes.get(j).getValue().toString()).append(" ");
+                        }
+                    }
+                    if(action.equals(Constant.ADD)){
+                        value.append(defaultValue);
+                    }
+                    String[] temp = new String[]{value.toString().trim()};
+                    result.add(temp);
+                }
+
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+
     }
 
     public boolean checkUnique(File table_file, Object value, MetaTable metaTable, int index){

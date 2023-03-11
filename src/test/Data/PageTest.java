@@ -49,4 +49,36 @@ class PageTest {
         Page deserialized = Page.deserialize(bytes, metaTable, 1, 1024, 1);
         assertEquals(page, deserialized);
     }
+
+    @Test
+    void serializationWithNull() {
+        Set<String> constraints = new HashSet<>();
+        constraints.add("unique");
+
+        MetaAttribute metaAttribute0 = new MetaAttribute(true, "Num", DataType.INTEGER, constraints);
+        Attribute attribute0 = new Attribute(metaAttribute0, 1);
+
+        MetaAttribute metaAttribute1 = new MetaAttribute(false, "LastName", DataType.VARCHAR, 20, constraints);
+        Attribute attribute1 = new Attribute(metaAttribute1, null);
+
+        ArrayList<MetaAttribute> metaAttributes = new ArrayList<>();
+        metaAttributes.add(metaAttribute0);
+        metaAttributes.add(metaAttribute1);
+
+        ArrayList<Attribute> attributes = new ArrayList<>();
+        attributes.add(attribute0);
+        attributes.add(attribute1);
+
+        Record record1 = new Record(attributes, metaAttributes);
+
+        ArrayList<Record> records = new ArrayList<>();
+        records.add(record1);
+
+        MetaTable metaTable = new MetaTable(0, "Student", metaAttributes);
+        Page page = new Page(1024,1, records, 0);
+
+        byte[] bytes = page.serialize();
+        Page deserialized = Page.deserialize(bytes, metaTable, 1, 1024, 1);
+        assertEquals(page, deserialized);
+    }
 }
