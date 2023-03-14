@@ -90,6 +90,17 @@ public class StorageManager {
         }
     }
 
+    public Constant.PrepareResult executeDelete(String tableName, String[] values){
+        // Check if the file exist in the directory
+        File table_file = getTableFile(tableName);
+        if (!table_file.exists()) {
+            System.out.printf("No such table %s\n", tableName);
+            return PREPARE_UNRECOGNIZED_STATEMENT;
+        }
+
+
+        return PREPARE_SUCCESS;
+    }
     public Constant.PrepareResult executeAlter(String tableName, String action, String[] values) {
         // Check if the file exist in the directory
         File table_file = getTableFile(tableName);

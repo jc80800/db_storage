@@ -48,6 +48,7 @@ public class SqlParser {
         String type = tokens[0].toUpperCase(Locale.ROOT);
         PrepareResult result;
         switch (type) {
+            case Constant.DELETE -> result = deleteCommand(tokens);
             case Constant.CREATE -> result = createCommand(tokens);
             case Constant.DISPLAY -> result = displayCommand(tokens);
             case Constant.INSERT -> result = insertCommand(tokens);
@@ -62,6 +63,22 @@ public class SqlParser {
         return result;
     }
 
+    private Constant.PrepareResult deleteCommand(String[] tokens) {
+        try {
+
+            String from = tokens[1].toUpperCase();
+            String tableName = tokens[2];
+            String where = tokens[3].toUpperCase();
+
+            if(!from.equals(Constant.FROM) || !where.equals(Constant.WHERE)){
+                return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+            }
+
+            return storageManager.executeDelete(tableName, Arrays.copyOfRange(tokens, 4, tokens.length));
+        } catch(ArrayIndexOutOfBoundsException e){
+            return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+        }
+    }
     /**
      * Function to check if Alter command is properly formatted
      *
@@ -93,7 +110,7 @@ public class SqlParser {
      */
     private Constant.PrepareResult selectCommand(String[] tokens) {
         try {
-            if (tokens.length != 4 || !tokens[1].equals("*") || !tokens[2].equals("from")) {
+            if (tokens.length != 4 || !tokens[1].equals("*") || !tokens[2].equalsIgnoreCase(Constant.FROM)) {
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
             return storageManager.executeSelect(tokens[3]);
