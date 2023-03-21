@@ -51,17 +51,12 @@ public class PageBuffer {
     }
 
     public void putPage(Page page) {
-        System.out.println("Printing Hashmap");
-        for(PageKey pageKey : this.pages.keySet()){
-            System.out.println(pageKey.pageId + " " + pageKey.tableNumber + " " + this.pages.get(pageKey));
-        }
         if (bufferQueue.size() >= bufferSize) {
             Page removedPage = bufferQueue.removeLast();
             updatePage(removedPage);
             pages.remove(new PageKey(removedPage.getPageId(), removedPage.getTableNumber()));
         }
 
-        System.out.println("Putting Page: " + page.getPageId() + " and " + page.getTableNumber());
         bufferQueue.push(page);
         pages.put(new PageKey(page.getPageId(), page.getTableNumber()), page);
     }
@@ -220,7 +215,7 @@ public class PageBuffer {
     }
 
     public ArrayList<String[]> copyRecords(File table_file, MetaAttribute metaAttribute, Object defaultValue, String action, MetaTable metaTable){
-        TableHeader  tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
+        TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
         int tableNumber = tableHeader.getTableNumber();
         ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
         ArrayList<String[]> result = new ArrayList<>();
@@ -243,18 +238,22 @@ public class PageBuffer {
                     StringBuilder value = new StringBuilder();
                     ArrayList<MetaAttribute> metaAttributes = record.getMetaAttributes();
                     ArrayList<Attribute> attributes = record.getAttributes();
+                    int idx = -1;
                     if(action.equals(Constant.DROP)){
-                        metaAttributes.remove(metaAttribute);
+                        idx = metaAttributes.indexOf(metaAttribute);
                     }
                     for(int j = 0; j < metaAttributes.size(); j++){
+                        if(j == idx){
+                            continue;
+                        }
                         if(attributes.get(j).getValue() == null){
                             value.append("null ");
                         } else {
                             if (metaAttributes.get(j).getType().equals(Constant.DataType.VARCHAR) ||
                                     metaAttributes.get(j).getType().equals(Constant.DataType.CHAR)) {
                                 value.append("\"");
-                                value.append(attributes.get(j).getValue().toString()).append(" ");
-                                value.append("\"");
+                                value.append(attributes.get(j).getValue().toString());
+                                value.append("\"").append(" ");;
                             } else {
                                 value.append(attributes.get(j).getValue().toString()).append(" ");
                             }
