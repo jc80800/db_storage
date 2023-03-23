@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import main.Constants.Constant;
 import main.Constants.Constant.PrepareResult;
+import main.Constants.Helper;
 import main.StorageManager.Data.Attribute;
 import main.StorageManager.StorageManager;
 
@@ -110,10 +111,64 @@ public class SqlParser {
      */
     private Constant.PrepareResult selectCommand(String[] tokens) {
         try {
-            if (tokens.length != 4 || !tokens[1].equals("*") || !tokens[2].equalsIgnoreCase(Constant.FROM)) {
-                return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+
+            String[] attributes;
+            String table;
+            String[] whereAttributes = null;
+            String orderBy = null;
+
+            // Combine the words together
+            String temp = String.join(" ", tokens);
+            if(!temp.contains("select") || !temp.contains("from")){
+                return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
-            return storageManager.executeSelect(tokens[3]);
+
+            // Split by "FROM" to get the first half
+            String[] selectField = temp.split("from");
+
+            // Check for keyword "select"
+            String selectAttributes = selectField[0];
+            String[] tempField = selectAttributes.split(" ");
+            if(!tempField[0].trim().equals("select")){
+                return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+            }
+
+            // Concat the fields back without "select" and split by "," to get the table attributes
+            String tableAttributes = Helper.concatString(tempField, 1, tempField.length).trim();
+            attributes = tableAttributes.split(",");
+            attributes = Arrays.stream(attributes).map(String::trim).toArray(String[]::new);
+
+            // Grab table in "from"
+            String fromClause = selectField[1].trim();
+            String[] fromClauseField = fromClause.split(" ");
+            if(fromClauseField.length == 1) {
+                table = fromClause;
+                return storageManager.executeSelect(attributes, table, whereAttributes, orderBy);
+            }
+
+            table = fromClauseField[0];
+
+            // Else check for where and orderby clauses
+            if(fromClause.contains("orderby")){
+                String[] orderbyClause = fromClause.split("orderby");
+                orderBy = orderbyClause[1].trim();
+            }
+
+            if(fromClause.contains("where")){
+                String[] whereClauseField = fromClause.split("where");
+                String whereAttributesString = whereClauseField[1].trim();
+
+                whereAttributes = whereAttributesString.split("and");
+                whereAttributes= Arrays.stream(whereAttributes).map(String::trim).toArray(String[]::new);
+
+                String lastField = whereAttributes[whereAttributes.length - 1];
+
+                if(fromClause.contains("orderby")){
+                    String[] lastFieldTokens = lastField.split("orderby");
+                    whereAttributes[whereAttributes.length - 1] = lastFieldTokens[0];
+                }
+            }
+            return storageManager.executeSelect(attributes, table, whereAttributes, orderBy);
 
         } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;

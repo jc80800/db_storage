@@ -309,7 +309,7 @@ public class StorageManager {
         return PREPARE_SUCCESS;
     }
 
-    public Constant.PrepareResult executeSelect(String table) {
+    public Constant.PrepareResult executeSelect(String[] attributes, String table, String[] whereAttributes, String orderByColumn) {
         // Check if the file exist in the directory
         File table_file = getTableFile(table);
         if (table_file.exists()) {

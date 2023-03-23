@@ -1,6 +1,7 @@
 package main.Constants;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 
@@ -87,5 +88,13 @@ public class Helper {
             }
         }
         return dest;
+    }
+
+    public static String concatString(String[] field, int startIndex, int endIndex){
+        ArrayList<String> result = new ArrayList<>();
+        for (int i = startIndex; i < endIndex; i++){
+            result.add(field[i]);
+        }
+        return String.join(" ", result);
     }
 }
