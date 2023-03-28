@@ -114,7 +114,7 @@ public class SqlParser {
 
             String[] attributes;
             String table;
-            String[] whereAttributes = null;
+            ArrayList<String> whereAttributes = null;
             String orderBy = null;
 
             // Combine the words together

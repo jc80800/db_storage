@@ -103,8 +103,7 @@ public class Helper {
         return String.join(" ", result);
     }
 
-    public static String[] implementShuntingYard(String expression){
-        expression = "a = 6 and b = 6 or c = 3 and d = 8";
+    public static ArrayList<String> implementShuntingYard(String expression){
         String[] tokens = expression.split(" ");
         Stack<String> stack = new Stack<>();
         ArrayList<String> queue = new ArrayList<>();
@@ -123,8 +122,7 @@ public class Helper {
         while(!stack.empty()){
             queue.add(stack.pop());
         }
-        System.out.println(queue);
-        return null;
+        return queue;
     }
 
     public static boolean checkPrecedence(String operator1, String operator2){
