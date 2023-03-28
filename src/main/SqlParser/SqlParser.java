@@ -158,16 +158,13 @@ public class SqlParser {
                 String[] whereClauseField = fromClause.split("where");
                 String whereAttributesString = whereClauseField[1].trim();
 
-                whereAttributes = whereAttributesString.split("and");
-                whereAttributes= Arrays.stream(whereAttributes).map(String::trim).toArray(String[]::new);
-
-                String lastField = whereAttributes[whereAttributes.length - 1];
-
-                if(fromClause.contains("orderby")){
-                    String[] lastFieldTokens = lastField.split("orderby");
-                    whereAttributes[whereAttributes.length - 1] = lastFieldTokens[0];
+                if(whereAttributesString.contains("orderby")){
+                    String[] lastFieldTokens = whereAttributesString.split("orderby");
+                    whereAttributesString = lastFieldTokens[0];
+                    whereAttributes = Helper.implementShuntingYard(whereAttributesString);
                 }
             }
+
             return storageManager.executeSelect(attributes, table, whereAttributes, orderBy);
 
         } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
