@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -309,7 +310,7 @@ public class StorageManager {
         return PREPARE_SUCCESS;
     }
 
-    public Constant.PrepareResult executeSelect(String[] attributes, String table, ArrayList<String> whereAttributes, String orderByColumn) {
+    public Constant.PrepareResult executeSelect(String[] attributes, String table, Queue<String> whereAttributes, String orderByColumn) {
         // Check if the file exist in the directory
         File table_file = getTableFile(table);
         if (table_file.exists()) {

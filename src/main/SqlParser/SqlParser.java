@@ -2,8 +2,10 @@ package main.SqlParser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Queue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -114,7 +116,7 @@ public class SqlParser {
 
             String[] attributes;
             String table;
-            ArrayList<String> whereAttributes = null;
+            Queue<String> whereAttributes = null;
             String orderBy = null;
 
             // Combine the words together
@@ -161,7 +163,7 @@ public class SqlParser {
                 if(whereAttributesString.contains("orderby")){
                     String[] lastFieldTokens = whereAttributesString.split("orderby");
                     whereAttributesString = lastFieldTokens[0];
-                    whereAttributes = Helper.implementShuntingYard(whereAttributesString);
+                    whereAttributes = ShuntingYardAlgorithm.parse(whereAttributesString);
                 }
             }
 

@@ -3,11 +3,6 @@ package main.Constants;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Queue;
-import java.util.Set;
-import java.util.Stack;
 
 
 public class Helper {
@@ -44,28 +39,27 @@ public class Helper {
         return new String(bytes, Constant.CHARSET);
     }
 
-    public static boolean checkInteger(String s){
+    public static boolean checkInteger(String s) {
         try {
             int i = Integer.parseInt(s);
             return true;
-        } catch (NumberFormatException e){
+        } catch (NumberFormatException e) {
             return false;
         }
     }
 
-    public static boolean checkDouble(String s){
+    public static boolean checkDouble(String s) {
         try {
             double i = Double.parseDouble(s);
             return true;
-        } catch (NumberFormatException e){
+        } catch (NumberFormatException e) {
             return false;
         }
     }
 
-    public static boolean checkBoolean(String s){
+    public static boolean checkBoolean(String s) {
         return s.equals("true") || s.equals("false");
     }
-
 
 
     /**
@@ -95,61 +89,11 @@ public class Helper {
         return dest;
     }
 
-    public static String concatString(String[] field, int startIndex, int endIndex){
+    public static String concatString(String[] field, int startIndex, int endIndex) {
         ArrayList<String> result = new ArrayList<>();
-        for (int i = startIndex; i < endIndex; i++){
+        for (int i = startIndex; i < endIndex; i++) {
             result.add(field[i]);
         }
         return String.join(" ", result);
-    }
-
-    public static ArrayList<String> implementShuntingYard(String expression){
-        String[] tokens = expression.split(" ");
-        Stack<String> stack = new Stack<>();
-        ArrayList<String> queue = new ArrayList<>();
-
-        for(String token : tokens){
-            if(checkOperator(token)){
-                while(!stack.empty() && checkPrecedence(stack.peek(), token)){
-                    queue.add(stack.pop());
-                }
-                stack.push(token);
-            } else {
-                queue.add(token);
-            }
-        }
-
-        while(!stack.empty()){
-            queue.add(stack.pop());
-        }
-        return queue;
-    }
-
-    public static boolean checkPrecedence(String operator1, String operator2){
-        HashMap<String, Integer> precedence = new HashMap<String, Integer>();
-        precedence.put("and", 2);
-        precedence.put("or", 1);
-        precedence.put("=", 3);
-        precedence.put(">", 3);
-        precedence.put("<", 3);
-        precedence.put(">=", 3);
-        precedence.put("<=", 3);
-        precedence.put("!=", 3);
-
-        return precedence.get(operator1) > precedence.get(operator2);
-    }
-
-    public static boolean checkOperator(String token){
-        Set<String> operators = new HashSet<String>();
-        operators.add("and");
-        operators.add("or");
-        operators.add("=");
-        operators.add(">");
-        operators.add("<");
-        operators.add(">=");
-        operators.add("<=");
-        operators.add("!=");
-
-        return operators.contains(token);
     }
 }
