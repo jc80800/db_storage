@@ -1,18 +1,11 @@
 package main.SqlParser;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Queue;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import main.Constants.Constant;
 import main.Constants.Constant.PrepareResult;
 import main.Constants.Helper;
-import main.StorageManager.Data.Attribute;
 import main.StorageManager.StorageManager;
 
 public class SqlParser {
@@ -73,15 +66,17 @@ public class SqlParser {
             String tableName = tokens[2];
             String where = tokens[3].toUpperCase();
 
-            if(!from.equals(Constant.FROM) || !where.equals(Constant.WHERE)){
+            if (!from.equals(Constant.FROM) || !where.equals(Constant.WHERE)) {
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
 
-            return storageManager.executeDelete(tableName, Arrays.copyOfRange(tokens, 4, tokens.length));
-        } catch(ArrayIndexOutOfBoundsException e){
+            return storageManager.executeDelete(tableName,
+                Arrays.copyOfRange(tokens, 4, tokens.length));
+        } catch (ArrayIndexOutOfBoundsException e) {
             return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
     }
+
     /**
      * Function to check if Alter command is properly formatted
      *
@@ -95,12 +90,14 @@ public class SqlParser {
             String tableName = tokens[2];
             String action = tokens[3].toUpperCase();
 
-            if (!token.equals(Constant.TABLE) || (!action.equals(Constant.DROP) && !action.equals(Constant.ADD))) {
+            if (!token.equals(Constant.TABLE) || (!action.equals(Constant.DROP) && !action.equals(
+                Constant.ADD))) {
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
 
-            return storageManager.executeAlter(tableName, action, Arrays.copyOfRange(tokens,4, tokens.length));
-        } catch(ArrayIndexOutOfBoundsException e) {
+            return storageManager.executeAlter(tableName, action,
+                Arrays.copyOfRange(tokens, 4, tokens.length));
+        } catch (ArrayIndexOutOfBoundsException e) {
             return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
     }
@@ -121,7 +118,7 @@ public class SqlParser {
 
             // Combine the words together
             String temp = String.join(" ", tokens);
-            if(!temp.contains("select") || !temp.contains("from")){
+            if (!temp.contains("select") || !temp.contains("from")) {
                 return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
 
@@ -131,7 +128,7 @@ public class SqlParser {
             // Check for keyword "select"
             String selectAttributes = selectField[0];
             String[] tempField = selectAttributes.split(" ");
-            if(!tempField[0].trim().equals("select")){
+            if (!tempField[0].trim().equals("select")) {
                 return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
 
@@ -143,7 +140,7 @@ public class SqlParser {
             // Grab table in "from"
             String fromClause = selectField[1].trim();
             String[] fromClauseField = fromClause.split(" ");
-            if(fromClauseField.length == 1) {
+            if (fromClauseField.length == 1) {
                 table = fromClause;
                 return storageManager.executeSelect(attributes, table, whereAttributes, orderBy);
             }
@@ -151,16 +148,16 @@ public class SqlParser {
             table = fromClauseField[0];
 
             // Else check for where and orderby clauses
-            if(fromClause.contains("orderby")){
+            if (fromClause.contains("orderby")) {
                 String[] orderbyClause = fromClause.split("orderby");
                 orderBy = orderbyClause[1].trim();
             }
 
-            if(fromClause.contains("where")){
+            if (fromClause.contains("where")) {
                 String[] whereClauseField = fromClause.split("where");
                 String whereAttributesString = whereClauseField[1].trim();
 
-                if(whereAttributesString.contains("orderby")){
+                if (whereAttributesString.contains("orderby")) {
                     String[] lastFieldTokens = whereAttributesString.split("orderby");
                     whereAttributesString = lastFieldTokens[0];
                     whereAttributes = ShuntingYardAlgorithm.parse(whereAttributesString);
@@ -176,6 +173,7 @@ public class SqlParser {
 
     /**
      * Function to check if Drop command is properly formatted
+     *
      * @param tokens User command
      * @return
      */
@@ -206,14 +204,13 @@ public class SqlParser {
 
             String table_name = tokens[2];
 
-
             tokens = Arrays.copyOfRange(tokens, 4, tokens.length);
             String combined_values = String.join(" ", tokens);
             combined_values = combined_values.trim();
 
             String[] splitValues = combined_values.split(",");
 
-            for (int i = 0; i < splitValues.length; i++){
+            for (int i = 0; i < splitValues.length; i++) {
                 splitValues[i] = splitValues[i].replace("(", "");
                 splitValues[i] = splitValues[i].replace(")", "");
                 splitValues[i] = splitValues[i].trim();
@@ -262,7 +259,7 @@ public class SqlParser {
                 table_name.append(tokens[2].charAt(index));
                 index += 1;
             }
-            if(table_name.toString().equals("temp")){
+            if (table_name.toString().equals("temp")) {
                 System.out.println("Do not name table as \" temp \"");
                 return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }

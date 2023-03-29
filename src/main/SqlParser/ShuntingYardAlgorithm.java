@@ -9,12 +9,17 @@ import java.util.Stack;
 
 public class ShuntingYardAlgorithm {
 
+
+
     public static Queue<String> parse(String expression) {
-        String[] tokens = expression.split(" ");
+        // split on space except in quotes
+        String[] tokens = expression.split("(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)\\s+");
         Stack<String> operators = new Stack<>();
         Queue<String> output = new LinkedList<>();
 
         for (String token : tokens) {
+            // remove quotes
+            token = token.replaceAll("\"", "");
             if (isOperator(token)) {
                 while (!operators.empty() && checkPrecedence(operators.peek(), token)) {
                     output.add(operators.pop());
