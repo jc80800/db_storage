@@ -91,17 +91,24 @@ public class StorageManager {
         }
     }
 
-    public Constant.PrepareResult executeDelete(String tableName, String[] values){
+    public Constant.PrepareResult executeDelete(String tableName, String[] values) {
         // Check if the file exist in the directory
         File table_file = getTableFile(tableName);
         if (!table_file.exists()) {
             System.out.printf("No such table %s\n", tableName);
             return PREPARE_UNRECOGNIZED_STATEMENT;
         }
+        TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
+        ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader)
+            .getCoordinates();
+        for (int i = 0; i < coordinates.size(); i++) {
+            Page page = pageBuffer.getPage(i, tableHeader);
 
+        }
 
         return PREPARE_SUCCESS;
     }
+
     public Constant.PrepareResult executeAlter(String tableName, String action, String[] values) {
         // Check if the file exist in the directory
         File table_file = getTableFile(tableName);
@@ -310,7 +317,8 @@ public class StorageManager {
         return PREPARE_SUCCESS;
     }
 
-    public Constant.PrepareResult executeSelect(String[] attributes, String table, Queue<String> whereAttributes, String orderByColumn) {
+    public Constant.PrepareResult executeSelect(String[] attributes, String table,
+        Queue<String> whereAttributes, String orderByColumn) {
         // Check if the file exist in the directory
         File table_file = getTableFile(table);
         if (table_file.exists()) {
@@ -320,30 +328,7 @@ public class StorageManager {
                 .getCoordinates();
 
             for (int i = 0; i < coordinates.size(); i++) {
-
-                if (pageBuffer.getPage(i, tableHeader.getTableNumber()) == null) {
-
-                    System.out.println("Page Buffer does not contain " + i + " and "
-                        + tableHeader.getTableNumber());
-                    //get page from file and put into buffer
-                    try {
-                        RandomAccessFile randomAccessFile = new RandomAccessFile(
-                            table_file.getPath(), "r");
-                        randomAccessFile.seek(coordinates.get(i).getOffset());
-                        byte[] pageBytes = new byte[catalog.getPageSize()];
-                        randomAccessFile.readFully(pageBytes);
-
-                        Page page = Page.deserialize(pageBytes,
-                            catalog.getMetaTable(tableHeader.getTableNumber()),
-                            tableHeader.getTableNumber(), catalog.getPageSize(), i);
-
-                        pageBuffer.putPage(page);
-                        randomAccessFile.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                pages.add(pageBuffer.getPage(i, tableHeader.getTableNumber()));
+                pages.add(pageBuffer.getPage(i, tableHeader));
             }
             CommandLineTable output = new CommandLineTable();
 

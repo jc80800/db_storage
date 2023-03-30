@@ -20,26 +20,27 @@ public class TableHeader {
     private int currentNumOfPages;
     private int numRecords;
     private ArrayList<Coordinate> coordinates;
-    private File db;
+    private File table_file;
+
 
     public TableHeader(int tableNumber, int maxPages, int currentNumOfPages, int numRecords,
-        ArrayList<Coordinate> coordinates, File db, int pageSize) {
+        ArrayList<Coordinate> coordinates, File table_file, int pageSize) {
         this.tableNumber = tableNumber;
         this.maxPages = maxPages;
         this.currentNumOfPages = currentNumOfPages;
         this.numRecords = numRecords;
         this.coordinates = coordinates;
-        this.db = db;
+        this.table_file = table_file;
         this.pageSize = pageSize;
     }
 
-    public TableHeader(int tableNumber, File db, int pageSize) {
+    public TableHeader(int tableNumber, File table_file, int pageSize) {
         this.tableNumber = tableNumber;
         this.maxPages = Constant.INITIAL_POINTER_SIZE;
         this.currentNumOfPages = 0;
         this.numRecords = 0;
         this.coordinates = new ArrayList<>();
-        this.db = db;
+        this.table_file = table_file;
         this.pageSize = pageSize;
     }
 
@@ -132,9 +133,10 @@ public class TableHeader {
 
             if (this.currentNumOfPages > this.maxPages) {
                 this.maxPages += Constant.INITIAL_POINTER_SIZE;
-                makeNewFile(this.db.getPath());
+                makeNewFile(this.table_file.getPath());
             } else {
-                RandomAccessFile randomAccessFile = new RandomAccessFile(this.db.getPath(), "rw");
+                RandomAccessFile randomAccessFile = new RandomAccessFile(this.table_file.getPath(),
+                    "rw");
 
                 randomAccessFile.seek(0);
                 byte[] bytes = this.serialize();
@@ -161,7 +163,8 @@ public class TableHeader {
             RandomAccessFile randomAccessFile = new RandomAccessFile(path, "rw");
             if (tempFile.createNewFile()) {
 
-                RandomAccessFile tempRandomAccessFile = new RandomAccessFile(tempFile.getPath(), "rw");
+                RandomAccessFile tempRandomAccessFile = new RandomAccessFile(tempFile.getPath(),
+                    "rw");
 
                 // Make the new file and write the new header with the coordinate adjusted
                 tempRandomAccessFile.seek(0);
@@ -170,7 +173,9 @@ public class TableHeader {
                 tempRandomAccessFile.write(this.serialize());
 
                 // find the old file's offset where the first page starts
-                int offset = (Constant.INTEGER_SIZE * 4) + ((this.maxPages - Constant.INITIAL_POINTER_SIZE) * Coordinate.getBinarySize());
+                int offset =
+                    (Constant.INTEGER_SIZE * 4) + ((this.maxPages - Constant.INITIAL_POINTER_SIZE)
+                        * Coordinate.getBinarySize());
                 randomAccessFile.seek(offset);
 
                 // copy the old pages over
@@ -230,7 +235,7 @@ public class TableHeader {
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
             for (int i = 0; i < this.coordinates.size(); i++) {
-                Page page = pageBuffer.getPage(i, tableNumber);
+                Page page = pageBuffer.getPage(i, this);
                 if (page == null) {
                     Coordinate coordinate = this.coordinates.get(i);
                     randomAccessFile.seek(coordinate.getOffset());
@@ -248,4 +253,7 @@ public class TableHeader {
         return total;
     }
 
+    public File getTable_file() {
+        return table_file;
+    }
 }

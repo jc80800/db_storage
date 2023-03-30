@@ -4,11 +4,13 @@ import static main.Constants.Constant.PrepareResult.PREPARE_SUCCESS;
 import static main.Constants.Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Objects;
 import main.Constants.Constant;
 import main.Constants.Coordinate;
 import main.StorageManager.Data.Attribute;
@@ -37,17 +39,31 @@ public class PageBuffer {
         this.catalog = catalog;
     }
 
-    public Page getPage(int pageId, int tableNumber) {
-        PageKey pageKey = new PageKey(pageId, tableNumber);
+    public Page getPage(int pageId, TableHeader tableHeader) {
+        PageKey pageKey = new PageKey(pageId, tableHeader.getTableNumber());
         // If page already in queue, remove it and put it to front of queue
-        if (pages.containsKey(pageKey)){
+        if (pages.containsKey(pageKey)) {
             bufferQueue.remove(pages.get(pageKey));
             Page page = pages.get(pageKey);
             bufferQueue.push(page);
             return page;
         }
-        System.out.println("No Page found");
-        return null;
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(
+            tableHeader.getTable_file().getPath(), "r");) {
+
+            randomAccessFile.seek(tableHeader.getCoordinates().get(pageId).getOffset());
+            byte[] pageBytes = new byte[catalog.getPageSize()];
+            randomAccessFile.readFully(pageBytes);
+
+            Page page = Page.deserialize(pageBytes,
+                catalog.getMetaTable(tableHeader.getTableNumber()),
+                tableHeader.getTableNumber(), catalog.getPageSize(), pageId);
+            putPage(page);
+            return page;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public void putPage(Page page) {
@@ -107,7 +123,7 @@ public class PageBuffer {
                 Boolean inserted;
 
                 for (int i = 0; i < coordinates.size(); i++) {
-                    Page page = getPage(i, tableNumber);
+                    Page page = getPage(i, tableHeader);
                     if (page == null) {
                         // If the page Buffer doesn't have it, go to the file and deserialize
                         byte[] bytes = new byte[this.pageSize];
@@ -200,12 +216,13 @@ public class PageBuffer {
     }
 
     /**
-     * Check if pages that belong to table that's to be dropped
-     * Remove pages from buffer queue and hash map (pages)
+     * Check if pages that belong to table that's to be dropped Remove pages from buffer queue and
+     * hash map (pages)
+     *
      * @param tableNumber table number for table to be dropped
      */
     public void deletePage(int tableNumber) {
-        for (Page page: bufferQueue) {
+        for (Page page : bufferQueue) {
             if (page.getTableNumber() == tableNumber) {
                 bufferQueue.remove(page);
                 PageKey pageKey = new PageKey(page.getPageId(), tableNumber);
@@ -214,7 +231,8 @@ public class PageBuffer {
         }
     }
 
-    public ArrayList<String[]> copyRecords(File table_file, MetaAttribute metaAttribute, Object defaultValue, String action, MetaTable metaTable){
+    public ArrayList<String[]> copyRecords(File table_file, MetaAttribute metaAttribute,
+        Object defaultValue, String action, MetaTable metaTable) {
         TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
         int tableNumber = tableHeader.getTableNumber();
         ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
@@ -223,7 +241,7 @@ public class PageBuffer {
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(table_file, "r");
             for (int i = 0; i < coordinates.size(); i++) {
-                Page page = getPage(i, tableNumber);
+                Page page = getPage(i, tableHeader);
                 if (page == null) {
                     // If the page Buffer doesn't have it, go to the file and deserialize
                     byte[] bytes = new byte[this.pageSize];
@@ -234,32 +252,33 @@ public class PageBuffer {
                 }
 
                 ArrayList<Record> pageRecords = page.getRecords();
-                for(Record record : pageRecords){
+                for (Record record : pageRecords) {
                     StringBuilder value = new StringBuilder();
                     ArrayList<MetaAttribute> metaAttributes = record.getMetaAttributes();
                     ArrayList<Attribute> attributes = record.getAttributes();
                     int idx = -1;
-                    if(action.equals(Constant.DROP)){
+                    if (action.equals(Constant.DROP)) {
                         idx = metaAttributes.indexOf(metaAttribute);
                     }
-                    for(int j = 0; j < metaAttributes.size(); j++){
-                        if(j == idx){
+                    for (int j = 0; j < metaAttributes.size(); j++) {
+                        if (j == idx) {
                             continue;
                         }
-                        if(attributes.get(j).getValue() == null){
+                        if (attributes.get(j).getValue() == null) {
                             value.append("null ");
                         } else {
                             if (metaAttributes.get(j).getType().equals(Constant.DataType.VARCHAR) ||
-                                    metaAttributes.get(j).getType().equals(Constant.DataType.CHAR)) {
+                                metaAttributes.get(j).getType().equals(Constant.DataType.CHAR)) {
                                 value.append("\"");
                                 value.append(attributes.get(j).getValue().toString());
-                                value.append("\"").append(" ");;
+                                value.append("\"").append(" ");
+                                ;
                             } else {
                                 value.append(attributes.get(j).getValue().toString()).append(" ");
                             }
                         }
                     }
-                    if(action.equals(Constant.ADD)){
+                    if (action.equals(Constant.ADD)) {
                         value.append(defaultValue);
                     }
                     String[] temp = new String[]{value.toString().trim()};
@@ -274,7 +293,7 @@ public class PageBuffer {
 
     }
 
-    public boolean checkUnique(File table_file, Object value, MetaTable metaTable, int index){
+    public boolean checkUnique(File table_file, Object value, MetaTable metaTable, int index) {
         TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
         int tableNumber = tableHeader.getTableNumber();
 
@@ -283,7 +302,7 @@ public class PageBuffer {
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(table_file, "r");
             for (int i = 0; i < coordinates.size(); i++) {
-                Page page = getPage(i, tableNumber);
+                Page page = getPage(i, tableHeader);
                 if (page == null) {
                     // If the page Buffer doesn't have it, go to the file and deserialize
                     byte[] bytes = new byte[this.pageSize];
@@ -294,8 +313,9 @@ public class PageBuffer {
                 }
 
                 ArrayList<Record> pageRecords = page.getRecords();
-                for (Record record : pageRecords){
-                    if((record.getAttributes().get(index).getValue()).equals(value) || record.getAttributes().get(index).getValue() == value ){
+                for (Record record : pageRecords) {
+                    if ((record.getAttributes().get(index).getValue()).equals(value)
+                        || record.getAttributes().get(index).getValue() == value) {
                         System.out.println("Exists");
                         return false;
                     }
@@ -307,20 +327,21 @@ public class PageBuffer {
         return true;
     }
 
-    private class PageKey{
+    private class PageKey {
 
         private int pageId;
         private int tableNumber;
 
-        private PageKey(int pageId, int tableNumber){
+        private PageKey(int pageId, int tableNumber) {
             this.pageId = pageId;
             this.tableNumber = tableNumber;
         }
 
         @Override
-        public boolean equals(Object other){
-            if (other instanceof PageKey){
-                return this.pageId == ((PageKey) other).pageId && this.tableNumber == ((((PageKey) other).tableNumber));
+        public boolean equals(Object other) {
+            if (other instanceof PageKey) {
+                return this.pageId == ((PageKey) other).pageId
+                    && this.tableNumber == ((((PageKey) other).tableNumber));
             } else {
                 return false;
             }
@@ -328,7 +349,7 @@ public class PageBuffer {
 
         @Override
         public int hashCode() {
-            return (int)(Math.pow(3,tableNumber) + Math.pow(2, pageId));
+            return (int) (Math.pow(3, tableNumber) + Math.pow(2, pageId));
         }
     }
 }
