@@ -91,6 +91,15 @@ public class Record {
         return new Record(attributes, metaAttributes, bytes.length);
     }
 
+    public Attribute getAttribute(String attributeName) {
+        for (Attribute attribute : attributes) {
+            if (attribute.getMetaAttribute().getName().equals(attributeName)) {
+                return attribute;
+            }
+        }
+        return null;
+    }
+
     public int getBinarySize() {
         return binarySize;
     }
@@ -114,7 +123,7 @@ public class Record {
     /**
      * form: [fieldMap, attributes]
      *
-     * @return
+     * @return - byte Array
      */
     public byte[] serialize() {
 
@@ -155,10 +164,8 @@ public class Record {
         return attributes;
     }
 
-    public ArrayList<MetaAttribute> getMetaAttributes(){return metaAttributes;}
-
-    public void setAttributes(ArrayList<Attribute> attributes) {
-        this.attributes = attributes;
+    public ArrayList<MetaAttribute> getMetaAttributes() {
+        return metaAttributes;
     }
 
     @Override
