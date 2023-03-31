@@ -64,14 +64,20 @@ public class SqlParser {
 
             String from = tokens[1].toUpperCase();
             String tableName = tokens[2];
-            String where = tokens[3].toUpperCase();
+            String conditions = null;
+            if (tokens.length > 3) {
+                if (!tokens[3].equalsIgnoreCase(Constant.WHERE)) {
+                    return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+                }
+                conditions = String.join(" ",
+                    Arrays.copyOfRange(tokens, 4, tokens.length));
+            }
 
-            if (!from.equals(Constant.FROM) || !where.equals(Constant.WHERE)) {
+            if (!from.equalsIgnoreCase(Constant.FROM)) {
                 return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
             }
 
-            return storageManager.executeDelete(tableName,
-                Arrays.copyOfRange(tokens, 4, tokens.length));
+            return storageManager.executeDelete(tableName, conditions);
         } catch (ArrayIndexOutOfBoundsException e) {
             return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }

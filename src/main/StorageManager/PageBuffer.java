@@ -170,6 +170,13 @@ public class PageBuffer {
         }
     }
 
+    public void deleteRecord(Record record, Page page, int index, TableHeader tableHeader) {
+        Page temp = page.deleteRecord(record, index, tableHeader);
+        if (temp == null) {
+            deletePage(page, tableHeader.getTableNumber());
+        }
+    }
+
     public Boolean checkPlacement(ArrayList<Record> records, Record target, Page page,
         TableHeader tableHeader) {
         Object recordValue = target.getPrimaryKey().getValue();
@@ -221,14 +228,18 @@ public class PageBuffer {
      *
      * @param tableNumber table number for table to be dropped
      */
-    public void deletePage(int tableNumber) {
+    public void deletePagesFromTable(int tableNumber) {
         for (Page page : bufferQueue) {
             if (page.getTableNumber() == tableNumber) {
-                bufferQueue.remove(page);
-                PageKey pageKey = new PageKey(page.getPageId(), tableNumber);
-                pages.remove(pageKey);
+                deletePage(page, tableNumber);
             }
         }
+    }
+
+    public void deletePage(Page page, int tableNumber) {
+        bufferQueue.remove(page);
+        PageKey pageKey = new PageKey(page.getPageId(), tableNumber);
+        pages.remove(pageKey);
     }
 
     public ArrayList<String[]> copyRecords(File table_file, MetaAttribute metaAttribute,

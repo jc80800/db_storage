@@ -9,6 +9,7 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
@@ -19,6 +20,7 @@ import main.Constants.CommandLineTable;
 import main.Constants.Constant;
 import main.Constants.Constant.DataType;
 import main.Constants.Coordinate;
+import main.SqlParser.ShuntingYardAlgorithm;
 import main.StorageManager.Data.Attribute;
 import main.StorageManager.Data.Page;
 import main.StorageManager.Data.Record;
@@ -91,7 +93,7 @@ public class StorageManager {
         }
     }
 
-    public Constant.PrepareResult executeDelete(String tableName, String[] values) {
+    public Constant.PrepareResult executeDelete(String tableName, String conditions) {
         // Check if the file exist in the directory
         File table_file = getTableFile(tableName);
         if (!table_file.exists()) {
@@ -101,9 +103,19 @@ public class StorageManager {
         TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
         ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader)
             .getCoordinates();
+        Queue<String> whereClause = ShuntingYardAlgorithm.parse(conditions);
         for (int i = 0; i < coordinates.size(); i++) {
             Page page = pageBuffer.getPage(i, tableHeader);
-
+            ArrayList<Record> records = page.getRecords();
+            ArrayList<Record> recordsToDelete = new ArrayList<>();
+            for (Record record : records) {
+                if (ShuntingYardAlgorithm.evaluate(new LinkedList<>(whereClause), record)) {
+                    recordsToDelete.add(record);
+                }
+            }
+            for (Record record : recordsToDelete) {
+                pageBuffer.deleteRecord(record, page, i, tableHeader);
+            }
         }
 
         return PREPARE_SUCCESS;
@@ -421,7 +433,7 @@ public class StorageManager {
         // Get the table number and get the schema table from catalog
         int tableNumber = tableHeader.getTableNumber();
         this.catalog.deleteMetaTable(tableNumber);
-        this.pageBuffer.deletePage(tableNumber);
+        this.pageBuffer.deletePagesFromTable(tableNumber);
 
         // Delete file
         table_file.delete();

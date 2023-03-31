@@ -85,7 +85,7 @@ public class TableHeader {
         }
     }
 
-    public void insertNewPage(Page page, int index) {
+    public void insertNewPage(int index) {
         int lastOffset = findLastOffset();
         if (this.coordinates.size() > 0) {
             lastOffset += this.pageSize;
@@ -100,9 +100,16 @@ public class TableHeader {
         updateTableHeader(index);
     }
 
+    // only deletes page coordinate, page will be left on disk and not be used
+    public void deletePage(int pageId) {
+        coordinates.remove(pageId);
+        currentNumOfPages -= 1;
+        updateTableHeader(pageId);
+    }
+
     public Page createFirstPage(int pageSize) {
         Page page = new Page(pageSize, this.tableNumber, new ArrayList<>(), 0);
-        insertNewPage(page, 0);
+        insertNewPage(0);
         return page;
     }
 
@@ -130,7 +137,6 @@ public class TableHeader {
 
     public void updateTableHeader(int newPageIndex) {
         try {
-
             if (this.currentNumOfPages > this.maxPages) {
                 this.maxPages += Constant.INITIAL_POINTER_SIZE;
                 makeNewFile(this.table_file.getPath());
@@ -141,10 +147,10 @@ public class TableHeader {
                 randomAccessFile.seek(0);
                 byte[] bytes = this.serialize();
                 randomAccessFile.write(bytes);
-                Coordinate newCoordinate = this.coordinates.get(newPageIndex);
-                byte[] bytes1 = new byte[newCoordinate.getLength()];
-                randomAccessFile.seek(newCoordinate.getOffset());
-                randomAccessFile.write(bytes1);
+//                Coordinate newCoordinate = this.coordinates.get(newPageIndex);
+//                byte[] bytes1 = new byte[newCoordinate.getLength()];
+//                randomAccessFile.seek(newCoordinate.getOffset());
+//                randomAccessFile.write(bytes1);
                 randomAccessFile.close();
             }
 

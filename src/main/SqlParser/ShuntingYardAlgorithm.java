@@ -11,7 +11,38 @@ import main.StorageManager.Data.Record;
 
 public class ShuntingYardAlgorithm {
 
+    public static Queue<String> parse(String expression) {
+        if (expression == null) {
+            return new LinkedList<>();
+        }
+        // split on space except in quotes
+        String[] tokens = expression.split("(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)\\s+");
+        Stack<String> operators = new Stack<>();
+        Queue<String> output = new LinkedList<>();
+
+        for (String token : tokens) {
+            // remove quotes
+            token = token.replaceAll("\"", "");
+            if (isOperator(token)) {
+                while (!operators.empty() && checkPrecedence(operators.peek(), token)) {
+                    output.add(operators.pop());
+                }
+                operators.push(token);
+            } else {
+                output.add(token);
+            }
+        }
+
+        while (!operators.empty()) {
+            output.add(operators.pop());
+        }
+        return output;
+    }
+
     public static Boolean evaluate(Queue<String> postfix, Record record) {
+        if (postfix.isEmpty()) {
+            return true;
+        }
         Stack<Boolean> resultStack = new Stack<>();
         Stack<String> valueStack = new Stack<>();
         while (!postfix.isEmpty()) {
@@ -139,6 +170,14 @@ public class ShuntingYardAlgorithm {
                     return attributeValue.equals(value);
                 } else if (operator.equals("!=")) {
                     return !attributeValue.equals(value);
+                } else if (operator.equals(">")) {
+                    return attributeValue.compareTo(value) > 0;
+                } else if (operator.equals("<")) {
+                    return attributeValue.compareTo(value) < 0;
+                } else if (operator.equals(">=")) {
+                    return attributeValue.compareTo(value) >= 0;
+                } else if (operator.equals("<=")) {
+                    return attributeValue.compareTo(value) <= 0;
                 } else {
                     System.out.printf("operator %s is not supported for type %s\n", operator,
                         type);
@@ -147,31 +186,6 @@ public class ShuntingYardAlgorithm {
             }
         }
         return null;
-    }
-
-    public static Queue<String> parse(String expression) {
-        // split on space except in quotes
-        String[] tokens = expression.split("(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)\\s+");
-        Stack<String> operators = new Stack<>();
-        Queue<String> output = new LinkedList<>();
-
-        for (String token : tokens) {
-            // remove quotes
-            token = token.replaceAll("\"", "");
-            if (isOperator(token)) {
-                while (!operators.empty() && checkPrecedence(operators.peek(), token)) {
-                    output.add(operators.pop());
-                }
-                operators.push(token);
-            } else {
-                output.add(token);
-            }
-        }
-
-        while (!operators.empty()) {
-            output.add(operators.pop());
-        }
-        return output;
     }
 
     private static boolean checkPrecedence(String operator1, String operator2) {

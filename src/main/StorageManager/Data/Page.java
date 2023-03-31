@@ -110,6 +110,16 @@ public class Page {
         return pageSize - spaceTaken;
     }
 
+    public Page deleteRecord(Record record, int pageId, TableHeader tableHeader) {
+        this.records.remove(record);
+        if (this.records.isEmpty()) {
+            tableHeader.deletePage(pageId);
+            return null;
+        }
+        this.recordPointers = constructPointers();
+        return this;
+    }
+
     public Page insertRecord(Record record, int index, TableHeader tableHeader) {
         boolean canInsert = isEnoughSpaceForInsert(record);
 
@@ -124,7 +134,7 @@ public class Page {
             this.records = new ArrayList<>(
                 this.records.subList(0, splittingPoint));
             Page newPage = new Page(this.pageSize, this.tableNumber, temp, this.pageId + 1);
-            tableHeader.insertNewPage(newPage, this.pageId + 1);
+            tableHeader.insertNewPage(this.pageId + 1);
             return newPage;
         }
     }
