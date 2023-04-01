@@ -329,47 +329,76 @@ public class StorageManager {
         return PREPARE_SUCCESS;
     }
 
-    public Constant.PrepareResult executeSelect(String[] attributes, String table,
+    public Constant.PrepareResult executeSelect(String[] attributes, ArrayList<String> tableList,
         Queue<String> whereAttributes, String orderByColumn) {
-        // Check if the file exist in the directory
-        File table_file = getTableFile(table);
-        if (table_file.exists()) {
-            ArrayList<Page> pages = new ArrayList<>();
-            TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
-            ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader)
-                .getCoordinates();
 
-            for (int i = 0; i < coordinates.size(); i++) {
-                pages.add(pageBuffer.getPage(i, tableHeader));
-            }
-            CommandLineTable output = new CommandLineTable();
+        CommandLineTable output = new CommandLineTable();
+        ArrayList<MetaAttribute> metaAttributes = new ArrayList<>();
+        ArrayList<Record> records = new ArrayList<>();
 
-            ArrayList<String> header = new ArrayList<>();
-            for (MetaAttribute attribute : catalog.getMetaTable(tableHeader.getTableNumber())
-                .metaAttributes()) {
-                header.add(attribute.getName());
-            }
-            output.setHeaders(header.toArray(new String[0]));
+        for (int i = 0; i < tableList.size(); i++) {
+            File tableFile = getTableFile(tableList.get(i));
 
-            for (Page page : pages) {
-                for (Record record : page.getRecords()) {
-                    ArrayList<String> row = new ArrayList<>();
-                    for (Attribute attribute : record.getAttributes()) {
-                        if (attribute.getValue() == null) {
-                            row.add("null");
-                        } else {
-                            row.add(attribute.getValue().toString());
+            if (tableFile.exists()) {
+                TableHeader tableHeader = TableHeader.parseTableHeader(tableFile, pageSize);
+
+                assert tableHeader != null;
+                for (MetaAttribute attribute : catalog.getMetaTable(tableHeader.getTableNumber()).metaAttributes()) {
+                    if(tableList.size() == 1) {
+                        metaAttributes.add(attribute);
+                    }
+                    else {
+                        metaAttributes.add(new MetaAttribute(attribute.getIsPrimaryKey(), tableList.get(i) + "." + attribute.getName() , attribute.getType(), attribute.getConstraints()));
+                    }
+                }
+                ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader).getCoordinates();
+
+                ArrayList<Record> newRecords = new ArrayList<>();
+                for (int j = 0; j < coordinates.size(); j++) {
+                    Page page = pageBuffer.getPage(j, tableHeader);
+                    if(i == 0){
+                        newRecords.addAll(page.getRecords());
+                    }
+                    else {
+                        for (Record record : page.getRecords()) {
+                            for (Record currRecord : records) {
+                                ArrayList<Attribute> combinedAttributes = new ArrayList<>();
+                                combinedAttributes.addAll(currRecord.getAttributes());
+                                combinedAttributes.addAll(record.getAttributes());
+                                Record combinedRecord = new Record(combinedAttributes, metaAttributes);
+                                newRecords.add(combinedRecord);
+                            }
                         }
                     }
-                    output.addRow(row);
+                }
+
+                records = newRecords;
+
+            } else {
+                System.out.printf("No such table %s\n", tableFile);
+                return PREPARE_UNRECOGNIZED_STATEMENT;
+            }
+        }
+
+        ArrayList<String> header = new ArrayList<>();
+        for(int i = 0; i < metaAttributes.size(); i++){
+            header.add(metaAttributes.get(i).getName());
+        }
+        output.setHeaders(header.toArray(new String[0]));
+
+        for (Record record : records) {
+            ArrayList<String> row = new ArrayList<>();
+            for (Attribute attribute : record.getAttributes()) {
+                if (attribute.getValue() == null) {
+                    row.add("null");
+                } else {
+                    row.add(attribute.getValue().toString());
                 }
             }
-            output.print();
-            return PREPARE_SUCCESS;
-        } else {
-            System.out.printf("No such table %s\n", table);
-            return PREPARE_UNRECOGNIZED_STATEMENT;
+            output.addRow(row);
         }
+        output.print();
+        return PREPARE_SUCCESS;
     }
 
     public Constant.PrepareResult executeInsert(String table, String[] values) {

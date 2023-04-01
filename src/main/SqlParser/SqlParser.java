@@ -1,5 +1,6 @@
 package main.SqlParser;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Queue;
@@ -146,12 +147,16 @@ public class SqlParser {
             // Grab table in "from"
             String fromClause = selectField[1].trim();
             String[] fromClauseField = fromClause.split(" ");
-            if (fromClauseField.length == 1) {
-                table = fromClause;
-                return storageManager.executeSelect(attributes, table, whereAttributes, orderBy);
+
+            String[] tables = fromClause.split(",");
+            if(fromClause.contains("where")){
+                tables = fromClause.split("where")[0].split(",");
             }
 
-            table = fromClauseField[0];
+            ArrayList<String> tableList = new ArrayList<>();
+            for(int i = 0; i < tables.length; i++){
+                tableList.add(tables[i].trim());
+            }
 
             // Else check for where and orderby clauses
             if (fromClause.contains("orderby")) {
@@ -170,7 +175,7 @@ public class SqlParser {
                 }
             }
 
-            return storageManager.executeSelect(attributes, table, whereAttributes, orderBy);
+            return storageManager.executeSelect(attributes, tableList, whereAttributes, orderBy);
 
         } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
