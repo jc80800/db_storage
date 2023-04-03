@@ -6,14 +6,7 @@ import static main.Constants.Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEME
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import main.Constants.CommandLineTable;
@@ -21,10 +14,8 @@ import main.Constants.Constant;
 import main.Constants.Constant.DataType;
 import main.Constants.Coordinate;
 import main.SqlParser.ShuntingYardAlgorithm;
-import main.StorageManager.Data.Attribute;
-import main.StorageManager.Data.Page;
+import main.StorageManager.Data.*;
 import main.StorageManager.Data.Record;
-import main.StorageManager.Data.TableHeader;
 import main.StorageManager.MetaData.Catalog;
 import main.StorageManager.MetaData.MetaAttribute;
 import main.StorageManager.MetaData.MetaTable;
@@ -381,14 +372,22 @@ public class StorageManager {
         }
 
         ArrayList<String> header = new ArrayList<>();
-        for(int i = 0; i < metaAttributes.size(); i++){
-            header.add(metaAttributes.get(i).getName());
+        for (MetaAttribute metaAttribute : metaAttributes) {
+            header.add(metaAttribute.getName());
         }
         output.setHeaders(header.toArray(new String[0]));
+        ArrayList<SortRecord> sortRecords = new ArrayList<>();
+        for (Record record: records) {
+            SortRecord sortRecord = new SortRecord(record, orderByColumn);
+            sortRecords.add(sortRecord);
+        }
 
-        for (Record record : records) {
+        Collections.sort(sortRecords);
+
+
+        for (SortRecord sortRecord : sortRecords) {
             ArrayList<String> row = new ArrayList<>();
-            for (Attribute attribute : record.getAttributes()) {
+            for (Attribute attribute : sortRecord.getRecord().getAttributes()) {
                 if (attribute.getValue() == null) {
                     row.add("null");
                 } else {
@@ -468,6 +467,7 @@ public class StorageManager {
         table_file.delete();
         return PREPARE_SUCCESS;
     }
+
 
     private ArrayList<Record> parseRecords(String[] values, MetaTable metaTable) {
 
