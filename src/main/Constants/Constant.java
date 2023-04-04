@@ -14,6 +14,7 @@ public final class Constant {
     public static final String QUIT_CODE = "QUIT";
     public static final String PROMPT = "> ";
     public static final String DELETE = "DELETE";
+    public static final String UPDATE = "UPDATE";
     public static final String INSERT = "INSERT";
     public static final String SELECT = "SELECT";
     public static final String DISPLAY = "DISPLAY";
@@ -29,6 +30,8 @@ public final class Constant {
     public static final String TEMP = "TEMP";
     public static final String FROM = "FROM";
     public static final String WHERE = "WHERE";
+    public static final String SET = "SET";
+    public static final String EQUAL_SYMBOL = "=";
     public static final Charset CHARSET = StandardCharsets.UTF_8;
     public static final Integer BOOLEAN_SIZE = 1;
     public static final Integer INTEGER_SIZE = Integer.BYTES;

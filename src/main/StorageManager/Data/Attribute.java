@@ -81,11 +81,8 @@ public class Attribute {
         return metaAttribute;
     }
 
-    public boolean checkPrimaryKey(){
-        if (metaAttribute.getIsPrimaryKey()){
-            return true;
-        }
-        return false;
+    public boolean checkPrimaryKey() {
+        return metaAttribute.getIsPrimaryKey();
     }
 
     public int getBinarySize() {

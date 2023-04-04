@@ -62,7 +62,7 @@ public class PageBuffer {
             return page;
         } catch (IOException e) {
             e.printStackTrace();
-            return null;
+            throw new IllegalArgumentException();
         }
     }
 
@@ -124,15 +124,6 @@ public class PageBuffer {
 
                 for (int i = 0; i < coordinates.size(); i++) {
                     Page page = getPage(i, tableHeader);
-                    if (page == null) {
-                        // If the page Buffer doesn't have it, go to the file and deserialize
-                        byte[] bytes = new byte[this.pageSize];
-                        randomAccessFile.seek(coordinates.get(i).getOffset());
-                        randomAccessFile.readFully(bytes);
-                        page = Page.deserialize(bytes, metaTable, tableNumber, this.pageSize, i);
-                        putPage(page);
-                    }
-
                     ArrayList<Record> pageRecords = page.getRecords();
 
                     // Check if record can be placed in this page
@@ -253,14 +244,6 @@ public class PageBuffer {
             RandomAccessFile randomAccessFile = new RandomAccessFile(table_file, "r");
             for (int i = 0; i < coordinates.size(); i++) {
                 Page page = getPage(i, tableHeader);
-                if (page == null) {
-                    // If the page Buffer doesn't have it, go to the file and deserialize
-                    byte[] bytes = new byte[this.pageSize];
-                    randomAccessFile.seek(coordinates.get(i).getOffset());
-                    randomAccessFile.readFully(bytes);
-                    page = Page.deserialize(bytes, metaTable, tableNumber, this.pageSize, i);
-                    putPage(page);
-                }
 
                 ArrayList<Record> pageRecords = page.getRecords();
                 for (Record record : pageRecords) {
@@ -314,15 +297,6 @@ public class PageBuffer {
             RandomAccessFile randomAccessFile = new RandomAccessFile(table_file, "r");
             for (int i = 0; i < coordinates.size(); i++) {
                 Page page = getPage(i, tableHeader);
-                if (page == null) {
-                    // If the page Buffer doesn't have it, go to the file and deserialize
-                    byte[] bytes = new byte[this.pageSize];
-                    randomAccessFile.seek(coordinates.get(i).getOffset());
-                    randomAccessFile.readFully(bytes);
-                    page = Page.deserialize(bytes, metaTable, tableNumber, this.pageSize, i);
-                    putPage(page);
-                }
-
                 ArrayList<Record> pageRecords = page.getRecords();
                 for (Record record : pageRecords) {
                     if ((record.getAttributes().get(index).getValue()).equals(value)

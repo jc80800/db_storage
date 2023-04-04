@@ -16,6 +16,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import main.Constants.CommandLineTable;
 import main.Constants.Constant;
 import main.Constants.Constant.DataType;
@@ -102,7 +103,7 @@ public class StorageManager {
         }
         TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
         ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader)
-            .getCoordinates();
+                .getCoordinates();
         Queue<String> whereClause = ShuntingYardAlgorithm.parse(conditions);
         for (int i = 0; i < coordinates.size(); i++) {
             Page page = pageBuffer.getPage(i, tableHeader);
@@ -118,6 +119,43 @@ public class StorageManager {
             }
         }
 
+        return PREPARE_SUCCESS;
+    }
+
+    public Constant.PrepareResult executeUpdate(String tableName, String attributeName, String newValue,
+                                                String conditions) {
+        File table_file = getTableFile(tableName);
+        if (!table_file.exists()) {
+            System.out.printf("No such table %s\n", tableName);
+            return PREPARE_UNRECOGNIZED_STATEMENT;
+        }
+        TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
+        ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader)
+                .getCoordinates();
+        Queue<String> whereClause = ShuntingYardAlgorithm.parse(conditions);
+        for (int i = 0; i < coordinates.size(); i++) {
+            Page page = pageBuffer.getPage(i, tableHeader);
+            ArrayList<Record> records = page.getRecords();
+            ArrayList<Record> recordsToDelete = new ArrayList<>();
+            ArrayList<Record> updatedRecords = new ArrayList<>();
+            for (Record record : records) {
+                if (ShuntingYardAlgorithm.evaluate(new LinkedList<>(whereClause), record)) {
+                    recordsToDelete.add(record);
+                    Record updatedRecord = new Record(record);
+                    if (!record.hasAttribute(attributeName)) {
+                        System.out.printf("Table %s does not have column %s\n", tableName, attributeName);
+                        return PREPARE_UNRECOGNIZED_STATEMENT;
+                    }
+                    updatedRecord.getAttributeByName(attributeName).setValue(newValue);
+                    updatedRecords.add(updatedRecord);
+                }
+            }
+            for (Record record : recordsToDelete) {
+                pageBuffer.deleteRecord(record, page, i, tableHeader);
+            }
+            pageBuffer.findRecordPlacement(table_file, updatedRecords,
+                    catalog.getMetaTable(tableHeader.getTableNumber()), tableHeader);
+        }
         return PREPARE_SUCCESS;
     }
 
@@ -140,7 +178,7 @@ public class StorageManager {
             TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
             assert tableHeader != null;
             for (MetaAttribute a : catalog.getMetaTable(tableHeader.getTableNumber())
-                .metaAttributes()) {
+                    .metaAttributes()) {
                 if (a.getName().equals(aName)) {
                     if (a.getIsPrimaryKey()) {
                         System.out.println("Can't drop primarykey");
@@ -152,7 +190,7 @@ public class StorageManager {
         } else {
             String aName = values[0]; // attribute name
             if (values[1].toUpperCase().contains(DataType.VARCHAR.toString())
-                || values[1].toUpperCase().contains(DataType.CHAR.toString())) {
+                    || values[1].toUpperCase().contains(DataType.CHAR.toString())) {
                 DataType dataType = DataType.CHAR;
                 if (values[1].toUpperCase().equals(DataType.VARCHAR.toString())) {
                     dataType = DataType.VARCHAR;
@@ -202,10 +240,10 @@ public class StorageManager {
                     return PREPARE_UNRECOGNIZED_STATEMENT;
                 }
                 attribute = new MetaAttribute(false, aName, DataType.valueOf(type.toUpperCase()),
-                    null);
+                        null);
 
                 if (values.length > 2 && values[2].equalsIgnoreCase(Constant.DEFAULT)
-                    && values.length == 4) {
+                        && values.length == 4) {
                     defaultValue = values[3];
                 }
 
@@ -229,13 +267,13 @@ public class StorageManager {
 
         createTable(Constant.TEMP, newAttribute);
         ArrayList<String[]> results = pageBuffer.copyRecords(table_file, attribute, defaultValue,
-            action, metaTable);
+                action, metaTable);
         for (String[] result : results) {
             executeInsert(Constant.TEMP, result);
         }
         executeDrop(tableName);
         TableHeader tableHeader1 = TableHeader.parseTableHeader(getTableFile(Constant.TEMP),
-            pageSize);
+                pageSize);
         int tempNumber = tableHeader1.getTableNumber();
         this.catalog.getMetaTable(tempNumber).changeName(table_file.getName());
         getTableFile(Constant.TEMP).renameTo(table_file);
@@ -261,7 +299,7 @@ public class StorageManager {
             } else {
                 for (int i = 2; i < valArray.length; i++) {
                     if (!possible_constraints.contains(valArray[i]) && !valArray[i].equals(
-                        "primarykey")) {
+                            "primarykey")) {
                         System.out.println("Duplicate/Invalid Field for attribute");
                         return PREPARE_UNRECOGNIZED_STATEMENT;
                     }
@@ -292,7 +330,7 @@ public class StorageManager {
                         type = Constant.DataType.BOOLEAN;
                     }
                     attributes.add(
-                        new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, constraints));
+                            new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, constraints));
                 } else if (valArray[1].matches("(?i)CHAR\\([0-9]+\\)|VARCHAR\\([0-9]+\\)")) {
                     String[] typeArray = valArray[1].split("\\(");
                     Constant.DataType type = Constant.DataType.CHAR;
@@ -301,8 +339,8 @@ public class StorageManager {
                     }
                     int length = Integer.parseInt(typeArray[1].replace(")", ""));
                     attributes.add(
-                        new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, length,
-                            constraints));
+                            new MetaAttribute(isPrimary, valArray[0].toLowerCase(), type, length,
+                                    constraints));
                 } else {
                     System.out.println("Syntax error was found!");
                     return PREPARE_UNRECOGNIZED_STATEMENT;
@@ -330,7 +368,7 @@ public class StorageManager {
     }
 
     public Constant.PrepareResult executeSelect(String[] attributes, ArrayList<String> tableList,
-        Queue<String> whereAttributes, String orderByColumn) {
+                                                Queue<String> whereAttributes, String orderByColumn) {
 
         CommandLineTable output = new CommandLineTable();
         ArrayList<MetaAttribute> metaAttributes = new ArrayList<>();
@@ -344,11 +382,10 @@ public class StorageManager {
 
                 assert tableHeader != null;
                 for (MetaAttribute attribute : catalog.getMetaTable(tableHeader.getTableNumber()).metaAttributes()) {
-                    if(tableList.size() == 1) {
+                    if (tableList.size() == 1) {
                         metaAttributes.add(attribute);
-                    }
-                    else {
-                        metaAttributes.add(new MetaAttribute(attribute.getIsPrimaryKey(), tableList.get(i) + "." + attribute.getName() , attribute.getType(), attribute.getConstraints()));
+                    } else {
+                        metaAttributes.add(new MetaAttribute(attribute.getIsPrimaryKey(), tableList.get(i) + "." + attribute.getName(), attribute.getType(), attribute.getConstraints()));
                     }
                 }
                 ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader).getCoordinates();
@@ -356,10 +393,9 @@ public class StorageManager {
                 ArrayList<Record> newRecords = new ArrayList<>();
                 for (int j = 0; j < coordinates.size(); j++) {
                     Page page = pageBuffer.getPage(j, tableHeader);
-                    if(i == 0){
+                    if (i == 0) {
                         newRecords.addAll(page.getRecords());
-                    }
-                    else {
+                    } else {
                         for (Record record : page.getRecords()) {
                             for (Record currRecord : records) {
                                 ArrayList<Attribute> combinedAttributes = new ArrayList<>();
@@ -381,7 +417,7 @@ public class StorageManager {
         }
 
         ArrayList<String> header = new ArrayList<>();
-        for(int i = 0; i < metaAttributes.size(); i++){
+        for (int i = 0; i < metaAttributes.size(); i++) {
             header.add(metaAttributes.get(i).getName());
         }
         output.setHeaders(header.toArray(new String[0]));
@@ -425,7 +461,7 @@ public class StorageManager {
 
             // Find where to place each record and place it
             Constant.PrepareResult result = this.pageBuffer.findRecordPlacement(table_file, records,
-                metaTable, tableHeader);
+                    metaTable, tableHeader);
 
             if (records.size() != values.length || result.equals(PREPARE_UNRECOGNIZED_STATEMENT)) {
                 return PREPARE_UNRECOGNIZED_STATEMENT;
@@ -512,14 +548,14 @@ public class StorageManager {
                                 intObject = Integer.parseInt(object);
                             } catch (NumberFormatException e) {
                                 System.out.printf("Invalid value: \"%s\" for Integer Type\n",
-                                    object);
+                                        object);
                                 return result;
                             }
                             if (unique) {
                                 if (!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()),
-                                    intObject, metaTable, i)) {
+                                        intObject, metaTable, i)) {
                                     System.out.println(
-                                        "Invalid value: value is unique and already exist");
+                                            "Invalid value: value is unique and already exist");
                                     return result;
                                 }
                             }
@@ -531,14 +567,14 @@ public class StorageManager {
                                 doubleObject = Double.parseDouble(object);
                             } catch (NumberFormatException e) {
                                 System.out.printf("Invalid value: \"%s\" for Double Type\n",
-                                    object);
+                                        object);
                                 return result;
                             }
                             if (unique) {
                                 if (!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()),
-                                    doubleObject, metaTable, i)) {
+                                        doubleObject, metaTable, i)) {
                                     System.out.println(
-                                        "Invalid value: value is unique and already exist");
+                                            "Invalid value: value is unique and already exist");
                                     return result;
                                 }
                             }
@@ -548,10 +584,10 @@ public class StorageManager {
                             if (object.equalsIgnoreCase("true")) {
                                 if (unique) {
                                     if (!pageBuffer.checkUnique(
-                                        getTableFile(metaTable.getTableName()),
-                                        true, metaTable, i)) {
+                                            getTableFile(metaTable.getTableName()),
+                                            true, metaTable, i)) {
                                         System.out.println(
-                                            "Invalid value: value is unique and already exist");
+                                                "Invalid value: value is unique and already exist");
                                         return result;
                                     }
                                 }
@@ -559,42 +595,42 @@ public class StorageManager {
                             } else if (object.equalsIgnoreCase("false")) {
                                 if (unique) {
                                     if (!pageBuffer.checkUnique(
-                                        getTableFile(metaTable.getTableName()),
-                                        false, metaTable, i)) {
+                                            getTableFile(metaTable.getTableName()),
+                                            false, metaTable, i)) {
                                         System.out.println(
-                                            "Invalid value: value is unique and already exist");
+                                                "Invalid value: value is unique and already exist");
                                         return result;
                                     }
                                 }
                                 attributes.add(new Attribute(metaAttribute, false));
                             } else {
                                 System.out.printf("Invalid value: \"%s\" for Boolean Type\n",
-                                    object);
+                                        object);
                                 return result;
                             }
                         }
                         case CHAR, VARCHAR -> {
                             if (object.charAt(0) != '\"'
-                                || object.charAt(object.length() - 1) != '\"') {
+                                    || object.charAt(object.length() - 1) != '\"') {
                                 System.out.printf("Invalid value: %s, missing quotes\n", object);
                                 return result;
                             }
                             object = object.substring(1, object.length() - 1);
                             if (object.length() > metaAttribute.getMaxLength()) {
                                 System.out.printf("\"%s\" length exceeds %s(%d)\n", object,
-                                    dataType.name(), metaAttribute.getMaxLength());
+                                        dataType.name(), metaAttribute.getMaxLength());
                                 return result;
                             }
                             if (unique) {
                                 if (!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()),
-                                    object, metaTable, i)) {
+                                        object, metaTable, i)) {
                                     System.out.println(
-                                        "Invalid value: value is unique and already exist");
+                                            "Invalid value: value is unique and already exist");
                                     return result;
                                 }
                             }
                             attributes.add(
-                                new Attribute(metaAttribute, object));
+                                    new Attribute(metaAttribute, object));
                         }
                     }
                 }
@@ -629,8 +665,8 @@ public class StorageManager {
         TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
 
         int numOfPages = Objects.requireNonNull(tableHeader).getCoordinates().size();
-        int numOfRecords = tableHeader.getTotalRecords(table_file, this.pageBuffer, foundMetaTable,
-            this.pageSize);
+        int numOfRecords = tableHeader.getTotalRecords(this.pageBuffer
+        );
 
         System.out.format("Pages: %d\n", numOfPages);
         System.out.format("Records: %d\n", numOfRecords);
@@ -659,8 +695,8 @@ public class StorageManager {
             if (table_file.exists()) {
                 TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
                 numOfPages = Objects.requireNonNull(tableHeader).getCoordinates().size();
-                numOfRecords = tableHeader.getTotalRecords(table_file, this.pageBuffer, metaTable,
-                    this.pageSize);
+                numOfRecords = tableHeader.getTotalRecords(this.pageBuffer
+                );
             }
             System.out.format("Pages: %s\n", numOfPages);
             System.out.format("Records: %s\n", numOfRecords);
@@ -675,7 +711,7 @@ public class StorageManager {
     public void saveCatalog() {
         File catalog_file = new File(this.db + Constant.CATALOG_FILE);
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(catalog_file,
-            "rw")) {
+                "rw")) {
             byte[] bytes = this.catalog.serialize();
             // erase current content
             randomAccessFile.setLength(0);

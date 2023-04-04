@@ -70,7 +70,7 @@ public class ShuntingYardAlgorithm {
 
     private static Boolean evaluateCondition(Record record, String operator, String attributeName,
         String value) {
-        Attribute attribute = record.getAttribute(attributeName);
+        Attribute attribute = record.getAttributeByName(attributeName);
         if (attribute == null) {
             System.out.printf("No such attribute %s\n", attributeName);
             throw new IllegalArgumentException();

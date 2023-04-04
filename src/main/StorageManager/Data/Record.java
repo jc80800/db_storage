@@ -28,6 +28,12 @@ public class Record {
         this.binarySize = binarySize;
     }
 
+    public Record(Record other) {
+        this.attributes = other.attributes;
+        this.metaAttributes = other.metaAttributes;
+        this.binarySize = calculateBinarySize();
+    }
+
     public static Record deserialize(byte[] bytes, ArrayList<MetaAttribute> metaAttributes) {
         byte[] fieldBoolean = Arrays.copyOf(bytes, metaAttributes.size());
         ArrayList<Attribute> attributes = new ArrayList<>();
@@ -91,7 +97,16 @@ public class Record {
         return new Record(attributes, metaAttributes, bytes.length);
     }
 
-    public Attribute getAttribute(String attributeName) {
+    public boolean hasAttribute(String attributeName) {
+        for (Attribute attribute : attributes) {
+            if (attribute.getMetaAttribute().getName().equals(attributeName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Attribute getAttributeByName(String attributeName) {
         for (Attribute attribute : attributes) {
             if (attribute.getMetaAttribute().getName().equals(attributeName)) {
                 return attribute;

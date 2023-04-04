@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import main.Constants.Constant;
 import main.Constants.Coordinate;
 import main.Constants.Helper;
-import main.StorageManager.MetaData.MetaTable;
 import main.StorageManager.PageBuffer;
 
 public class TableHeader {
@@ -235,25 +234,14 @@ public class TableHeader {
             " Coordinates: " + this.coordinates;
     }
 
-    public int getTotalRecords(File file, PageBuffer pageBuffer, MetaTable metaTable,
-        int pageSize) {
+    public int getTotalRecords(PageBuffer pageBuffer) {
         int total = 0;
         try {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
             for (int i = 0; i < this.coordinates.size(); i++) {
                 Page page = pageBuffer.getPage(i, this);
-                if (page == null) {
-                    Coordinate coordinate = this.coordinates.get(i);
-                    randomAccessFile.seek(coordinate.getOffset());
-                    byte[] bytes = new byte[pageSize];
-                    randomAccessFile.readFully(bytes);
-
-                    page = Page.deserialize(bytes, metaTable, metaTable.getTableNumber(), pageSize,
-                        i);
-                }
                 total += page.getNumberOfRecords();
             }
-        } catch (IOException e) {
+        } catch (IllegalArgumentException e) {
             e.printStackTrace();
         }
         return total;

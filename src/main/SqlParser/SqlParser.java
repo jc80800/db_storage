@@ -46,6 +46,7 @@ public class SqlParser {
         PrepareResult result;
         switch (type) {
             case Constant.DELETE -> result = deleteCommand(tokens);
+            case Constant.UPDATE -> result = updateCommand(tokens);
             case Constant.CREATE -> result = createCommand(tokens);
             case Constant.DISPLAY -> result = displayCommand(tokens);
             case Constant.INSERT -> result = insertCommand(tokens);
@@ -62,7 +63,6 @@ public class SqlParser {
 
     private Constant.PrepareResult deleteCommand(String[] tokens) {
         try {
-
             String from = tokens[1].toUpperCase();
             String tableName = tokens[2];
             String conditions = null;
@@ -79,6 +79,30 @@ public class SqlParser {
             }
 
             return storageManager.executeDelete(tableName, conditions);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+        }
+    }
+
+    private Constant.PrepareResult updateCommand(String[] tokens) {
+        try {
+            String tableName = tokens[1];
+            String setKeyword = tokens[2];
+            String column = tokens[3];
+            String equalSign = tokens[4];
+            String newValue = tokens[5];
+            if (!setKeyword.equalsIgnoreCase(Constant.SET) || !equalSign.equalsIgnoreCase(Constant.EQUAL_SYMBOL)) {
+                return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+            }
+            String conditions = null;
+            if (tokens.length > 6) {
+                if (!tokens[6].equalsIgnoreCase(Constant.WHERE)) {
+                    return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
+                }
+                conditions = String.join(" ",
+                        Arrays.copyOfRange(tokens, 7, tokens.length));
+            }
+            return storageManager.executeUpdate(tableName, column, newValue, conditions);
         } catch (ArrayIndexOutOfBoundsException e) {
             return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
