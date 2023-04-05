@@ -6,11 +6,8 @@ import static main.Constants.Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEME
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Objects;
+import java.util.*;
+
 import main.Constants.Constant;
 import main.Constants.Coordinate;
 import main.StorageManager.Data.Attribute;
@@ -106,10 +103,41 @@ public class PageBuffer {
         }
     }
 
-    public Constant.PrepareResult findRecordPlacement(File table_file,
-        ArrayList<Record> records, MetaTable metaTable, TableHeader tableHeader) {
-        int tableNumber = tableHeader.getTableNumber();
+    public boolean validateRecord(Record record, MetaTable metaTable, TableHeader tableHeader) {
+        for (int i = 0; i < metaTable.metaAttributes().size(); i++) {
+            MetaAttribute metaAttribute = metaTable.metaAttributes().get(i);
+            Set<String> constraints = metaAttribute.getConstraints();
+            Object value = record.getAttributes().get(i).getValue();
 
+            if (metaAttribute.getIsPrimaryKey()) {
+                if (value == null) {
+                    System.out.printf("Invalid value, %s is primaryKey which can not be null\n",
+                            metaAttribute.getName());
+                    return false;
+                }
+                if (!checkUnique(value, tableHeader, i)) {
+                    System.out.println("Duplicate primaryKey");
+                    return false;
+                }
+            }
+
+            if (constraints.contains("notnull") && value == null) {
+                System.out.println("Invalid value: value can't be null for this column");
+                return false;
+            }
+            boolean unique = constraints.contains("unique");
+            if (unique) {
+                if (!checkUnique(value, tableHeader, i)) {
+                    System.out.println("Invalid value: value is unique and already exist");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public Constant.PrepareResult findRecordPlacement(File table_file,
+        ArrayList<Record> records, TableHeader tableHeader) {
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(), "rw");
 
@@ -287,28 +315,20 @@ public class PageBuffer {
 
     }
 
-    public boolean checkUnique(File table_file, Object value, MetaTable metaTable, int index) {
-        TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
-        int tableNumber = tableHeader.getTableNumber();
-
+    public boolean checkUnique(Object value, TableHeader tableHeader, int index) {
         ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
-
-        try {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(table_file, "r");
-            for (int i = 0; i < coordinates.size(); i++) {
-                Page page = getPage(i, tableHeader);
-                ArrayList<Record> pageRecords = page.getRecords();
-                for (Record record : pageRecords) {
-                    if ((record.getAttributes().get(index).getValue()).equals(value)
-                        || record.getAttributes().get(index).getValue() == value) {
-                        System.out.println("Exists");
-                        return false;
-                    }
+        for (int i = 0; i < coordinates.size(); i++) {
+            Page page = getPage(i, tableHeader);
+            ArrayList<Record> pageRecords = page.getRecords();
+            for (Record record : pageRecords) {
+                if ((record.getAttributes().get(index).getValue()).equals(value)
+                    || record.getAttributes().get(index).getValue() == value) {
+                    System.out.println("Exists");
+                    return false;
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+
         return true;
     }
 

@@ -18,6 +18,11 @@ public class Attribute {
         this.binarySize = calculateBinarySize();
     }
 
+    public Attribute(MetaAttribute metaAttribute, String value) {
+        this.metaAttribute = metaAttribute;
+        setValue(value);
+    }
+
     public static Attribute deserialize(byte[] bytes, MetaAttribute metaAttribute) {
 
         int index = 0;
@@ -72,8 +77,54 @@ public class Attribute {
         return value;
     }
 
-    public void setValue(Object value) {
-        this.value = value;
+    public void setValue(String newValue) {
+        if (newValue == null) {
+            this.value = null;
+        } else {
+            Constant.DataType dataType = metaAttribute.getType();
+            switch (dataType) {
+                case INTEGER -> {
+                    try {
+                        this.value = Integer.parseInt(newValue);
+                    } catch (NumberFormatException e) {
+                        System.out.printf("Invalid value: \"%s\" for Integer Type\n", newValue);
+                        throw new IllegalArgumentException();
+                    }
+                }
+                case DOUBLE -> {
+                    try {
+                        this.value = Double.parseDouble(newValue);
+                    } catch (NumberFormatException e) {
+                        System.out.printf("Invalid value: \"%s\" for Double Type\n", newValue);
+                        throw new IllegalArgumentException();
+                    }
+                }
+                case BOOLEAN -> {
+                    if (newValue.equalsIgnoreCase("true")) {
+                        this.value = true;
+                    } else if (newValue.equalsIgnoreCase("false")) {
+                        this.value = false;
+                    } else {
+                        System.out.printf("Invalid value: \"%s\" for Boolean Type\n", newValue);
+                        throw new IllegalArgumentException();
+                    }
+                }
+                case CHAR, VARCHAR -> {
+                    if (newValue.charAt(0) != '\"'
+                            || newValue.charAt(newValue.length() - 1) != '\"') {
+                        System.out.printf("Invalid value: %s, missing quotes\n", newValue);
+                        throw new IllegalArgumentException();
+                    }
+                    newValue = newValue.substring(1, newValue.length() - 1);
+                    if (newValue.length() > metaAttribute.getMaxLength()) {
+                        System.out.printf("\"%s\" length exceeds %s(%d)\n", newValue,
+                                dataType.name(), metaAttribute.getMaxLength());
+                        throw new IllegalArgumentException();
+                    }
+                    this.value = newValue;
+                }
+            }
+        }
         this.binarySize = calculateBinarySize();
     }
 

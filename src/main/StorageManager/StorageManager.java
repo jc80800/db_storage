@@ -130,6 +130,8 @@ public class StorageManager {
             return PREPARE_UNRECOGNIZED_STATEMENT;
         }
         TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
+        int tableNumber = tableHeader.getTableNumber();
+        MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
         ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader)
                 .getCoordinates();
         Queue<String> whereClause = ShuntingYardAlgorithm.parse(conditions);
@@ -140,21 +142,23 @@ public class StorageManager {
             ArrayList<Record> updatedRecords = new ArrayList<>();
             for (Record record : records) {
                 if (ShuntingYardAlgorithm.evaluate(new LinkedList<>(whereClause), record)) {
-                    recordsToDelete.add(record);
                     Record updatedRecord = new Record(record);
                     if (!record.hasAttribute(attributeName)) {
                         System.out.printf("Table %s does not have column %s\n", tableName, attributeName);
                         return PREPARE_UNRECOGNIZED_STATEMENT;
                     }
                     updatedRecord.getAttributeByName(attributeName).setValue(newValue);
+                    if (!pageBuffer.validateRecord(updatedRecord, metaTable, tableHeader)) {
+                        break;
+                    }
+                    recordsToDelete.add(record);
                     updatedRecords.add(updatedRecord);
                 }
             }
             for (Record record : recordsToDelete) {
                 pageBuffer.deleteRecord(record, page, i, tableHeader);
             }
-            pageBuffer.findRecordPlacement(table_file, updatedRecords,
-                    catalog.getMetaTable(tableHeader.getTableNumber()), tableHeader);
+            pageBuffer.findRecordPlacement(table_file, updatedRecords, tableHeader);
         }
         return PREPARE_SUCCESS;
     }
@@ -457,11 +461,10 @@ public class StorageManager {
 
         // Parse the values from user and validate it
         try {
-            ArrayList<Record> records = parseRecords(values, metaTable);
+            ArrayList<Record> records = parseRecords(values, metaTable, tableHeader);
 
             // Find where to place each record and place it
-            Constant.PrepareResult result = this.pageBuffer.findRecordPlacement(table_file, records,
-                    metaTable, tableHeader);
+            Constant.PrepareResult result = this.pageBuffer.findRecordPlacement(table_file, records, tableHeader);
 
             if (records.size() != values.length || result.equals(PREPARE_UNRECOGNIZED_STATEMENT)) {
                 return PREPARE_UNRECOGNIZED_STATEMENT;
@@ -505,7 +508,7 @@ public class StorageManager {
         return PREPARE_SUCCESS;
     }
 
-    private ArrayList<Record> parseRecords(String[] values, MetaTable metaTable) {
+    private ArrayList<Record> parseRecords(String[] values, MetaTable metaTable, TableHeader tableHeader) {
 
         ArrayList<MetaAttribute> metaAttributes = metaTable.metaAttributes();
         ArrayList<Record> result = new ArrayList<>();
@@ -525,117 +528,20 @@ public class StorageManager {
             for (int i = 0; i < metaTable.metaAttributes().size(); i++) {
                 MetaAttribute metaAttribute = metaTable.metaAttributes().get(i);
                 String object = retrievedAttributes[i];
-                DataType dataType = metaAttribute.getType();
-                Set<String> constraints = metaAttribute.getConstraints();
-                boolean unique = false;
-
-                if (constraints.contains("notnull") && object.equals("null")) {
-                    System.out.println("Invalid value: value can't be null for this column");
-                    return result;
-                }
-
-                if (constraints.contains("unique")) {
-                    unique = true;
-                }
-
+                Attribute attribute;
                 if (object.equalsIgnoreCase("null")) {
-                    attributes.add(new Attribute(metaAttribute, null));
+                    attribute = new Attribute(metaAttribute, null);
                 } else {
-                    switch (dataType) {
-                        case INTEGER -> {
-                            int intObject;
-                            try {
-                                intObject = Integer.parseInt(object);
-                            } catch (NumberFormatException e) {
-                                System.out.printf("Invalid value: \"%s\" for Integer Type\n",
-                                        object);
-                                return result;
-                            }
-                            if (unique) {
-                                if (!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()),
-                                        intObject, metaTable, i)) {
-                                    System.out.println(
-                                            "Invalid value: value is unique and already exist");
-                                    return result;
-                                }
-                            }
-                            attributes.add(new Attribute(metaAttribute, intObject));
-                        }
-                        case DOUBLE -> {
-                            double doubleObject;
-                            try {
-                                doubleObject = Double.parseDouble(object);
-                            } catch (NumberFormatException e) {
-                                System.out.printf("Invalid value: \"%s\" for Double Type\n",
-                                        object);
-                                return result;
-                            }
-                            if (unique) {
-                                if (!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()),
-                                        doubleObject, metaTable, i)) {
-                                    System.out.println(
-                                            "Invalid value: value is unique and already exist");
-                                    return result;
-                                }
-                            }
-                            attributes.add(new Attribute(metaAttribute, doubleObject));
-                        }
-                        case BOOLEAN -> {
-                            if (object.equalsIgnoreCase("true")) {
-                                if (unique) {
-                                    if (!pageBuffer.checkUnique(
-                                            getTableFile(metaTable.getTableName()),
-                                            true, metaTable, i)) {
-                                        System.out.println(
-                                                "Invalid value: value is unique and already exist");
-                                        return result;
-                                    }
-                                }
-                                attributes.add(new Attribute(metaAttribute, true));
-                            } else if (object.equalsIgnoreCase("false")) {
-                                if (unique) {
-                                    if (!pageBuffer.checkUnique(
-                                            getTableFile(metaTable.getTableName()),
-                                            false, metaTable, i)) {
-                                        System.out.println(
-                                                "Invalid value: value is unique and already exist");
-                                        return result;
-                                    }
-                                }
-                                attributes.add(new Attribute(metaAttribute, false));
-                            } else {
-                                System.out.printf("Invalid value: \"%s\" for Boolean Type\n",
-                                        object);
-                                return result;
-                            }
-                        }
-                        case CHAR, VARCHAR -> {
-                            if (object.charAt(0) != '\"'
-                                    || object.charAt(object.length() - 1) != '\"') {
-                                System.out.printf("Invalid value: %s, missing quotes\n", object);
-                                return result;
-                            }
-                            object = object.substring(1, object.length() - 1);
-                            if (object.length() > metaAttribute.getMaxLength()) {
-                                System.out.printf("\"%s\" length exceeds %s(%d)\n", object,
-                                        dataType.name(), metaAttribute.getMaxLength());
-                                return result;
-                            }
-                            if (unique) {
-                                if (!pageBuffer.checkUnique(getTableFile(metaTable.getTableName()),
-                                        object, metaTable, i)) {
-                                    System.out.println(
-                                            "Invalid value: value is unique and already exist");
-                                    return result;
-                                }
-                            }
-                            attributes.add(
-                                    new Attribute(metaAttribute, object));
-                        }
+                    try {
+                         attribute = new Attribute(metaAttribute, object);
+                    } catch (IllegalArgumentException e) {
+                        return result;
                     }
                 }
+                attributes.add(attribute);
             }
             Record record = new Record(attributes, metaAttributes);
+            pageBuffer.validateRecord(record, metaTable, tableHeader);
             result.add(record);
         }
         return result;
@@ -648,11 +554,9 @@ public class StorageManager {
      */
     public Constant.PrepareResult displayInfo(String table) {
         boolean foundTable = false;
-        MetaTable foundMetaTable = null;
         for (MetaTable metaTable : catalog.getMetaTableHashMap().values()) {
             if (metaTable.getTableName().equalsIgnoreCase(table)) {
                 foundTable = true;
-                foundMetaTable = metaTable;
                 System.out.print(metaTable);
                 break;
             }
