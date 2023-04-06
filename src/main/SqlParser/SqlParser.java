@@ -182,6 +182,12 @@ public class SqlParser {
             for(int i = 0; i < tables.length; i++){
                 tableList.add(tables[i].trim());
             }
+            if(tableList.get(tableList.size() - 1).contains("orderby")){
+                String temp1 = tableList.get(tableList.size() - 1);
+                String[] temp2 = temp1.split("orderby");
+                tableList.remove(tableList.size() - 1);
+                tableList.add(temp2[0].trim());
+            }
 
             // Else check for where and orderby clauses
             if (fromClause.contains("orderby")) {
@@ -200,7 +206,9 @@ public class SqlParser {
                 whereAttributes = ShuntingYardAlgorithm.parse(whereAttributesString);
             }
 
-            return storageManager.executeSelect(Arrays.asList(attributes), tableList, whereAttributes, orderBy);
+            ArrayList<String> attributeList = new ArrayList<>(Arrays.asList(attributes));
+
+            return storageManager.executeSelect(attributeList, tableList, whereAttributes, orderBy);
 
         } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;

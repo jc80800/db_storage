@@ -6,14 +6,7 @@ import static main.Constants.Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEME
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,10 +15,8 @@ import main.Constants.Constant;
 import main.Constants.Constant.DataType;
 import main.Constants.Coordinate;
 import main.SqlParser.ShuntingYardAlgorithm;
-import main.StorageManager.Data.Attribute;
-import main.StorageManager.Data.Page;
+import main.StorageManager.Data.*;
 import main.StorageManager.Data.Record;
-import main.StorageManager.Data.TableHeader;
 import main.StorageManager.MetaData.Catalog;
 import main.StorageManager.MetaData.MetaAttribute;
 import main.StorageManager.MetaData.MetaTable;
@@ -371,7 +362,7 @@ public class StorageManager {
         return PREPARE_SUCCESS;
     }
 
-    public Constant.PrepareResult executeSelect(List<String> attributes, ArrayList<String> tableList,
+    public Constant.PrepareResult executeSelect(ArrayList<String> attributes, ArrayList<String> tableList,
                                                 Queue<String> whereAttributes, String orderByColumn) {
 
         if(orderByColumn != null && !attributes.contains(orderByColumn)) {
@@ -381,7 +372,6 @@ public class StorageManager {
         CommandLineTable output = new CommandLineTable();
         ArrayList<MetaAttribute> metaAttributes = new ArrayList<>();
         ArrayList<Record> records = new ArrayList<>();
-
         for (int i = 0; i < tableList.size(); i++) {
             File tableFile = getTableFile(tableList.get(i));
 
@@ -442,6 +432,20 @@ public class StorageManager {
             }
             records = result;
         }
+
+        if(orderByColumn != null){
+            ArrayList<Record> records1 = new ArrayList<>();
+            ArrayList<SortRecord> sortRecords = new ArrayList<>();
+            for (Record record : records) {
+                sortRecords.add(new SortRecord(record, orderByColumn));
+            }
+            Collections.sort(sortRecords);
+            for(SortRecord sortRecord : sortRecords){
+                records1.add(sortRecord.getRecord());
+            }
+            records = records1;
+        }
+
 
         for (Record record : records) {
             ArrayList<String> row = new ArrayList<>();

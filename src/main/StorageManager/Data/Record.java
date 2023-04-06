@@ -120,11 +120,15 @@ public class Record {
     public Boolean checkDuplicateAttribute(String attributeName){
         boolean found = false;
         for(Attribute attribute : this.attributes){
-            if(attribute.getMetaAttribute().getName().equals(attributeName) && !found){
-                found = true;
+            if(attribute.getMetaAttribute().getName().equals(attributeName)){
+                if(!found){
+                    found = true;
+                } else {
+                    return true;
+                }
             }
         }
-        return found;
+        return false;
     }
 
     public int getBinarySize() {
