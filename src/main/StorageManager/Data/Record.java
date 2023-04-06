@@ -2,7 +2,9 @@ package main.StorageManager.Data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import main.Constants.Constant;
 import main.Constants.Constant.DataType;
 import main.Constants.Helper;
@@ -107,12 +109,22 @@ public class Record {
     }
 
     public Attribute getAttributeByName(String attributeName) {
-        for (Attribute attribute : attributes) {
-            if (attribute.getMetaAttribute().getName().equals(attributeName)) {
-                return attribute;
+        for (int i = 0; i < metaAttributes.size(); i++){
+            if (metaAttributes.get(i).getName().equals(attributeName)){
+                return attributes.get(i);
             }
         }
         return null;
+    }
+
+    public Boolean checkDuplicateAttribute(String attributeName){
+        boolean found = false;
+        for(Attribute attribute : this.attributes){
+            if(attribute.getMetaAttribute().getName().equals(attributeName) && !found){
+                found = true;
+            }
+        }
+        return found;
     }
 
     public int getBinarySize() {

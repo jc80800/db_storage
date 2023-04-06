@@ -371,8 +371,12 @@ public class StorageManager {
         return PREPARE_SUCCESS;
     }
 
-    public Constant.PrepareResult executeSelect(String[] attributes, ArrayList<String> tableList,
+    public Constant.PrepareResult executeSelect(List<String> attributes, ArrayList<String> tableList,
                                                 Queue<String> whereAttributes, String orderByColumn) {
+
+        if(orderByColumn != null && !attributes.contains(orderByColumn)) {
+            attributes.add(orderByColumn);
+        }
 
         CommandLineTable output = new CommandLineTable();
         ArrayList<MetaAttribute> metaAttributes = new ArrayList<>();
@@ -411,9 +415,7 @@ public class StorageManager {
                         }
                     }
                 }
-
                 records = newRecords;
-
             } else {
                 System.out.printf("No such table %s\n", tableFile);
                 return PREPARE_UNRECOGNIZED_STATEMENT;
@@ -425,6 +427,21 @@ public class StorageManager {
             header.add(metaAttributes.get(i).getName());
         }
         output.setHeaders(header.toArray(new String[0]));
+
+        if(whereAttributes != null){
+            ArrayList<Record> result = new ArrayList<>();
+            for(Record record: records){
+                Queue<String> temp = new LinkedList<>(whereAttributes);
+                try {
+                    if (ShuntingYardAlgorithm.evaluate(temp, record)) {
+                        result.add(record);
+                    }
+                } catch(IllegalArgumentException e){
+                    return PREPARE_UNRECOGNIZED_STATEMENT;
+                }
+            }
+            records = result;
+        }
 
         for (Record record : records) {
             ArrayList<String> row = new ArrayList<>();

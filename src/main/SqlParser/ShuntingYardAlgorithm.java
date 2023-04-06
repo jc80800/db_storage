@@ -1,5 +1,7 @@
 package main.SqlParser;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Objects;
@@ -8,6 +10,7 @@ import java.util.Stack;
 import main.Constants.Constant.DataType;
 import main.StorageManager.Data.Attribute;
 import main.StorageManager.Data.Record;
+import main.StorageManager.MetaData.MetaAttribute;
 
 public class ShuntingYardAlgorithm {
 
@@ -39,7 +42,7 @@ public class ShuntingYardAlgorithm {
         return output;
     }
 
-    public static Boolean evaluate(Queue<String> postfix, Record record) {
+    public static Boolean evaluate(Queue<String> postfix, Record record) throws IllegalArgumentException{
         if (postfix.isEmpty()) {
             return true;
         }
@@ -70,12 +73,46 @@ public class ShuntingYardAlgorithm {
 
     private static Boolean evaluateCondition(Record record, String operator, String attributeName,
         String value) {
-        Attribute attribute = record.getAttributeByName(attributeName);
+
+        // Check if the attributeName is without .extension by checking inside the record
+        ArrayList<Attribute> tempAtt = record.getAttributes();
+        boolean found = false;
+        Attribute attribute = null;
+        for(Attribute attribute1 : tempAtt){
+            if(attribute1.getMetaAttribute().getName().equals(attributeName)){
+                // check if that attribute is duplicate
+                if(record.checkDuplicateAttribute(attributeName)){
+                    System.out.printf("Need to specify Duplicate attribute %s\n", attributeName);
+                    throw new IllegalArgumentException();
+                } else{
+                    attribute = attribute1;
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found){
+            attribute = record.getAttributeByName(attributeName);
+        }
         if (attribute == null) {
             System.out.printf("No such attribute %s\n", attributeName);
             throw new IllegalArgumentException();
         }
         DataType type = attribute.getMetaAttribute().getType();
+        if(attribute.getValue() == null){
+            switch(operator){
+                case "=" -> {
+                    return value.equals("null");
+                }
+                case "!=" -> {
+                    return !value.equals("null");
+                }
+                default -> {
+                    return false;
+                }
+            }
+        }
+
         switch (type) {
             case INTEGER -> {
                 int intValue;

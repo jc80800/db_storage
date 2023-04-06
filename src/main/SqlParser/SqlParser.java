@@ -176,6 +176,7 @@ public class SqlParser {
             if(fromClause.contains("where")){
                 tables = fromClause.split("where")[0].split(",");
             }
+            System.out.println(whereAttributes);
 
             ArrayList<String> tableList = new ArrayList<>();
             for(int i = 0; i < tables.length; i++){
@@ -195,11 +196,11 @@ public class SqlParser {
                 if (whereAttributesString.contains("orderby")) {
                     String[] lastFieldTokens = whereAttributesString.split("orderby");
                     whereAttributesString = lastFieldTokens[0];
-                    whereAttributes = ShuntingYardAlgorithm.parse(whereAttributesString);
                 }
+                whereAttributes = ShuntingYardAlgorithm.parse(whereAttributesString);
             }
 
-            return storageManager.executeSelect(attributes, tableList, whereAttributes, orderBy);
+            return storageManager.executeSelect(Arrays.asList(attributes), tableList, whereAttributes, orderBy);
 
         } catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {
             return Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
