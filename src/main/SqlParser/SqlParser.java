@@ -176,7 +176,6 @@ public class SqlParser {
             if(fromClause.contains("where")){
                 tables = fromClause.split("where")[0].split(",");
             }
-            System.out.println(whereAttributes);
 
             ArrayList<String> tableList = new ArrayList<>();
             for(int i = 0; i < tables.length; i++){
