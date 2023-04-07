@@ -1,7 +1,7 @@
 # db_storage
 
 # How to run the program
-- inside src folder
+- cd inside src folder
 - javac main/Main.java
 - java main/Main \<db loc> \<page size> \<buffer size>
 
@@ -23,3 +23,5 @@
 - insert into \<table name> values (list of values[comma seperated]);
 - create table \<table name> (\<attribute name> \<attribute type> ?\<isPrimary>)
 - drop table \<table name> 
+- select * from \<table name> where \<conditions> orderBy \<attribute>
+- select * from \<table name>, \<table name2>, ... where\<conditions> orderBy \<tableName.attribute>
