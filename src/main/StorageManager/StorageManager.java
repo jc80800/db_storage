@@ -139,7 +139,7 @@ public class StorageManager {
                         return PREPARE_UNRECOGNIZED_STATEMENT;
                     }
                     updatedRecord.getAttributeByName(attributeName).setValue(newValue);
-                    if (!pageBuffer.validateRecord(updatedRecord, metaTable, tableHeader)) {
+                    if (!pageBuffer.validateRecord(updatedRecord, record, metaTable, tableHeader)) {
                         break;
                     }
                     recordsToDelete.add(record);
@@ -562,7 +562,7 @@ public class StorageManager {
                 attributes.add(attribute);
             }
             Record record = new Record(attributes, metaAttributes);
-            pageBuffer.validateRecord(record, metaTable, tableHeader);
+            pageBuffer.validateRecord(record, null, metaTable, tableHeader);
             result.add(record);
         }
         return result;

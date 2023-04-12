@@ -103,7 +103,7 @@ public class PageBuffer {
         }
     }
 
-    public boolean validateRecord(Record record, MetaTable metaTable, TableHeader tableHeader) {
+    public boolean validateRecord(Record record, Record oldRecord, MetaTable metaTable, TableHeader tableHeader) {
         for (int i = 0; i < metaTable.metaAttributes().size(); i++) {
             MetaAttribute metaAttribute = metaTable.metaAttributes().get(i);
             Set<String> constraints = metaAttribute.getConstraints();
@@ -115,9 +115,16 @@ public class PageBuffer {
                             metaAttribute.getName());
                     return false;
                 }
-                if (!checkUnique(value, tableHeader, i)) {
-                    System.out.println("Duplicate primaryKey");
-                    return false;
+                if (oldRecord != null) {
+                    if (value != oldRecord.getPrimaryKey().getValue() && !checkUnique(value, tableHeader, i)) {
+                        System.out.println("Duplicate primaryKey");
+                        return false;
+                    }
+                } else {
+                    if (!checkUnique(value, tableHeader, i)) {
+                        System.out.println("Duplicate primaryKey");
+                        return false;
+                    }
                 }
             }
 
