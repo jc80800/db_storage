@@ -6,8 +6,12 @@ import static main.Constants.Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEME
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Objects;
+import java.util.Set;
 import main.Constants.Constant;
 import main.Constants.Coordinate;
 import main.StorageManager.Data.Attribute;
@@ -103,7 +107,8 @@ public class PageBuffer {
         }
     }
 
-    public boolean validateRecord(Record record, Record oldRecord, MetaTable metaTable, TableHeader tableHeader) {
+    public boolean validateRecord(Record record, Record oldRecord, MetaTable metaTable,
+        TableHeader tableHeader) {
         for (int i = 0; i < metaTable.metaAttributes().size(); i++) {
             MetaAttribute metaAttribute = metaTable.metaAttributes().get(i);
             Set<String> constraints = metaAttribute.getConstraints();
@@ -112,11 +117,12 @@ public class PageBuffer {
             if (metaAttribute.getIsPrimaryKey()) {
                 if (value == null) {
                     System.out.printf("Invalid value, %s is primaryKey which can not be null\n",
-                            metaAttribute.getName());
+                        metaAttribute.getName());
                     return false;
                 }
                 if (oldRecord != null) {
-                    if (value != oldRecord.getPrimaryKey().getValue() && !checkUnique(value, tableHeader, i)) {
+                    if (!value.equals(oldRecord.getPrimaryKey().getValue()) && !checkUnique(value,
+                        tableHeader, i)) {
                         System.out.println("Duplicate primaryKey");
                         return false;
                     }
@@ -134,9 +140,17 @@ public class PageBuffer {
             }
             boolean unique = constraints.contains("unique");
             if (unique) {
-                if (!checkUnique(value, tableHeader, i)) {
-                    System.out.println("Invalid value: value is unique and already exist");
-                    return false;
+                if (oldRecord != null) {
+                    if (!value.equals(oldRecord.getAttributes().get(i).getValue()) && !checkUnique(value,
+                        tableHeader, i)) {
+                        System.out.println("Invalid value: value is unique and already exist");
+                        return false;
+                    }
+                } else {
+                    if (!checkUnique(value, tableHeader, i)) {
+                        System.out.println("Invalid value: value is unique and already exist");
+                        return false;
+                    }
                 }
             }
         }

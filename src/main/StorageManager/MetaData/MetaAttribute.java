@@ -49,6 +49,15 @@ public class MetaAttribute {
         this.constraints = constraints;
     }
 
+    public MetaAttribute(MetaAttribute other) {
+        this.isPrimaryKey = other.isPrimaryKey;
+        this.name = other.name;
+        this.type = other.type;
+        this.maxLength = other.maxLength;
+        this.binarySize = other.binarySize;
+        this.constraints = new HashSet<>(other.constraints);
+    }
+
     /**
      * Construct metaAttribute object from the byte array in the following form:
      * [isPrimary(boolean), nameLength(int), name(String), DataTypeCode(int), isLength(bool),

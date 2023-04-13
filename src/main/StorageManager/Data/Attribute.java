@@ -23,6 +23,12 @@ public class Attribute {
         setValue(value);
     }
 
+    public Attribute(Attribute other) {
+        this.value = other.value;
+        this.binarySize = other.binarySize;
+        this.metaAttribute = new MetaAttribute(other.metaAttribute);
+    }
+
     public static Attribute deserialize(byte[] bytes, MetaAttribute metaAttribute) {
 
         int index = 0;

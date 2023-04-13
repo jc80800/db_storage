@@ -29,9 +29,13 @@ public class Record {
     }
 
     public Record(Record other) {
-        this.attributes = other.attributes;
-        this.metaAttributes = other.metaAttributes;
-        this.binarySize = calculateBinarySize();
+        this.attributes = new ArrayList<>();
+        this.metaAttributes = new ArrayList<>();
+        for (int i = 0; i < other.attributes.size(); i++) {
+            this.attributes.add(new Attribute(other.attributes.get(i)));
+            this.metaAttributes.add(new MetaAttribute(other.metaAttributes.get(i)));
+        }
+        this.binarySize = other.binarySize;
     }
 
     public static Record deserialize(byte[] bytes, ArrayList<MetaAttribute> metaAttributes) {

@@ -18,7 +18,7 @@ class AttributeTest {
         constraints.add("unique");
 
         MetaAttribute metaAttribute1 = new MetaAttribute(false, "FirstName", DataType.CHAR, 10, constraints);
-        Attribute attribute1 = new Attribute(metaAttribute1, "Eldon");
+        Attribute attribute1 = new Attribute(metaAttribute1, (Object) "Eldon");
 
         byte[] bytes = attribute1.serialize();
         Attribute deserialized = Attribute.deserialize(bytes, metaAttribute1);

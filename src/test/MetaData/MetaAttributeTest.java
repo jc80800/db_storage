@@ -1,6 +1,7 @@
 package test.MetaData;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -17,9 +18,10 @@ class MetaAttributeTest {
         constraints.add("notnull");
         constraints.add("unique");
 
-
-        MetaAttribute metaAttribute1 = new MetaAttribute(true, "num", DataType.INTEGER, constraints);
-        MetaAttribute metaAttribute2 = new MetaAttribute(false, "Firstname", DataType.VARCHAR, 10, constraints);
+        MetaAttribute metaAttribute1 = new MetaAttribute(true, "num", DataType.INTEGER,
+            constraints);
+        MetaAttribute metaAttribute2 = new MetaAttribute(false, "Firstname", DataType.VARCHAR, 10,
+            constraints);
 
         byte[] bytes1 = metaAttribute1.serialize();
         MetaAttribute deserialized1 = MetaAttribute.deserialize(bytes1);
