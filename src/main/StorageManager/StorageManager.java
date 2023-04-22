@@ -447,6 +447,8 @@ public class StorageManager {
         }
 
 
+
+
         for (Record record : records) {
             ArrayList<String> row = new ArrayList<>();
             for (Attribute attribute : record.getAttributes()) {
