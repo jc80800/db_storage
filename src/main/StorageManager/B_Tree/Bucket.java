@@ -10,6 +10,4 @@ public class Bucket {
         this.pairs = new ArrayList<>();
     }
 
-
-
 }
