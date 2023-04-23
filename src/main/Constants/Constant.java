@@ -36,6 +36,7 @@ public final class Constant {
     public static final Integer BOOLEAN_SIZE = 1;
     public static final Integer INTEGER_SIZE = Integer.BYTES;
     public static final Integer DOUBLE_SIZE = Double.BYTES;
+    public static final Integer CHAR_SIZE = Character.BYTES;
     public static final Integer INITIAL_POINTER_SIZE = 10;
     public static final Integer NOT_NULL_CODE = 1;
     public static final Integer UNIQUE_CODE = 2;

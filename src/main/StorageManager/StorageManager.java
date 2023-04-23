@@ -59,6 +59,26 @@ public class StorageManager {
         System.out.println("\nPlease enter commands, enter <quit> to shutdown the db\n");
     }
 
+    public int calculateN(MetaAttribute dataType){
+        float maxSize;
+        switch(dataType.getType()){
+            case INTEGER:
+                maxSize = Constant.INTEGER_SIZE;
+                break;
+            case DOUBLE:
+                maxSize = Constant.DOUBLE_SIZE;
+                break;
+            case BOOLEAN:
+                maxSize = Constant.BOOLEAN_SIZE;
+                break;
+            default:
+                maxSize = Constant.CHAR_SIZE * dataType.getMaxLength();
+        }
+        int n = (int)Math.floor(pageSize/(maxSize)) - 1;
+
+        return n;
+    }
+
     private void checkCatalog() {
         File catalog_file = new File(db.getPath() + Constant.CATALOG_FILE);
         boolean restart = catalog_file.exists();
