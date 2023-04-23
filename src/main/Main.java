@@ -13,24 +13,25 @@ public class Main {
      * Entry Program: java src.main.Main <db loc> <page size> <buffer size>
      */
     public static void main(String[] args) {
-        if (args.length != 3) {
+        if (args.length != 4) {
             System.out.println("Argument Length invalid");
             System.exit(1);
         }
 
-        start(args[0], Integer.parseInt(args[1]), Integer.parseInt(args[2]));
+        boolean index = args[3].equals("true");
+        start(args[0], Integer.parseInt(args[1]), Integer.parseInt(args[2]), index);
     }
 
     /**
      * main.Main interface with user. Will continuously ask for command until quit
      *
      */
-    public static void start(String dbLoc, int pageSize, int bufferSize) {
+    public static void start(String dbLoc, int pageSize, int bufferSize, boolean index) {
         // Check if Directory exist, if not create else restart
         File db = new File(dbLoc);
 
         // Create Storage Manager
-        StorageManager storageManager = new StorageManager(db, pageSize, bufferSize);
+        StorageManager storageManager = new StorageManager(db, pageSize, bufferSize, index);
         storageManager.initializeDB();
 
         SqlParser sqlParser = new SqlParser(storageManager);

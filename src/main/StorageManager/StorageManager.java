@@ -28,11 +28,13 @@ public class StorageManager {
     private int pageSize;
     private Catalog catalog;
     private PageBuffer pageBuffer;
+    private boolean index;
 
-    public StorageManager(File db, int pageSize, int bufferSize) {
+    public StorageManager(File db, int pageSize, int bufferSize, boolean index) {
         this.db = db;
         this.pageSize = pageSize;
         this.bufferSize = bufferSize;
+        this.index = index;
     }
 
     /**
