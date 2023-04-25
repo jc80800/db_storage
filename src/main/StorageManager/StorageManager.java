@@ -436,7 +436,13 @@ public class StorageManager {
 
         ArrayList<String> header = new ArrayList<>();
         for (int i = 0; i < metaAttributes.size(); i++) {
-            header.add(metaAttributes.get(i).getName());
+            if(attributes.contains("*")){
+                header.add(metaAttributes.get(i).getName());
+            } else {
+                if (attributes.contains(metaAttributes.get(i).getName())) {
+                    header.add(metaAttributes.get(i).getName());
+                }
+            }
         }
         output.setHeaders(header.toArray(new String[0]));
 
@@ -468,17 +474,25 @@ public class StorageManager {
             records = records1;
         }
 
-
-
-
         for (Record record : records) {
             ArrayList<String> row = new ArrayList<>();
             for (Attribute attribute : record.getAttributes()) {
-                if (attribute.getValue() == null) {
-                    row.add("null");
+                if(!attributes.contains("*")) {
+                    if(attributes.contains(attribute.getMetaAttribute().getName())){
+                        if (attribute.getValue() == null) {
+                            row.add("null");
+                        } else {
+                            row.add(attribute.getValue().toString());
+                        }
+                    }
                 } else {
-                    row.add(attribute.getValue().toString());
+                    if (attribute.getValue() == null) {
+                        row.add("null");
+                    } else {
+                        row.add(attribute.getValue().toString());
+                    }
                 }
+
             }
             output.addRow(row);
         }
