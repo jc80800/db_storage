@@ -15,6 +15,7 @@ import main.Constants.Constant;
 import main.Constants.Constant.DataType;
 import main.Constants.Coordinate;
 import main.SqlParser.ShuntingYardAlgorithm;
+import main.StorageManager.B_Tree.Node;
 import main.StorageManager.Data.*;
 import main.StorageManager.Data.Record;
 import main.StorageManager.MetaData.Catalog;
@@ -28,13 +29,13 @@ public class StorageManager {
     private int pageSize;
     private Catalog catalog;
     private PageBuffer pageBuffer;
-    private boolean index;
+    private boolean isIndex;
 
-    public StorageManager(File db, int pageSize, int bufferSize, boolean index) {
+    public StorageManager(File db, int pageSize, int bufferSize, boolean isIndex) {
         this.db = db;
         this.pageSize = pageSize;
         this.bufferSize = bufferSize;
-        this.index = index;
+        this.isIndex = isIndex;
     }
 
     /**
@@ -381,6 +382,14 @@ public class StorageManager {
 
         createFile(file, tableNumber);
 
+        // Create an index
+        if(this.isIndex){
+            MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
+            int N = calculateN(Objects.requireNonNull(metaTable.getPrimaryKey()));
+            // TODO create Node
+            Node node = new Node(N);
+            createIndexFile(getIndexFile(table_name), node);
+        }
         return PREPARE_SUCCESS;
     }
 
@@ -701,11 +710,27 @@ public class StorageManager {
         return new File(table_path);
     }
 
+    public File getIndexFile(String table){
+        String index_path = db.getName() + "/" + table + "_index";
+        return new File(index_path);
+    }
+
     public void createFile(File file, int tableNumber) {
         TableHeader tableHeader = new TableHeader(tableNumber, file, pageSize);
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
             byte[] bytes = tableHeader.serialize();
+            randomAccessFile.write(bytes);
+            randomAccessFile.close();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public void createIndexFile(File file, Node node){
+        try {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
+            byte[] bytes = node.serialize();
             randomAccessFile.write(bytes);
             randomAccessFile.close();
         } catch (IOException ex) {

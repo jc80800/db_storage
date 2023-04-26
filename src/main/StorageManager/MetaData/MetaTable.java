@@ -144,6 +144,16 @@ public final class MetaTable {
         return binarySize;
     }
 
+    public MetaAttribute getPrimaryKey(){
+        for (MetaAttribute metaAttribute : metaAttributes){
+            if (metaAttribute.getIsPrimaryKey()){
+                return metaAttribute;
+            }
+        }
+        System.out.println("No PrimaryKey Found");
+        return null;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

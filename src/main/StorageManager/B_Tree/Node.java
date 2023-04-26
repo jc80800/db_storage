@@ -34,8 +34,9 @@ public class Node {
         return childPointers;
     }
 
-    public void serialize(){
+    public byte[] serialize(){
         // TODO
+        return null;
     }
 
     public static Node deserialize(byte[] bytes){
