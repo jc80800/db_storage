@@ -1,17 +1,13 @@
 package main.StorageManager.B_Tree;
 
-import java.util.ArrayList;
-
-public class Bucket {
+public class RecordPointer {
 
     private int pageNumber;
     private int index;
-    private Record record;
 
-    public Bucket(int pageNumber, int index, Record record){
+    public RecordPointer(int pageNumber, int index){
         this.pageNumber = pageNumber;
         this.index = index;
-        this.record = record;
     }
 
     public int getPageNumber() {
@@ -22,8 +18,11 @@ public class Bucket {
         return index;
     }
 
-    public Record getRecord() {
-        return record;
+    public void setPageNumber(int pageNumber) {
+        this.pageNumber = pageNumber;
     }
 
+    public void setIndex(int index) {
+        this.index = index;
+    }
 }
