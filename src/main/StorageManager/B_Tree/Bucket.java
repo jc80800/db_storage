@@ -4,10 +4,26 @@ import java.util.ArrayList;
 
 public class Bucket {
 
-    private ArrayList<Pair> pairs;
+    private int pageNumber;
+    private int index;
+    private Record record;
 
-    public Bucket(){
-        this.pairs = new ArrayList<>();
+    public Bucket(int pageNumber, int index, Record record){
+        this.pageNumber = pageNumber;
+        this.index = index;
+        this.record = record;
+    }
+
+    public int getPageNumber() {
+        return pageNumber;
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
+    public Record getRecord() {
+        return record;
     }
 
 }

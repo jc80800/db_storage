@@ -386,7 +386,6 @@ public class StorageManager {
         if(this.isIndex){
             MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
             int N = calculateN(Objects.requireNonNull(metaTable.getPrimaryKey()));
-            // TODO create Node
             Node node = new Node(N);
             createIndexFile(getIndexFile(table_name), node);
         }
@@ -730,6 +729,7 @@ public class StorageManager {
     public void createIndexFile(File file, Node node){
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
+            // TODO delete comment once serialize() is implemented
             byte[] bytes = node.serialize();
             randomAccessFile.write(bytes);
             randomAccessFile.close();
