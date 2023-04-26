@@ -13,8 +13,9 @@ public class Node {
 
     public Node(DataType dataType){
         this.dataType = dataType;
-        this.isLeaf = false;
+        this.isLeaf = true;
         this.searchKeys = new ArrayList<>();
+        this.recordPointers = new ArrayList<>();
     }
 
     public boolean isLeaf() {
@@ -31,12 +32,17 @@ public class Node {
             }
 
             if (compareValue < 0){
-                this.searchKeys.add(i, searchValue);
                 if(this.isLeaf){
+                    this.searchKeys.add(i, searchValue);
+                }
+                else{
 
                 }
                 // TODO insert newValue right before this
             }
+        }
+        if(this.isLeaf){
+            this.searchKeys.add(searchValue);
         }
 
     }

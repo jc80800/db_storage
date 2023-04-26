@@ -1,5 +1,7 @@
 package main.StorageManager.B_Tree;
 
+import main.Constants.Constant;
+
 import java.io.File;
 import java.util.ArrayList;
 
@@ -19,6 +21,16 @@ public class BPlusTree {
     }
 
     public void insert(int key) {
-        // TODO
+        if(root == -1) {
+            Node rootNode = new Node(Constant.DataType.INTEGER);
+            nodes.add(rootNode);
+            root = 0;
+        }
+        else{
+            Node rootNode = nodes.get(root);
+            rootNode.insert(key);
+        }
+
+
     }
 }
