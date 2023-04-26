@@ -1,20 +1,44 @@
 package main.StorageManager.B_Tree;
 
 import java.util.ArrayList;
+import main.Constants.Constant.DataType;
 
 public class Node {
+
+    private DataType dataType;
     private boolean isLeaf;
     private int parent;
     private ArrayList<Object> searchKeys;
     private ArrayList<RecordPointer> recordPointers;
 
+    public Node(DataType dataType){
+        this.dataType = dataType;
+        this.isLeaf = false;
+        this.searchKeys = new ArrayList<>();
+    }
 
     public boolean isLeaf() {
         return isLeaf;
     }
 
-    public void insert(Object value){
+    public void insert(Object searchValue){
         // TODO create and insert Node of value
+        for(int i = 0; i < this.searchKeys.size(); i++){
+            int compareValue = compareValues(searchValue, this.searchKeys.get(i));
+            if(compareValue == 0){
+                System.out.println("Primary Key already exist");
+                return;
+            }
+
+            if (compareValue < 0){
+                this.searchKeys.add(i, searchValue);
+                if(this.isLeaf){
+
+                }
+                // TODO insert newValue right before this
+            }
+        }
+
     }
 
     public void delete(Object value){
@@ -41,6 +65,16 @@ public class Node {
     public static Node deserialize(byte[] bytes){
         // TODO
         return null;
+    }
+
+    public int compareValues(Object searchValue, Object compareValue){
+        return switch (dataType) {
+            case INTEGER -> ((Integer) searchValue).compareTo((Integer) compareValue);
+            case DOUBLE -> ((Double) searchValue).compareTo((Double) compareValue);
+            case BOOLEAN -> ((Boolean) searchValue).compareTo((Boolean) compareValue);
+            case VARCHAR -> ((String) searchValue).compareTo((String) compareValue);
+            default -> ((Character) searchValue).compareTo((Character) compareValue);
+        };
     }
 
 }

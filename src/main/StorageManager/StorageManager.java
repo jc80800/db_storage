@@ -15,6 +15,7 @@ import main.Constants.Constant;
 import main.Constants.Constant.DataType;
 import main.Constants.Coordinate;
 import main.SqlParser.ShuntingYardAlgorithm;
+import main.StorageManager.B_Tree.BPlusTree;
 import main.StorageManager.B_Tree.Node;
 import main.StorageManager.Data.*;
 import main.StorageManager.Data.Record;
@@ -386,8 +387,8 @@ public class StorageManager {
         if(this.isIndex){
             MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
             int N = calculateN(Objects.requireNonNull(metaTable.getPrimaryKey()));
-            Node node = new Node(N);
-            createIndexFile(getIndexFile(table_name), node);
+            BPlusTree bPlusTree = new BPlusTree(N, getIndexFile(table_name));
+            // TODO serializing
         }
         return PREPARE_SUCCESS;
     }
@@ -719,18 +720,6 @@ public class StorageManager {
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
             byte[] bytes = tableHeader.serialize();
-            randomAccessFile.write(bytes);
-            randomAccessFile.close();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    public void createIndexFile(File file, Node node){
-        try {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(file.getPath(), "rw");
-            // TODO delete comment once serialize() is implemented
-            byte[] bytes = node.serialize();
             randomAccessFile.write(bytes);
             randomAccessFile.close();
         } catch (IOException ex) {
