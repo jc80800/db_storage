@@ -4,18 +4,24 @@ public class Pair {
 
     private int pageNumber;
     private int index;
+    private Record record;
 
-    public Pair(int pageNumber, int index){
+    public Pair(int pageNumber, int index, Record record){
         this.pageNumber = pageNumber;
         this.index = index;
+        this.record = record;
     }
 
     public int getPageNumber(){
-        return this.pageNumber;
+        return pageNumber;
     }
 
     public int getIndex(){
-        return this.index;
+        return index;
+    }
+
+    public Record getRecord(){
+        return record;
     }
 
 }

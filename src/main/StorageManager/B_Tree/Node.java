@@ -1,42 +1,46 @@
 package main.StorageManager.B_Tree;
 
+import java.util.ArrayList;
+
 public class Node {
 
-    private Object value;
-    private boolean ifLeaf;
-    private Node prev;
-    private Node next;
+    private int size;
+    private boolean isLeaf;
+    private ArrayList<Object> value;
+    private ArrayList<Node> childPointers;
     private Bucket bucket;
 
-    public Node(Object value, boolean ifLeaf){
-        this.value = value;
-        this.ifLeaf = ifLeaf;
-        this.prev = null;
-        this.next = null;
+    public Node(int size){
+        this.size = size;
+        this.isLeaf = false;
+        this.value = new ArrayList<>();
+        this.childPointers = new ArrayList<>();
         this.bucket = null;
     }
 
-    public void setNext(Node node){
-        this.next = node;
+    public int getSize() {
+        return size;
     }
 
-    public void setPrev(Node node){
-        this.prev = node;
+    public boolean isLeaf() {
+        return isLeaf;
     }
 
-    public Object getValue(){
-        return this.value;
+    public ArrayList<Object> getValue() {
+        return value;
     }
 
-    public boolean getIfLeaf(){
-        return this.ifLeaf;
+    public ArrayList<Node> getChildPointers() {
+        return childPointers;
     }
 
-    public Node getNext(){
-        return this.next;
+    public void serialize(){
+        // TODO
     }
 
-    public Node getPrev(){
-        return this.prev;
+    public static Node deserialize(byte[] bytes){
+        // TODO
+        return null;
     }
+
 }
