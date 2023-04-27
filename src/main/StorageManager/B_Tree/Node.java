@@ -25,31 +25,45 @@ public class Node {
     }
 
     public Node(DataType dataType, boolean isLeaf, ArrayList<Object> searchKeys,
-                ArrayList<RecordPointer> recordPointers, int N, int index) {
+                ArrayList<RecordPointer> recordPointers, int N, Integer parentIndex, int index) {
         this.dataType = dataType;
         this.isLeaf = isLeaf;
         this.searchKeys = searchKeys;
         this.recordPointers = recordPointers;
         this.N = N;
-        this.parentIndex = null;
+        this.parentIndex = parentIndex;
         this.index = index;
     }
 
-    private ArrayList<Node> splitRoot() {
+    private Node splitRoot() {
         Node sibling = this.split();
         Node parent = new Node(dataType, false, N, BPlusTree.getNextIndexAndIncrement());
         RecordPointer left = new RecordPointer(-1, this.index);
         RecordPointer right = new RecordPointer(-1, sibling.index);
         parent.addElementByIndex(0, sibling.searchKeys.get(0), left, right);
-        if (!isLeaf) {
-            sibling.searchKeys.remove(0);
-        }
         this.parentIndex = parent.index;
         sibling.parentIndex = parent.index;
-        ArrayList<Node> result = new ArrayList<>();
-        result.add(parent);
-        result.add(sibling);
-        return result;
+        BPlusTree.putNode(parent);
+        return parent;
+    }
+
+    private Node splitRoot(Node leftChild, Node rightChild) {
+        Node sibling = this.split();
+        Node parent = new Node(dataType, false, N, BPlusTree.getNextIndexAndIncrement());
+        RecordPointer left = new RecordPointer(-1, this.index);
+        RecordPointer right = new RecordPointer(-1, sibling.index);
+        Object elementLiftedUp = sibling.searchKeys.get(0);
+        parent.addElementByIndex(0, sibling.searchKeys.get(0), left, right);
+        sibling.searchKeys.remove(0);
+        this.parentIndex = parent.index;
+        sibling.parentIndex = parent.index;
+        int compareResult = compareValues(rightChild.searchKeys.get(rightChild.searchKeys.size() - 1), elementLiftedUp);
+        if (compareResult >= 0) {
+            leftChild.parentIndex = sibling.index;
+            rightChild.parentIndex = sibling.index;
+        }
+        BPlusTree.putNode(parent);
+        return parent;
     }
 
     private Node split() {
@@ -63,12 +77,13 @@ public class Node {
                 (recordPointers.subList(recordPointerMid, recordPointers.size()));
         Node newNode;
         if (isLeaf) {
-            newNode = new Node(dataType, true, newSearchKeys, newRecordPointers, N,
+            newNode = new Node(dataType, true, newSearchKeys, newRecordPointers, N, parentIndex,
                     BPlusTree.getNextIndexAndIncrement());
         } else {
-            newNode = new Node(dataType, false, newSearchKeys, newRecordPointers, N,
+            newNode = new Node(dataType, false, newSearchKeys, newRecordPointers, N, parentIndex,
                     BPlusTree.getNextIndexAndIncrement());
         }
+        BPlusTree.putNode(newNode);
 
         this.searchKeys = new ArrayList<>(searchKeys.subList(0, mid));
         this.recordPointers = new ArrayList<>(recordPointers.subList(0, recordPointerMid));
@@ -90,10 +105,9 @@ public class Node {
         this.recordPointers.add(index + 1, right);
     }
 
-    private ArrayList<Node> addNodeToParent(Node newNode) {
+    private Node addNodeToParent(Node newNode) {
         Object searchKey = newNode.searchKeys.get(0);
         Node parent = BPlusTree.getNodeAtIndex(parentIndex);
-        ArrayList<Node> result = new ArrayList<>();
         boolean added = false;
         for (int i = 0; i < parent.searchKeys.size(); i++) {
             int compareValue = compareValues(searchKey, parent.searchKeys.get(i));
@@ -103,7 +117,6 @@ public class Node {
                 if (parent.isRoot() && !newNode.isLeaf) {
                     newNode.searchKeys.remove(0);
                 }
-                result.add(newNode);
                 added = true;
                 break;
             }
@@ -114,26 +127,22 @@ public class Node {
             if (parent.isRoot() && !newNode.isLeaf) {
                 newNode.searchKeys.remove(0);
             }
-            result.add(newNode);
         }
         if (parent.overflow()) {
             // if it's a root
             if (parent.isRoot()) {
-                ArrayList<Node> ans = parent.splitRoot();
-                this.parentIndex = ans.get(1).getIndex();
-                newNode.parentIndex = ans.get(1).getIndex();
-                result.addAll(ans);
+                return parent.splitRoot(this, newNode);
             } else {
                 Node parentSibling = parent.split();
                 this.parentIndex = parentSibling.index;
                 newNode.parentIndex = parentSibling.index;
-                result.addAll(parent.addNodeToParent(parentSibling));
+                return parent.addNodeToParent(parentSibling);
             }
         }
-        return result;
+        return null;
     }
 
-    public ArrayList<Node> insert(Object searchValue) {
+    public Node insert(Object searchValue) {
         for (int i = 0; i < this.searchKeys.size(); i++) {
             int compareValue = compareValues(searchValue, this.searchKeys.get(i));
             if (isLeaf && compareValue == 0) {
@@ -161,6 +170,7 @@ public class Node {
                     Node node = BPlusTree.getNodeAtIndex(recordPointers.get(i).getIndex());
                     return node.insert(searchValue);
                 }
+                return null;
             }
         }
         // largest value

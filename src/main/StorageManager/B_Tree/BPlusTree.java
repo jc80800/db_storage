@@ -31,16 +31,14 @@ public class BPlusTree {
         } else{
             rootNode = nodes.get(rootIndex);
         }
-        ArrayList<Node> result = rootNode.insert(key);
-        if (result != null) {
-            result.sort(Comparator.comparingInt(Node::getIndex));
-            for (Node node : result) {
-                if (node.isRoot()) {
-                    rootIndex = node.getIndex();
-                }
-                nodes.add(node);
-            }
+        Node newRoot = rootNode.insert(key);
+        if (newRoot != null) {
+            rootIndex = newRoot.getIndex();
         }
+    }
+
+    public static void putNode(Node node) {
+        nodes.add(node);
     }
 
     public static Node getNodeAtIndex(int index) {
