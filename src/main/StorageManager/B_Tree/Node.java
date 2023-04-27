@@ -1,22 +1,20 @@
 package main.StorageManager.B_Tree;
 
-import java.awt.image.AreaAveragingScaleFilter;
-import java.util.ArrayList;
-
 import main.Constants.Constant.DataType;
-import main.StorageManager.Data.Record;
+
+import java.util.ArrayList;
 
 public class Node {
 
-    private DataType dataType;
-    private boolean isLeaf;
+    private final DataType dataType;
+    private final boolean isLeaf;
     private Integer parentIndex;
-    private int index;
+    private final int index;
     private ArrayList<Object> searchKeys;
     private ArrayList<RecordPointer> recordPointers;
     private final int N;
 
-    public Node(DataType dataType, boolean isLeaf, int N, int index){
+    public Node(DataType dataType, boolean isLeaf, int N, int index) {
         this.dataType = dataType;
         this.isLeaf = isLeaf;
         this.searchKeys = new ArrayList<>();
@@ -27,18 +25,14 @@ public class Node {
     }
 
     public Node(DataType dataType, boolean isLeaf, ArrayList<Object> searchKeys,
-                ArrayList<RecordPointer> recordPointers, int n, int index) {
+                ArrayList<RecordPointer> recordPointers, int N, int index) {
         this.dataType = dataType;
         this.isLeaf = isLeaf;
         this.searchKeys = searchKeys;
         this.recordPointers = recordPointers;
-        N = n;
+        this.N = N;
         this.parentIndex = null;
         this.index = index;
-    }
-
-    public boolean isLeaf() {
-        return isLeaf;
     }
 
     private ArrayList<Node> splitRoot() {
@@ -59,11 +53,10 @@ public class Node {
     }
 
     private Node split() {
-        // TODO split node once it exceeds size
         int mid = searchKeys.size() / 2;
         int recordPointerMid = (isLeaf) ?
                 recordPointers.size() / 2
-                : (recordPointers.size() / 2) + 1 ;
+                : (recordPointers.size() / 2) + 1;
         // construct new Node
         ArrayList<Object> newSearchKeys = new ArrayList<>(searchKeys.subList(mid, searchKeys.size()));
         ArrayList<RecordPointer> newRecordPointers = new ArrayList<>
@@ -90,6 +83,7 @@ public class Node {
             this.recordPointers.add(index + 1, recordPointer);
         }
     }
+
     private void addElementByIndex(int index, Object searchKey, RecordPointer left, RecordPointer right) {
         this.searchKeys.add(index, searchKey);
         this.recordPointers.add(index, left);
@@ -133,25 +127,22 @@ public class Node {
                 Node parentSibling = parent.split();
                 this.parentIndex = parentSibling.index;
                 newNode.parentIndex = parentSibling.index;
-
                 result.addAll(parent.addNodeToParent(parentSibling));
             }
         }
         return result;
     }
 
-    public ArrayList<Node> insert(Object searchValue){
-        // TODO create and insert Node of value
+    public ArrayList<Node> insert(Object searchValue) {
         for (int i = 0; i < this.searchKeys.size(); i++) {
             int compareValue = compareValues(searchValue, this.searchKeys.get(i));
-            if (compareValue == 0) {
-                // TODO might need to check if value in internal node is outdated
+            if (isLeaf && compareValue == 0) {
                 System.out.println("Primary Key already exist");
                 return null;
             }
             if (compareValue < 0) {
                 // if root as leaf (only one node)
-                if (parentIndex == null && isLeaf) {
+                if (isRoot() && isLeaf) {
                     addElementByIndex(i, searchValue, new RecordPointer(0, (int) searchValue));
                     if (overflow()) {
                         return splitRoot();
@@ -170,12 +161,11 @@ public class Node {
                     Node node = BPlusTree.getNodeAtIndex(recordPointers.get(i).getIndex());
                     return node.insert(searchValue);
                 }
-                return null;
             }
         }
         // largest value
         // if it's root
-        if (parentIndex == null && isLeaf) {
+        if (isRoot() && isLeaf) {
             addElementByIndex(searchKeys.size(), searchValue, new RecordPointer(0, (int) searchValue));
             if (overflow()) {
                 return splitRoot();
@@ -201,19 +191,19 @@ public class Node {
         return this.searchKeys.size() == maxNum();
     }
 
-    public void delete(Object value){
+    public void delete(Object value) {
         // TODO delete node with primarykey value
     }
 
-    public void update(){
+    public void update() {
         // TODO not sure about parameter but update Node
     }
 
-    public void merge(){
+    public void merge() {
         // TODO merge node if the size is too low
     }
 
-    public byte[] serialize(){
+    public byte[] serialize() {
         // TODO
         return null;
     }
@@ -233,12 +223,12 @@ public class Node {
         return (int) Math.ceil((double) N / 2);
     }
 
-    public static Node deserialize(byte[] bytes){
+    public static Node deserialize(byte[] bytes) {
         // TODO
         return null;
     }
 
-    public int compareValues(Object searchValue, Object compareValue){
+    public int compareValues(Object searchValue, Object compareValue) {
         return switch (dataType) {
             case INTEGER -> ((Integer) searchValue).compareTo((Integer) compareValue);
             case DOUBLE -> ((Double) searchValue).compareTo((Double) compareValue);
@@ -254,10 +244,6 @@ public class Node {
 
     public int getIndex() {
         return index;
-    }
-
-    public ArrayList<RecordPointer> getRecordPointers() {
-        return recordPointers;
     }
 
     @Override
