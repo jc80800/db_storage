@@ -1,6 +1,7 @@
 package main.StorageManager.B_Tree;
 
 import main.Constants.Constant.DataType;
+import main.StorageManager.Data.Page;
 
 import java.util.ArrayList;
 
@@ -35,7 +36,7 @@ public class Node {
         this.index = index;
     }
 
-    private Node splitRoot() {
+    private ArrayList<Node> splitRoot() {
         Node sibling = this.split();
         Node parent = new Node(dataType, false, N, BPlusTree.getNextIndexAndIncrement());
         RecordPointer left = new RecordPointer(-1, this.index);
@@ -201,21 +202,107 @@ public class Node {
         return this.searchKeys.size() == maxNum();
     }
 
-    public void delete(Object value) {
-        // TODO delete node with primarykey value
+    public void delete(Object searchValue){
+        for(int i = 0; i < this.searchKeys.size(); i++) {
+            int compareValue = compareValues(searchValue, this.searchKeys.get(i));
+            if (compareValue == 0) {
+                if(this.isLeaf){
+                    this.recordPointers.remove(i);
+                    this.searchKeys.remove(i);
+                    ArrayList<Node> siblings = getSiblings();
+                    Node leftSibling = siblings.get(0);
+                    Node rightSibling = siblings.get(1);
+                    if(minNum() > searchKeys.size()){
+                        //borrowing from siblings
+                        if(leftSibling != null && leftSibling.searchKeys.size() > minNum()){
+                            Object borrow = leftSibling.searchKeys.remove(leftSibling.searchKeys.size() - 1);
+                            searchKeys.add(0, borrow);
+
+                            BPlusTree.getNodeAtIndex(parentIndex).searchKeys.set(getIndexRelativetoParent() - 1, borrow);
+
+                        }
+                        else if(rightSibling != null && rightSibling.searchKeys.size() > minNum()){
+                            Object borrow = rightSibling.searchKeys.remove(0);
+                            searchKeys.add(borrow);
+                            BPlusTree.getNodeAtIndex(parentIndex).searchKeys.set(getIndexRelativetoParent(), rightSibling.searchKeys.get(0));
+                        }
+                        else{
+                            //merging
+                        }
+                    }
+                    return;
+                }
+                else {
+                    getRecordPointerNode(i + 1).delete(searchValue);
+                    return;
+
+                }
+
+
+            }
+            else if (compareValue < 0){
+                if(this.isLeaf){
+                    System.out.println("Search Value doesn't exist");
+                    return;
+                }
+                else{
+                    getRecordPointerNode(i).delete(searchValue);
+                    return;
+                }
+            }
+        }
+        if(this.isLeaf){
+            System.out.println("Search Value doesn't exist");
+        } else {
+            getRecordPointerNode(this.recordPointers.size() - 1).delete(searchValue);
+        }
     }
 
-    public void update() {
-        // TODO not sure about parameter but update Node
-    }
-
-    public void merge() {
+    public void merge(){
         // TODO merge node if the size is too low
     }
 
-    public byte[] serialize() {
+    public void update(){
+        // TODO not sure about parameter but update Node
+    }
+
+    public byte[] serialize(){
         // TODO
         return null;
+    }
+
+    public ArrayList<Node> getSiblings(){
+        Node parent = BPlusTree.getNodeAtIndex(this.parentIndex);
+        ArrayList<Node> result = new ArrayList<>();
+        for (int i = 0; i < parent.recordPointers.size(); i++){
+            if (parent.recordPointers.get(i).getIndex() == this.index){
+                result.add(parent.getRecordPointerNode(i - 1));
+                result.add(parent.getRecordPointerNode(i + 1));
+            }
+        }
+        return result;
+    }
+
+    public int getIndexRelativetoParent(){
+        Node parent = BPlusTree.getNodeAtIndex(this.parentIndex);
+        ArrayList<Node> result = new ArrayList<>();
+        for (int i = 0; i < parent.recordPointers.size(); i++){
+            if (parent.recordPointers.get(i).getIndex() == this.index){
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private Node getRecordPointerNode(int index){
+        try {
+            RecordPointer recordPointer = this.recordPointers.get(index);
+            int recordPointerIndex = recordPointer.getIndex();
+            return BPlusTree.getNodeAtIndex(recordPointerIndex);
+        } catch (IndexOutOfBoundsException e){
+            return null;
+        }
     }
 
     private int maxNum() {
@@ -264,13 +351,27 @@ public class Node {
             sb.append(" ").append(sk);
         }
         sb.append(" )").append(" Children: {");
-        for (RecordPointer recordPointer : recordPointers) {
-            if (recordPointer.getPageNumber() == -1) {
-                Node node = BPlusTree.getNodeAtIndex(recordPointer.getIndex());
-                sb.append(node.toString());
+        if(!this.isLeaf) {
+            for (RecordPointer recordPointer : recordPointers) {
+                if (recordPointer.getPageNumber() == -1) {
+                    Node node = BPlusTree.getNodeAtIndex(recordPointer.getIndex());
+                    sb.append(node.toString());
+                }
             }
         }
         sb.append("}");
         return sb.toString();
+    }
+
+    public void insertValuesForTesting(int values){
+        this.searchKeys.add(values);
+    }
+
+    public void setParentIndexForTesting(int index){
+        this.parentIndex = index;
+    }
+
+    public void setRecordPointers(int index){
+        this.recordPointers.add(new RecordPointer(-1, index));
     }
 }

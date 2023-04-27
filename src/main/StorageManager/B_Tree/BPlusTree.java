@@ -41,12 +41,35 @@ public class BPlusTree {
         nodes.add(node);
     }
 
+    public void delete(int key){
+        if(rootIndex == null){
+            System.out.println("Table is empty! Nothing to delete!");
+        }
+        else{
+            Node rootNode = nodes.get(rootIndex);
+            rootNode.delete(key);
+        }
+    }
+    public static void insertNodeForTesting(Node node){
+        nodes.add(node);
+    }
+
+    public void setRootIndex(int index){
+        this.rootIndex = index;
+    }
+
     public static Node getNodeAtIndex(int index) {
        return nodes.get(index);
     }
 
     public static int getNextIndexAndIncrement() {
         return nums++;
+    }
+
+    public static void printNodes(){
+        for(Node n : nodes){
+            System.out.println(n);
+        }
     }
 
     @Override
