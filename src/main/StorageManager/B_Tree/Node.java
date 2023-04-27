@@ -1,8 +1,10 @@
 package main.StorageManager.B_Tree;
 
+import java.awt.image.AreaAveragingScaleFilter;
 import java.util.ArrayList;
 
 import main.Constants.Constant.DataType;
+import main.StorageManager.Data.Record;
 
 public class Node {
 
@@ -45,6 +47,9 @@ public class Node {
         RecordPointer left = new RecordPointer(-1, this.index);
         RecordPointer right = new RecordPointer(-1, sibling.index);
         parent.addElementByIndex(0, sibling.searchKeys.get(0), left, right);
+        if (!isLeaf) {
+            sibling.searchKeys.remove(0);
+        }
         this.parentIndex = parent.index;
         sibling.parentIndex = parent.index;
         ArrayList<Node> result = new ArrayList<>();
@@ -56,21 +61,34 @@ public class Node {
     private Node split() {
         // TODO split node once it exceeds size
         int mid = searchKeys.size() / 2;
+        int recordPointerMid = (isLeaf) ?
+                recordPointers.size() / 2
+                : (recordPointers.size() / 2) + 1 ;
         // construct new Node
         ArrayList<Object> newSearchKeys = new ArrayList<>(searchKeys.subList(mid, searchKeys.size()));
         ArrayList<RecordPointer> newRecordPointers = new ArrayList<>
-                (recordPointers.subList(mid, searchKeys.size()));
-        Node newNode = new Node(dataType, true, newSearchKeys, newRecordPointers, N,
-                BPlusTree.getNextIndexAndIncrement());
+                (recordPointers.subList(recordPointerMid, recordPointers.size()));
+        Node newNode;
+        if (isLeaf) {
+            newNode = new Node(dataType, true, newSearchKeys, newRecordPointers, N,
+                    BPlusTree.getNextIndexAndIncrement());
+        } else {
+            newNode = new Node(dataType, false, newSearchKeys, newRecordPointers, N,
+                    BPlusTree.getNextIndexAndIncrement());
+        }
 
         this.searchKeys = new ArrayList<>(searchKeys.subList(0, mid));
-        this.recordPointers = new ArrayList<>(recordPointers.subList(0, mid));
+        this.recordPointers = new ArrayList<>(recordPointers.subList(0, recordPointerMid));
         return newNode;
     }
 
-    private void addElementByIndex(int index, Object searchKey, RecordPointer left) {
+    private void addElementByIndex(int index, Object searchKey, RecordPointer recordPointer) {
         this.searchKeys.add(index, searchKey);
-        this.recordPointers.add(index, left);
+        if (isLeaf) {
+            this.recordPointers.add(index, recordPointer);
+        } else {
+            this.recordPointers.add(index + 1, recordPointer);
+        }
     }
     private void addElementByIndex(int index, Object searchKey, RecordPointer left, RecordPointer right) {
         this.searchKeys.add(index, searchKey);
@@ -81,27 +99,45 @@ public class Node {
     private ArrayList<Node> addNodeToParent(Node newNode) {
         Object searchKey = newNode.searchKeys.get(0);
         Node parent = BPlusTree.getNodeAtIndex(parentIndex);
+        ArrayList<Node> result = new ArrayList<>();
         boolean added = false;
         for (int i = 0; i < parent.searchKeys.size(); i++) {
-            int compareValue = compareValues(searchKey, this.searchKeys.get(i));
+            int compareValue = compareValues(searchKey, parent.searchKeys.get(i));
             if (compareValue < 0) {
-                addElementByIndex(i, searchKey, new RecordPointer(-1, newNode.index));
+                parent.addElementByIndex(i, searchKey, new RecordPointer(-1, newNode.index));
+                newNode.parentIndex = parent.index;
+                if (parent.isRoot() && !newNode.isLeaf) {
+                    newNode.searchKeys.remove(0);
+                }
+                result.add(newNode);
                 added = true;
                 break;
             }
         }
         if (!added) {
-            addElementByIndex(0, searchKey, new RecordPointer(-1, newNode.index));
+            parent.addElementByIndex(parent.searchKeys.size(), searchKey, new RecordPointer(-1, newNode.index));
+            newNode.parentIndex = parent.index;
+            if (parent.isRoot() && !newNode.isLeaf) {
+                newNode.searchKeys.remove(0);
+            }
+            result.add(newNode);
         }
         if (parent.overflow()) {
             // if it's a root
-            if (parent.parentIndex == null) {
-                return splitRoot();
+            if (parent.isRoot()) {
+                ArrayList<Node> ans = parent.splitRoot();
+                this.parentIndex = ans.get(1).getIndex();
+                newNode.parentIndex = ans.get(1).getIndex();
+                result.addAll(ans);
+            } else {
+                Node parentSibling = parent.split();
+                this.parentIndex = parentSibling.index;
+                newNode.parentIndex = parentSibling.index;
+
+                result.addAll(parent.addNodeToParent(parentSibling));
             }
-            Node sibling = split();
-            addNodeToParent(sibling);
         }
-        return null;
+        return result;
     }
 
     public ArrayList<Node> insert(Object searchValue){
@@ -114,35 +150,49 @@ public class Node {
                 return null;
             }
             if (compareValue < 0) {
-                // if it's root
-                if (parentIndex == null) {
+                // if root as leaf (only one node)
+                if (parentIndex == null && isLeaf) {
                     addElementByIndex(i, searchValue, new RecordPointer(0, (int) searchValue));
                     if (overflow()) {
                         return splitRoot();
                     }
-                } else {
+                }
+                // if leaf node
+                else if (isLeaf) {
                     addElementByIndex(i, searchValue, new RecordPointer(0, (int) searchValue));
                     if (overflow()) {
                         Node newNode = split();
                         return addNodeToParent(newNode);
                     }
                 }
+                // if internal node
+                else {
+                    Node node = BPlusTree.getNodeAtIndex(recordPointers.get(i).getIndex());
+                    return node.insert(searchValue);
+                }
                 return null;
             }
         }
         // largest value
         // if it's root
-        if (parentIndex == null) {
+        if (parentIndex == null && isLeaf) {
             addElementByIndex(searchKeys.size(), searchValue, new RecordPointer(0, (int) searchValue));
             if (overflow()) {
                 return splitRoot();
             }
-        } else {
+        }
+        // if leaf node
+        else if (isLeaf) {
             addElementByIndex(searchKeys.size(), searchValue, new RecordPointer(0, (int) searchValue));
             if (overflow()) {
                 Node newNode = split();
                 return addNodeToParent(newNode);
             }
+        }
+        // if internal node
+        else {
+            Node node = BPlusTree.getNodeAtIndex(recordPointers.get(searchKeys.size()).getIndex());
+            return node.insert(searchValue);
         }
         return null;
     }
@@ -198,11 +248,33 @@ public class Node {
         };
     }
 
+    public boolean isRoot() {
+        return parentIndex == null;
+    }
+
     public int getIndex() {
         return index;
     }
 
     public ArrayList<RecordPointer> getRecordPointers() {
         return recordPointers;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Node (");
+        for (Object sk : searchKeys) {
+            sb.append(" ").append(sk);
+        }
+        sb.append(" )").append(" Children: {");
+        for (RecordPointer recordPointer : recordPointers) {
+            if (recordPointer.getPageNumber() == -1) {
+                Node node = BPlusTree.getNodeAtIndex(recordPointer.getIndex());
+                sb.append(node.toString());
+            }
+        }
+        sb.append("}");
+        return sb.toString();
     }
 }

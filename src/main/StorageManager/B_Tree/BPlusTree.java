@@ -4,6 +4,7 @@ import main.Constants.Constant;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 public class BPlusTree {
     Integer rootIndex;
@@ -26,19 +27,19 @@ public class BPlusTree {
         if (rootIndex == null) {
             rootNode = new Node(Constant.DataType.INTEGER, true, N, nums++);
             nodes.add(rootNode);
-            rootIndex = 0;
+            rootIndex = rootNode.getIndex();
         } else{
             rootNode = nodes.get(rootIndex);
         }
         ArrayList<Node> result = rootNode.insert(key);
         if (result != null) {
-            Node newRoot = result.get(0);
-            rootIndex = newRoot.getIndex();
-            if (result.size() > 1) {
-                Node node = result.get(1);
+            result.sort(Comparator.comparingInt(Node::getIndex));
+            for (Node node : result) {
+                if (node.isRoot()) {
+                    rootIndex = node.getIndex();
+                }
                 nodes.add(node);
             }
-            nodes.add(newRoot);
         }
     }
 
@@ -48,5 +49,14 @@ public class BPlusTree {
 
     public static int getNextIndexAndIncrement() {
         return nums++;
+    }
+
+    @Override
+    public String toString() {
+        if (rootIndex == null) {
+            return "No tree";
+        }
+        Node root = nodes.get(rootIndex);
+        return root.toString();
     }
 }
