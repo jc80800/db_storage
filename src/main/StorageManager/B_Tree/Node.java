@@ -35,6 +35,10 @@ public class Node {
         this.index = index;
     }
 
+    public boolean isLeaf() {
+        return isLeaf;
+    }
+
     private ArrayList<Node> splitRoot() {
         Node sibling = this.split();
         Node parent = new Node(dataType, false, N, BPlusTree.getNextIndexAndIncrement());
@@ -191,21 +195,77 @@ public class Node {
         return this.searchKeys.size() == maxNum();
     }
 
-    public void delete(Object value) {
-        // TODO delete node with primarykey value
+    public void delete(Object searchValue){
+        for(int i = 0; i < this.searchKeys.size(); i++) {
+            int compareValue = compareValues(searchValue, this.searchKeys.get(i));
+            if (compareValue == 0) {
+                if(this.isLeaf){
+                    this.recordPointers.remove(i);
+                    this.searchKeys.remove(i);
+                    // TODO check for deficiency
+                    ArrayList<Node> siblings = getSiblings();
+                    Node leftSibling = siblings.get(0);
+                    Node rightSibling = siblings.get(1);
+
+
+                } else {
+                    getRecordPointerNode(i + 1).delete(searchValue);
+                }
+
+            } if (compareValue < 0){
+                if(this.isLeaf){
+                    System.out.println("Search Value doesn't exist");
+                    return;
+                }
+                else{
+                    getRecordPointerNode(i).delete(searchValue);
+                }
+            }
+        }
+        if(this.isLeaf){
+            System.out.println("Search Value doesn't exist");
+            return;
+        } else {
+            getRecordPointerNode(this.recordPointers.size() - 1).delete(searchValue);
+        }
     }
 
-    public void update() {
-        // TODO not sure about parameter but update Node
-    }
-
-    public void merge() {
+    public void merge(){
         // TODO merge node if the size is too low
     }
 
-    public byte[] serialize() {
+    public void update(){
+        // TODO not sure about parameter but update Node
+    }
+
+    public byte[] serialize(){
         // TODO
         return null;
+    }
+
+    public ArrayList<Node> getSiblings(){
+        RecordPointer recordPointer = this.recordPointers.get(this.parentIndex);
+        int recordPointerIndex = recordPointer.getIndex();
+        Node parent = BPlusTree.getNodeAtIndex(recordPointerIndex);
+
+        ArrayList<Node> result = new ArrayList<>();
+        for (int i = 0; i < parent.recordPointers.size(); i++){
+            if (parent.recordPointers.get(i).getIndex() == this.index){
+                result.add(getRecordPointerNode(i - 1));
+                result.add(getRecordPointerNode(i + 1));
+            }
+        }
+        return result;
+    }
+
+    private Node getRecordPointerNode(int index){
+        try {
+            RecordPointer recordPointer = this.recordPointers.get(index);
+            int recordPointerIndex = recordPointer.getIndex();
+            return BPlusTree.getNodeAtIndex(recordPointerIndex);
+        } catch (ArrayIndexOutOfBoundsException e){
+            return null;
+        }
     }
 
     private int maxNum() {
