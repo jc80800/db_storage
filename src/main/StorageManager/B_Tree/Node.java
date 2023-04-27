@@ -36,7 +36,7 @@ public class Node {
         this.index = index;
     }
 
-    private ArrayList<Node> splitRoot() {
+    private Node splitRoot() {
         Node sibling = this.split();
         Node parent = new Node(dataType, false, N, BPlusTree.getNextIndexAndIncrement());
         RecordPointer left = new RecordPointer(-1, this.index);
