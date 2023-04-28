@@ -318,4 +318,22 @@ public class TreeTest {
         System.out.println(bPlusTree);
 
     }
+
+    @Test
+    void testUpdate(){
+        BPlusTree bPlusTree = new BPlusTree(3, null);
+
+        Node root = new Node(Constant.DataType.INTEGER, true, 4, 0, bPlusTree);
+        root.insertValuesForTesting(2);
+
+        root.setRecordPointers(234);
+
+        bPlusTree.setRootIndex(0);
+        BPlusTree.insertNodeForTesting(root);
+
+        System.out.println(bPlusTree);
+        bPlusTree.update(2, 3);
+        System.out.println(bPlusTree);
+
+    }
 }

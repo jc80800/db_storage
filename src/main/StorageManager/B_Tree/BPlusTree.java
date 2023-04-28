@@ -51,6 +51,11 @@ public class BPlusTree {
         }
     }
 
+    public void update(int key, int value){
+        delete(key);
+        insert(value);
+    }
+
     public static void insertNodeForTesting(Node node){
         nodes.add(node);
     }

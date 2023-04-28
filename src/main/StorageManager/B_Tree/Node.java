@@ -221,7 +221,7 @@ public class Node {
                 if (this.isLeaf){
                     this.recordPointers.remove(i);
                     this.searchKeys.remove(i);
-                    if(minNum() > searchKeys.size()){
+                    if(minNum() > searchKeys.size() && !this.isRoot()){
                         // try to burrow, else merge
                         handleDeficiency();
                     }
