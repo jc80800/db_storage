@@ -14,6 +14,7 @@ public class Node {
     private ArrayList<Object> searchKeys;
     private ArrayList<RecordPointer> recordPointers;
     private final int N;
+    private BPlusTree bPlusTree = null;
 
     public Node(DataType dataType, boolean isLeaf, int N, int index) {
         this.dataType = dataType;
@@ -34,6 +35,17 @@ public class Node {
         this.N = N;
         this.parentIndex = parentIndex;
         this.index = index;
+    }
+
+    public Node(DataType dataType, boolean isLeaf, int N, int index, BPlusTree bPlusTree) {
+        this.dataType = dataType;
+        this.isLeaf = isLeaf;
+        this.searchKeys = new ArrayList<>();
+        this.recordPointers = new ArrayList<>();
+        this.N = N;
+        this.parentIndex = null;
+        this.index = index;
+        this.bPlusTree = null;
     }
 
     private Node splitRoot() {
@@ -206,49 +218,27 @@ public class Node {
         for(int i = 0; i < this.searchKeys.size(); i++) {
             int compareValue = compareValues(searchValue, this.searchKeys.get(i));
             if (compareValue == 0) {
-                if(this.isLeaf){
+                if (this.isLeaf){
                     this.recordPointers.remove(i);
                     this.searchKeys.remove(i);
-                    ArrayList<Node> siblings = getSiblings();
-                    Node leftSibling = siblings.get(0);
-                    Node rightSibling = siblings.get(1);
                     if(minNum() > searchKeys.size()){
-                        //borrowing from siblings
-                        if(leftSibling != null && leftSibling.searchKeys.size() > minNum()){
-                            Object borrow = leftSibling.searchKeys.remove(leftSibling.searchKeys.size() - 1);
-                            searchKeys.add(0, borrow);
-
-                            BPlusTree.getNodeAtIndex(parentIndex).searchKeys.set(getIndexRelativetoParent() - 1, borrow);
-
-                        }
-                        else if(rightSibling != null && rightSibling.searchKeys.size() > minNum()){
-                            Object borrow = rightSibling.searchKeys.remove(0);
-                            searchKeys.add(borrow);
-                            BPlusTree.getNodeAtIndex(parentIndex).searchKeys.set(getIndexRelativetoParent(), rightSibling.searchKeys.get(0));
-                        }
-                        else{
-                            //merging
-                        }
+                        // try to burrow, else merge
+                        handleDeficiency();
                     }
-                    return;
                 }
                 else {
                     getRecordPointerNode(i + 1).delete(searchValue);
-                    return;
-
                 }
-
-
+                return;
             }
             else if (compareValue < 0){
                 if(this.isLeaf){
                     System.out.println("Search Value doesn't exist");
-                    return;
                 }
                 else{
                     getRecordPointerNode(i).delete(searchValue);
-                    return;
                 }
+                return;
             }
         }
         if(this.isLeaf){
@@ -258,8 +248,147 @@ public class Node {
         }
     }
 
-    public void merge(){
-        // TODO merge node if the size is too low
+    private void handleDeficiency(){
+        ArrayList<Node> siblings = getSiblings();
+        Node leftSibling = siblings.get(0);
+        Node rightSibling = siblings.get(1);
+        Node parentNode = BPlusTree.getNodeAtIndex(parentIndex);
+        if(!burrow(parentNode, leftSibling, rightSibling)){
+            merge(parentNode, leftSibling, rightSibling);
+        }
+    }
+
+    public boolean burrow(Node parentNode, Node leftSibling, Node rightSibling) {
+        //borrowing from siblings
+        if (isLeaf) {
+            if (leftSibling != null && leftSibling.searchKeys.size() > leftSibling.minNum()) {
+                Object borrow = leftSibling.searchKeys.remove(leftSibling.searchKeys.size() - 1);
+                searchKeys.add(0, borrow);
+
+                parentNode.searchKeys.set(getIndexRelativetoParent() - 1, borrow);
+                return true;
+
+            } else if (rightSibling != null && rightSibling.searchKeys.size() > rightSibling.minNum()) {
+                Object borrow = rightSibling.searchKeys.remove(0);
+                searchKeys.add(borrow);
+                parentNode.searchKeys.set(getIndexRelativetoParent(), rightSibling.searchKeys.get(0));
+                return true;
+            }
+        } else {
+            // Internal Node
+            int relativeIndex = getIndexRelativetoParent();
+            if (leftSibling != null && leftSibling.searchKeys.size() > leftSibling.minNum()) {
+                Object borrow = parentNode.searchKeys.get(relativeIndex - 1);
+                Object transfer = leftSibling.searchKeys.remove(leftSibling.searchKeys.size() - 1);
+
+                this.searchKeys.add(0, borrow);
+                parentNode.searchKeys.set(relativeIndex - 1, transfer);
+                RecordPointer recordPointer = leftSibling.recordPointers.remove(leftSibling.recordPointers.size() - 1);
+                this.recordPointers.add(0, recordPointer);
+                return true;
+            } else if (rightSibling != null && rightSibling.searchKeys.size() > rightSibling.minNum()){
+                Object borrow = parentNode.searchKeys.get(relativeIndex);
+                Object transfer = rightSibling.searchKeys.remove(0);
+
+                this.searchKeys.add(borrow);
+                parentNode.searchKeys.set(relativeIndex, transfer);
+                RecordPointer recordPointer = rightSibling.recordPointers.remove(0);
+                this.recordPointers.add(recordPointer);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void merge(Node parentNode, Node leftSibling, Node rightSibling){
+        int relativeIndex = getIndexRelativetoParent();
+        int parentIndexToDelete;
+
+        // Record Pointer to delete / replace
+        int rp1;
+        int rp2;
+        if (isLeaf) {
+            // if merging to the left
+            if (leftSibling != null) {
+                parentIndexToDelete = relativeIndex - 1;
+                rp1 = relativeIndex;
+                rp2 = relativeIndex - 1;
+                for (int i = leftSibling.searchKeys.size() - 1; i >= 0; i--){
+                    this.searchKeys.add(0, leftSibling.searchKeys.get(i));
+                }
+
+            } else {
+                // Merging to the right
+                parentIndexToDelete = relativeIndex;
+                rp1 = relativeIndex;
+                rp2 = relativeIndex + 1;
+                this.searchKeys.addAll(rightSibling.searchKeys);
+            }
+
+            // delete the SK for parent Node
+            parentNode.searchKeys.remove(parentIndexToDelete);
+            parentNode.recordPointers.remove(rp1);
+            parentNode.recordPointers.remove(rp2);
+
+            int lesserIndex = Math.min(rp1, rp2);
+
+            // TODO might be array out of bounds for lesserIndex
+            parentNode.recordPointers.add(lesserIndex, new RecordPointer(-1, this.index));
+
+            // TODO Check if parentNode is sufficient
+        } else {
+            // Internal Node
+            if (leftSibling != null) {
+                parentIndexToDelete = relativeIndex - 1;
+                rp1 = relativeIndex;
+                rp2 = relativeIndex - 1;
+
+                // Drag the parent Value down
+                Object parentValue = parentNode.searchKeys.remove(parentIndexToDelete);
+
+                for (int i = leftSibling.searchKeys.size() - 1; i >= 0; i--){
+                    this.searchKeys.add(0, leftSibling.searchKeys.get(i));
+                }
+                this.searchKeys.add(parentValue);
+
+                for (int i = leftSibling.recordPointers.size() - 1; i >= 0; i--){
+                    this.recordPointers.add(0, leftSibling.recordPointers.get(i));
+                }
+
+            } else {
+                // Merging to the right
+                parentIndexToDelete = relativeIndex;
+                rp1 = relativeIndex;
+                rp2 = relativeIndex + 1;
+
+                // Drag the parent Value down
+                Object parentValue = parentNode.searchKeys.remove(parentIndexToDelete);
+
+                this.searchKeys.addAll(rightSibling.searchKeys);
+                this.searchKeys.add(0, parentValue);
+
+                this.recordPointers.addAll(rightSibling.recordPointers);
+            }
+            parentNode.recordPointers.remove(rp1);
+            parentNode.recordPointers.remove(rp2);
+
+            int lesserIndex = Math.min(rp1, rp2);
+
+            // TODO might be array out of bounds for lesserIndex
+            parentNode.recordPointers.add(lesserIndex, new RecordPointer(-1, this.index));
+
+        }
+        if (parentNode.searchKeys.size() < parentNode.minNum()) {
+            if(!parentNode.isRoot()) {
+                parentNode.handleDeficiency();
+            } else {
+                if (parentNode.searchKeys.size() == 0){
+                    this.bPlusTree = parentNode.bPlusTree;
+                    this.bPlusTree.setRootIndex(this.index);
+                    this.parentIndex = null;
+                }
+            }
+        }
     }
 
     public void update(){
@@ -355,7 +484,9 @@ public class Node {
             for (RecordPointer recordPointer : recordPointers) {
                 if (recordPointer.getPageNumber() == -1) {
                     Node node = BPlusTree.getNodeAtIndex(recordPointer.getIndex());
-                    sb.append(node.toString());
+                    if (node != null) {
+                        sb.append(node.toString());
+                    }
                 }
             }
         }
