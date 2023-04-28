@@ -25,7 +25,7 @@ public class BPlusTree {
     public void insert(int key) {
         Node rootNode;
         if (rootIndex == null) {
-            rootNode = new Node(Constant.DataType.INTEGER, true, N, nums++);
+            rootNode = new Node(Constant.DataType.INTEGER, true, N, nums++, this);
             nodes.add(rootNode);
             rootIndex = rootNode.getIndex();
         } else{

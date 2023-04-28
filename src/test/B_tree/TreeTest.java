@@ -269,8 +269,6 @@ public class TreeTest {
         CNode44.setRecordPointers(3123);
         CNode44.setRecordPointers(3123);
 
-
-
         bPlusTree.setRootIndex(0);
         BPlusTree.insertNodeForTesting(root);
         BPlusTree.insertNodeForTesting(node1);
@@ -286,9 +284,38 @@ public class TreeTest {
         System.out.println(bPlusTree);
         bPlusTree.delete(21);
         System.out.println(bPlusTree);
+    }
 
+    @Test
+    void testRootDeletion(){
+        BPlusTree bPlusTree = new BPlusTree(3, null);
 
+        Node root = new Node(Constant.DataType.INTEGER, false, 4, 0, bPlusTree);
+        root.insertValuesForTesting(2);
 
+        root.setRecordPointers(1);
+        root.setRecordPointers(2);
+
+        Node node1 = new Node(Constant.DataType.INTEGER, true, 4, 1);
+        node1.insertValuesForTesting(1);
+        node1.setParentIndexForTesting(0);
+
+        node1.setRecordPointers(255);
+
+        Node node2 = new Node(Constant.DataType.INTEGER, true, 4, 2);
+        node2.insertValuesForTesting(3);
+        node2.setParentIndexForTesting(0);
+
+        node2.setRecordPointers(255);
+
+        bPlusTree.setRootIndex(0);
+        BPlusTree.insertNodeForTesting(root);
+        BPlusTree.insertNodeForTesting(node1);
+        BPlusTree.insertNodeForTesting(node2);
+
+        System.out.println(bPlusTree);
+        bPlusTree.delete(1);
+        System.out.println(bPlusTree);
 
     }
 }

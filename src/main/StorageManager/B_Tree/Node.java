@@ -45,7 +45,7 @@ public class Node {
         this.N = N;
         this.parentIndex = null;
         this.index = index;
-        this.bPlusTree = null;
+        this.bPlusTree = bPlusTree;
     }
 
     private Node splitRoot() {
@@ -327,15 +327,15 @@ public class Node {
 
             // delete the SK for parent Node
             parentNode.searchKeys.remove(parentIndexToDelete);
-            parentNode.recordPointers.remove(rp1);
-            parentNode.recordPointers.remove(rp2);
 
-            int lesserIndex = Math.min(rp1, rp2);
+            int maxIndex = Math.max(rp1, rp2);
+            int minIndex = Math.min(rp1, rp2);
 
-            // TODO might be array out of bounds for lesserIndex
-            parentNode.recordPointers.add(lesserIndex, new RecordPointer(-1, this.index));
+            parentNode.recordPointers.remove(maxIndex);
+            parentNode.recordPointers.remove(minIndex);
 
-            // TODO Check if parentNode is sufficient
+            parentNode.recordPointers.add(minIndex, new RecordPointer(-1, this.index));
+
         } else {
             // Internal Node
             if (leftSibling != null) {
@@ -374,7 +374,6 @@ public class Node {
 
             int lesserIndex = Math.min(rp1, rp2);
 
-            // TODO might be array out of bounds for lesserIndex
             parentNode.recordPointers.add(lesserIndex, new RecordPointer(-1, this.index));
 
         }
