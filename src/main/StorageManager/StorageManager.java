@@ -16,7 +16,6 @@ import main.Constants.Constant.DataType;
 import main.Constants.Coordinate;
 import main.SqlParser.ShuntingYardAlgorithm;
 import main.StorageManager.B_Tree.BPlusTree;
-import main.StorageManager.B_Tree.Node;
 import main.StorageManager.Data.*;
 import main.StorageManager.Data.Record;
 import main.StorageManager.MetaData.Catalog;
@@ -31,12 +30,14 @@ public class StorageManager {
     private Catalog catalog;
     private PageBuffer pageBuffer;
     private boolean isIndex;
+    private HashMap<Integer, BPlusTree> bPlusTreeHashMap;
 
     public StorageManager(File db, int pageSize, int bufferSize, boolean isIndex) {
         this.db = db;
         this.pageSize = pageSize;
         this.bufferSize = bufferSize;
         this.isIndex = isIndex;
+        bPlusTreeHashMap = new HashMap<>();
     }
 
     /**
@@ -101,7 +102,7 @@ public class StorageManager {
                 e.printStackTrace();
             }
         }
-        pageBuffer = new PageBuffer(bufferSize, pageSize, db, catalog);
+        pageBuffer = new PageBuffer(bufferSize, pageSize, db, catalog, isIndex);
         System.out.printf("Page size: %s\n", pageSize);
         System.out.printf("Buffer size: %s\n", bufferSize);
         if (restart) {
@@ -146,6 +147,7 @@ public class StorageManager {
         }
         TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
         int tableNumber = tableHeader.getTableNumber();
+        BPlusTree bPlusTree = bPlusTreeHashMap.get(tableNumber);
         MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
         ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader)
                 .getCoordinates();
@@ -173,7 +175,7 @@ public class StorageManager {
             for (Record record : recordsToDelete) {
                 pageBuffer.deleteRecord(record, page, i, tableHeader);
             }
-            pageBuffer.findRecordPlacement(table_file, updatedRecords, tableHeader);
+            pageBuffer.findRecordPlacement(updatedRecords, tableHeader, bPlusTree);
         }
         return PREPARE_SUCCESS;
     }
@@ -388,6 +390,7 @@ public class StorageManager {
             MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
             int N = calculateN(Objects.requireNonNull(metaTable.getPrimaryKey()));
             BPlusTree bPlusTree = new BPlusTree(N, getIndexFile(table_name));
+            bPlusTreeHashMap.put(tableNumber, bPlusTree);
             // TODO serializing
         }
         return PREPARE_SUCCESS;
@@ -526,13 +529,14 @@ public class StorageManager {
         // Get the table number and get the schema table from catalog
         int tableNumber = tableHeader.getTableNumber();
         MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
+        BPlusTree bPlusTree = bPlusTreeHashMap.get(tableNumber);
 
         // Parse the values from user and validate it
         try {
             ArrayList<Record> records = parseRecords(values, metaTable, tableHeader);
 
             // Find where to place each record and place it
-            Constant.PrepareResult result = this.pageBuffer.findRecordPlacement(table_file, records, tableHeader);
+            Constant.PrepareResult result = this.pageBuffer.findRecordPlacement(records, tableHeader, bPlusTree);
 
             if (records.size() != values.length || result.equals(PREPARE_UNRECOGNIZED_STATEMENT)) {
                 return PREPARE_UNRECOGNIZED_STATEMENT;
@@ -609,7 +613,9 @@ public class StorageManager {
                 attributes.add(attribute);
             }
             Record record = new Record(attributes, metaAttributes);
-            pageBuffer.validateRecord(record, null, metaTable, tableHeader);
+            if (!pageBuffer.validateRecord(record, null, metaTable, tableHeader)) {
+                throw new IllegalArgumentException();
+            };
             result.add(record);
         }
         return result;

@@ -1,12 +1,10 @@
 package main.StorageManager.B_Tree;
 
 import main.Constants.Constant.DataType;
-import main.StorageManager.Data.Page;
 
 import java.util.ArrayList;
 
 public class Node {
-
     private final DataType dataType;
     private final boolean isLeaf;
     private Integer parentIndex;
@@ -46,6 +44,34 @@ public class Node {
         this.parentIndex = null;
         this.index = index;
         this.bPlusTree = bPlusTree;
+    }
+
+    public Node search(Object searchKey) {
+        if (isLeaf) {
+            return this;
+        }
+        for (int i = 0; i < this.searchKeys.size(); i++) {
+            int compareValue = compareValues(searchKey, this.searchKeys.get(i));
+            if (compareValue < 0) {
+                Node node = BPlusTree.getNodeAtIndex(recordPointers.get(i).getRecordIndex());
+                return node.search(searchKey);
+            }
+        }
+        Node node = BPlusTree.getNodeAtIndex(recordPointers.get(searchKeys.size() - 1).getRecordIndex());
+        return node.search(searchKey);
+    }
+
+    public RecordPointer findRecordPointer(Node node, Object searchKey) {
+        if (node.searchKeys.size() == 0) {
+            return null;
+        }
+        for (int i = 0; i < node.searchKeys.size(); i++) {
+            int compareValue = compareValues(searchKey, node.searchKeys.get(i));
+            if (compareValue < 0) {
+                return node.recordPointers.get(i);
+            }
+        }
+        return node.recordPointers.get(node.searchKeys.size() - 1);
     }
 
     private Node splitRoot() {
@@ -155,7 +181,7 @@ public class Node {
         return null;
     }
 
-    public Node insert(Object searchValue) {
+    public Node insert(Object searchValue, int pageNumber, int recordNumber) {
         for (int i = 0; i < this.searchKeys.size(); i++) {
             int compareValue = compareValues(searchValue, this.searchKeys.get(i));
             if (isLeaf && compareValue == 0) {
@@ -165,14 +191,14 @@ public class Node {
             if (compareValue < 0) {
                 // if root as leaf (only one node)
                 if (isRoot() && isLeaf) {
-                    addElementByIndex(i, searchValue, new RecordPointer(0, (int) searchValue));
+                    addElementByIndex(i, searchValue, new RecordPointer(pageNumber, recordNumber));
                     if (overflow()) {
                         return splitRoot();
                     }
                 }
                 // if leaf node
                 else if (isLeaf) {
-                    addElementByIndex(i, searchValue, new RecordPointer(0, (int) searchValue));
+                    addElementByIndex(i, searchValue, new RecordPointer(pageNumber, recordNumber));
                     if (overflow()) {
                         Node newNode = split();
                         return addNodeToParent(newNode);
@@ -180,8 +206,8 @@ public class Node {
                 }
                 // if internal node
                 else {
-                    Node node = BPlusTree.getNodeAtIndex(recordPointers.get(i).getIndex());
-                    return node.insert(searchValue);
+                    Node node = BPlusTree.getNodeAtIndex(recordPointers.get(i).getRecordIndex());
+                    return node.insert(searchValue, pageNumber, recordNumber);
                 }
                 return null;
             }
@@ -189,14 +215,14 @@ public class Node {
         // largest value
         // if it's root
         if (isRoot() && isLeaf) {
-            addElementByIndex(searchKeys.size(), searchValue, new RecordPointer(0, (int) searchValue));
+            addElementByIndex(searchKeys.size(), searchValue, new RecordPointer(pageNumber, recordNumber));
             if (overflow()) {
                 return splitRoot();
             }
         }
         // if leaf node
         else if (isLeaf) {
-            addElementByIndex(searchKeys.size(), searchValue, new RecordPointer(0, (int) searchValue));
+            addElementByIndex(searchKeys.size(), searchValue, new RecordPointer(pageNumber, recordNumber));
             if (overflow()) {
                 Node newNode = split();
                 return addNodeToParent(newNode);
@@ -204,8 +230,8 @@ public class Node {
         }
         // if internal node
         else {
-            Node node = BPlusTree.getNodeAtIndex(recordPointers.get(searchKeys.size()).getIndex());
-            return node.insert(searchValue);
+            Node node = BPlusTree.getNodeAtIndex(recordPointers.get(searchKeys.size()).getRecordIndex());
+            return node.insert(searchValue, pageNumber, recordNumber);
         }
         return null;
     }
@@ -394,16 +420,11 @@ public class Node {
         // TODO not sure about parameter but update Node
     }
 
-    public byte[] serialize(){
-        // TODO
-        return null;
-    }
-
     public ArrayList<Node> getSiblings(){
         Node parent = BPlusTree.getNodeAtIndex(this.parentIndex);
         ArrayList<Node> result = new ArrayList<>();
         for (int i = 0; i < parent.recordPointers.size(); i++){
-            if (parent.recordPointers.get(i).getIndex() == this.index){
+            if (parent.recordPointers.get(i).getRecordIndex() == this.index){
                 result.add(parent.getRecordPointerNode(i - 1));
                 result.add(parent.getRecordPointerNode(i + 1));
             }
@@ -415,7 +436,7 @@ public class Node {
         Node parent = BPlusTree.getNodeAtIndex(this.parentIndex);
         ArrayList<Node> result = new ArrayList<>();
         for (int i = 0; i < parent.recordPointers.size(); i++){
-            if (parent.recordPointers.get(i).getIndex() == this.index){
+            if (parent.recordPointers.get(i).getRecordIndex() == this.index){
                 return i;
             }
         }
@@ -426,7 +447,7 @@ public class Node {
     private Node getRecordPointerNode(int index){
         try {
             RecordPointer recordPointer = this.recordPointers.get(index);
-            int recordPointerIndex = recordPointer.getIndex();
+            int recordPointerIndex = recordPointer.getRecordIndex();
             return BPlusTree.getNodeAtIndex(recordPointerIndex);
         } catch (IndexOutOfBoundsException e){
             return null;
@@ -448,12 +469,18 @@ public class Node {
         return (int) Math.ceil((double) N / 2);
     }
 
+
+    public byte[] serialize(){
+        // TODO
+        return null;
+    }
+
     public static Node deserialize(byte[] bytes) {
         // TODO
         return null;
     }
 
-    public int compareValues(Object searchValue, Object compareValue) {
+    protected int compareValues(Object searchValue, Object compareValue) {
         return switch (dataType) {
             case INTEGER -> ((Integer) searchValue).compareTo((Integer) compareValue);
             case DOUBLE -> ((Double) searchValue).compareTo((Double) compareValue);
@@ -471,6 +498,14 @@ public class Node {
         return index;
     }
 
+    public ArrayList<Object> getSearchKeys() {
+        return searchKeys;
+    }
+
+    public ArrayList<RecordPointer> getRecordPointers() {
+        return recordPointers;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -482,7 +517,7 @@ public class Node {
         if(!this.isLeaf) {
             for (RecordPointer recordPointer : recordPointers) {
                 if (recordPointer.getPageNumber() == -1) {
-                    Node node = BPlusTree.getNodeAtIndex(recordPointer.getIndex());
+                    Node node = BPlusTree.getNodeAtIndex(recordPointer.getRecordIndex());
                     if (node != null) {
                         sb.append(node.toString());
                     }

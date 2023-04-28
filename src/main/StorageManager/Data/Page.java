@@ -139,6 +139,25 @@ public class Page {
         }
     }
 
+    public int getRecordIndex(Record record) {
+        for (int i = 0; i < records.size(); i++) {
+            Record temp = records.get(i);
+            if (record.equals(temp)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public boolean containsRecord(Record record) {
+        for (Record temp : records) {
+            if (record.equals(temp)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public ArrayList<Record> getRecords() {
         return records;
     }

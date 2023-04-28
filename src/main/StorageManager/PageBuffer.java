@@ -14,6 +14,8 @@ import java.util.Objects;
 import java.util.Set;
 import main.Constants.Constant;
 import main.Constants.Coordinate;
+import main.StorageManager.B_Tree.BPlusTree;
+import main.StorageManager.B_Tree.RecordPointer;
 import main.StorageManager.Data.Attribute;
 import main.StorageManager.Data.Page;
 import main.StorageManager.Data.Record;
@@ -30,14 +32,16 @@ public class PageBuffer {
     private final Deque<Page> bufferQueue;
     private final File db;
     private final Catalog catalog;
+    private Boolean index;
 
-    public PageBuffer(int bufferSize, int pageSize, File db, Catalog catalog) {
+    public PageBuffer(int bufferSize, int pageSize, File db, Catalog catalog, Boolean index) {
         this.pageSize = pageSize;
         this.bufferSize = bufferSize;
         this.db = db;
         this.bufferQueue = new LinkedList<>();
         this.pages = new HashMap<>();
         this.catalog = catalog;
+        this.index = index;
     }
 
     public Page getPage(int pageId, TableHeader tableHeader) {
@@ -157,57 +161,83 @@ public class PageBuffer {
         return true;
     }
 
-    public Constant.PrepareResult findRecordPlacement(File table_file,
-        ArrayList<Record> records, TableHeader tableHeader) {
-        try {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(), "rw");
+    private void updateRecordPointersInBTree(BPlusTree bPlusTree, Page page) {
+        for (int i = 0; i < page.getNumberOfRecords(); i++) {
+            Record record = page.getRecords().get(i);
+            bPlusTree.updateRecordPointer(record.getPrimaryKey().getValue(), page.getPageId(), i);
+        }
+    }
 
-            if (tableHeader.getCoordinates().size() == 0) {
-                putPage(tableHeader.createFirstPage(this.pageSize));
-            }
-
-            ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
-
-            for (Record record : records) {
-                Boolean inserted;
-
+    public Constant.PrepareResult findRecordPlacement(ArrayList<Record> records, TableHeader tableHeader, BPlusTree bPlusTree) {
+        if (tableHeader.getCoordinates().size() == 0) {
+            putPage(tableHeader.createFirstPage(this.pageSize));
+        }
+        ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
+        for (Record record : records) {
+            if (index) {
+                Object searchKey = record.getPrimaryKey().getValue();
+                RecordPointer recordPointer = bPlusTree.findRecordPlacement(searchKey);
+                // first record entry
+                if (recordPointer == null) {
+                    int pageNumber = 0;
+                    int recordIndex = 0;
+                    Page page = getPage(pageNumber, tableHeader);
+                    insertRecord(record, page, recordIndex, tableHeader);
+                    bPlusTree.insert(searchKey, page.getPageId(), page.getRecordIndex(record));
+                    continue;
+                }
+                int pageNumber = recordPointer.getPageNumber();
+                int recordIndex = recordPointer.getRecordIndex();
+                Page page = getPage(pageNumber, tableHeader);
+                Constant.DataType type = record.getPrimaryKey().getMetaAttribute().getType();
+                int compareResult = compareValues(type, searchKey, page.getRecords().get(recordIndex).getPrimaryKey().getValue());
+                if (compareResult > 0) {
+                    recordIndex++;
+                } else if (compareResult == 0) {
+                    // duplicate primary key
+                    return PREPARE_UNRECOGNIZED_STATEMENT;
+                }
+                Page newPage = insertRecord(record, page, recordIndex, tableHeader);
+                int pageId = page.containsRecord(record) ? page.getPageId() : newPage.getPageId();
+                recordIndex = page.getRecordIndex(record) != -1
+                        ? page.getRecordIndex(record)
+                        : newPage.getRecordIndex(record);
+                bPlusTree.insert(searchKey, pageId, recordIndex);
+                updateRecordPointersInBTree(bPlusTree, page);
+                if (newPage != null) {
+                    updateRecordPointersInBTree(bPlusTree, newPage);
+                }
+            } else {
                 for (int i = 0; i < coordinates.size(); i++) {
                     Page page = getPage(i, tableHeader);
                     ArrayList<Record> pageRecords = page.getRecords();
 
                     // Check if record can be placed in this page
-                    inserted = checkPlacement(pageRecords, record, page, tableHeader);
-                    if (inserted == null) {
-                        System.out.printf("Duplicate primary key %s\n",
-                            record.getPrimaryKey().getValue());
+                    try {
+                        if (checkPlacement(pageRecords, record, page, tableHeader)) {
+                            return PREPARE_SUCCESS;
+                        }
+                    } catch (IllegalArgumentException e) {
                         return PREPARE_UNRECOGNIZED_STATEMENT;
-                    } else if (inserted) {
-                        break;
                     }
-
                     if (i == coordinates.size() - 1) {
                         // If no place, insert at the very end
-                        // something
                         insertRecord(record, page, pageRecords.size(), tableHeader);
                         break;
                     }
                 }
             }
-            randomAccessFile.close();
-
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-
         return PREPARE_SUCCESS;
 
     }
 
-    public void insertRecord(Record record, Page page, int index, TableHeader tableHeader) {
+    public Page insertRecord(Record record, Page page, int index, TableHeader tableHeader) {
         Page potentialNewPage = page.insertRecord(record, index, tableHeader);
         if (potentialNewPage != null) {
             putPage(potentialNewPage);
         }
+        return potentialNewPage;
     }
 
     public void deleteRecord(Record record, Page page, int index, TableHeader tableHeader) {
@@ -222,44 +252,30 @@ public class PageBuffer {
         Object recordValue = target.getPrimaryKey().getValue();
 
         for (int i = 0; i < records.size(); i++) {
+            Constant.DataType type = target.getPrimaryKey().getMetaAttribute().getType();
             Record currentPageRecord = records.get(i);
             Object value = currentPageRecord.getPrimaryKey().getValue();
-
-            if (value instanceof String) {
-                if (((String) value).compareTo((String) recordValue) == 0) {
-                    return null;
-                }
-
-                if (((String) value).compareTo((String) recordValue) > 0) {
-                    // if record's string is less than current record
-                    insertRecord(target, page, i, tableHeader);
-                    return true;
-                }
-            } else if (value instanceof Boolean) {
-                if ((boolean) value == (boolean) recordValue) {
-                    return null;
-                }
-            } else if (value instanceof Integer) {
-                if ((int) value == (int) recordValue) {
-                    return null;
-                }
-                if ((int) value > (int) recordValue) {
-                    // if record's int is less than current record
-                    insertRecord(target, page, i, tableHeader);
-                    return true;
-                }
-            } else {
-                if ((double) value == (double) recordValue) {
-                    return null;
-                }
-                if ((double) value > (double) recordValue) {
-                    // record's double is less
-                    insertRecord(target, page, i, tableHeader);
-                    return true;
-                }
+            int compareResult = compareValues(type, recordValue, value);
+            if (compareResult == 0) {
+                System.out.printf("Duplicate primary key %s\n",
+                        recordValue);
+                throw new IllegalArgumentException();
+            }
+            if (compareResult < 0) {
+                insertRecord(target, page, i, tableHeader);
+                return true;
             }
         }
         return false;
+    }
+    private int compareValues(Constant.DataType dataType, Object searchValue, Object compareValue) {
+        return switch (dataType) {
+            case INTEGER -> ((Integer) searchValue).compareTo((Integer) compareValue);
+            case DOUBLE -> ((Double) searchValue).compareTo((Double) compareValue);
+            case BOOLEAN -> ((Boolean) searchValue).compareTo((Boolean) compareValue);
+            case VARCHAR -> ((String) searchValue).compareTo((String) compareValue);
+            default -> ((Character) searchValue).compareTo((Character) compareValue);
+        };
     }
 
     /**

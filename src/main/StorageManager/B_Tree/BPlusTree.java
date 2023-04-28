@@ -4,7 +4,6 @@ import main.Constants.Constant;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Comparator;
 
 public class BPlusTree {
     Integer rootIndex;
@@ -22,7 +21,7 @@ public class BPlusTree {
         nums = 0;
     }
 
-    public void insert(int key) {
+    private Node getRoot() {
         Node rootNode;
         if (rootIndex == null) {
             rootNode = new Node(Constant.DataType.INTEGER, true, N, nums++, this);
@@ -31,11 +30,44 @@ public class BPlusTree {
         } else{
             rootNode = nodes.get(rootIndex);
         }
-        Node newRoot = rootNode.insert(key);
+        return rootNode;
+    }
+
+    public void updateRecordPointer(Object searchKey, int newPageId, int newRecordIndex) {
+        Node root = getRoot();
+        Node node = root.search(searchKey);
+        ArrayList<Object> searchKeys = node.getSearchKeys();
+        ArrayList<RecordPointer> recordPointers = node.getRecordPointers();
+        for (int i = 0; i < searchKeys.size(); i++) {
+            int compareValue = node.compareValues(searchKey, searchKeys.get(i));
+            if (compareValue == 0) {
+                RecordPointer recordPointer = recordPointers.get(i);
+                recordPointer.setPageNumber(newPageId);
+                recordPointer.setRecordIndex(newRecordIndex);
+                return;
+            }
+        }
+    }
+
+    public Node search(Node root, Object searchKey) {
+        return root.search(searchKey);
+    }
+
+    public RecordPointer findRecordPlacement(Object searchKey) {
+        Node root = getRoot();
+        Node nodeToInsert = search(root, searchKey);
+        return nodeToInsert.findRecordPointer(nodeToInsert, searchKey);
+    }
+
+    public void insert(Object key, int pageNumber, int recordNumber) {
+        Node rootNode = getRoot();
+        Node nodeToInsert = search(rootNode, key);
+        Node newRoot = nodeToInsert.insert(key, pageNumber, recordNumber);
         if (newRoot != null) {
             rootIndex = newRoot.getIndex();
         }
     }
+
 
     public static void putNode(Node node) {
         nodes.add(node);
@@ -52,8 +84,8 @@ public class BPlusTree {
     }
 
     public void update(int key, int value){
-        delete(key);
-        insert(value);
+//        delete(key);
+//        insert(value);
     }
 
     public static void insertNodeForTesting(Node node){
