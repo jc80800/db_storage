@@ -88,18 +88,21 @@ public class TableHeader {
         }
     }
 
-    public void insertNewPage(int index) {
+    public void insertNewPage(int index, int pageId) {
+
         int lastOffset = findLastOffset();
         if (this.coordinates.size() > 0) {
             lastOffset += this.pageSize;
         }
-        Coordinate coordinate = new Coordinate(lastOffset, this.pageSize);
+        Coordinate coordinate = new Coordinate(lastOffset, pageId);
+
         if (index < this.coordinates.size()) {
             this.coordinates.add(index, coordinate);
         } else {
             this.coordinates.add(coordinate);
         }
         this.currentNumOfPages += 1;
+
         updateTableHeader(index);
     }
 
@@ -111,8 +114,9 @@ public class TableHeader {
     }
 
     public Page createFirstPage(int pageSize) {
+        // ponteial error here
         Page page = new Page(pageSize, this.tableNumber, new ArrayList<>(), 0);
-        insertNewPage(0);
+        insertNewPage(0, page.getPageId());
         return page;
     }
 
@@ -138,6 +142,7 @@ public class TableHeader {
         return result;
     }
 
+    // TODO might need to change this
     public void updateTableHeader(int newPageIndex) {
         try {
             if (this.currentNumOfPages > this.maxPages) {
@@ -242,7 +247,7 @@ public class TableHeader {
         int total = 0;
         try {
             for (int i = 0; i < this.coordinates.size(); i++) {
-                Page page = pageBuffer.getPage(i, this);
+                Page page = pageBuffer.getPage(this.coordinates.get(i), this);
                 total += page.getNumberOfRecords();
             }
         } catch (IllegalArgumentException e) {

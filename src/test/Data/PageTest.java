@@ -24,9 +24,9 @@ class PageTest {
         MetaAttribute metaAttribute1 = new MetaAttribute(true, "id", DataType.INTEGER, constraints);
         Attribute attribute1 = new Attribute(metaAttribute1, 100);
         MetaAttribute metaAttribute2 = new MetaAttribute(false, "FirstName", DataType.CHAR, 10, constraints);
-        Attribute attribute2 = new Attribute(metaAttribute2, "Eldon");
+        Attribute attribute2 = new Attribute(metaAttribute2, "\"Eldon\"");
         MetaAttribute metaAttribute3 = new MetaAttribute(false, "LastName", DataType.VARCHAR, 20, constraints);
-        Attribute attribute3 = new Attribute(metaAttribute3, "Lin");
+        Attribute attribute3 = new Attribute(metaAttribute3, "\"Lin\"");
         ArrayList<Attribute> attributes = new ArrayList<>();
         attributes.add(attribute1);
         attributes.add(attribute2);
@@ -46,7 +46,7 @@ class PageTest {
         Page page = new Page(1024,1, records, 0);
 
         byte[] bytes = page.serialize();
-        Page deserialized = Page.deserialize(bytes, metaTable, 1, 1024, 1);
+        Page deserialized = Page.deserialize(bytes, metaTable, 1, 1024);
         assertEquals(page, deserialized);
     }
 
@@ -78,7 +78,9 @@ class PageTest {
         Page page = new Page(1024,1, records, 0);
 
         byte[] bytes = page.serialize();
-        Page deserialized = Page.deserialize(bytes, metaTable, 1, 1024, 1);
+        Page deserialized = Page.deserialize(bytes, metaTable, 1, 1024);
         assertEquals(page, deserialized);
     }
+
+
 }

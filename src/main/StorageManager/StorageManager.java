@@ -142,13 +142,12 @@ public class StorageManager {
 
             int pageNumber = recordPointer.getPageNumber();
             int indexNumber = recordPointer.getRecordIndex();
-            Page page = pageBuffer.getPage(pageNumber, tableHeader);
+            Page page = pageBuffer.getPageByPageId(pageNumber, tableHeader, tableHeader.getCoordinates());
             page.deleteRecordAtIndex(indexNumber, tableHeader);
-            System.out.println("Deleted");
-            System.out.println(bPlusTree);
+
         } else {
             for (int i = 0; i < coordinates.size(); i++) {
-                Page page = pageBuffer.getPage(i, tableHeader);
+                Page page = pageBuffer.getPage(coordinates.get(i), tableHeader);
                 ArrayList<Record> records = page.getRecords();
                 ArrayList<Record> recordsToDelete = new ArrayList<>();
                 for (Record record : records) {
@@ -179,7 +178,7 @@ public class StorageManager {
                 .getCoordinates();
         Queue<String> whereClause = ShuntingYardAlgorithm.parse(conditions);
         for (int i = 0; i < coordinates.size(); i++) {
-            Page page = pageBuffer.getPage(i, tableHeader);
+            Page page = pageBuffer.getPage(coordinates.get(i), tableHeader);
             ArrayList<Record> records = page.getRecords();
             ArrayList<Record> recordsToDelete = new ArrayList<>();
             ArrayList<Record> updatedRecords = new ArrayList<>();
@@ -456,8 +455,11 @@ public class StorageManager {
                 ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader).getCoordinates();
 
                 ArrayList<Record> newRecords = new ArrayList<>();
+
                 for (int j = 0; j < coordinates.size(); j++) {
-                    Page page = pageBuffer.getPage(j, tableHeader);
+                    Coordinate coordinate = coordinates.get(j);
+                    Page page = pageBuffer.getPage(coordinate, tableHeader);
+
                     if (i == 0) {
                         newRecords.addAll(page.getRecords());
                     } else {
@@ -572,8 +574,6 @@ public class StorageManager {
 
             // Find where to place each record and place it
             Constant.PrepareResult result = this.pageBuffer.findRecordPlacement(records, tableHeader, bPlusTree);
-            System.out.println("INSERTED");
-            System.out.println(bPlusTree);
 
             if (records.size() != values.length || result.equals(PREPARE_UNRECOGNIZED_STATEMENT)) {
                 return PREPARE_UNRECOGNIZED_STATEMENT;
