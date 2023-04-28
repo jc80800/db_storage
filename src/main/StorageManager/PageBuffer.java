@@ -109,6 +109,7 @@ public class PageBuffer {
                 tableHeader.getTableNumber(), catalog.getPageSize());
 
             putPage(page);
+
             return page;
         } catch (IOException e) {
             e.printStackTrace();
@@ -418,7 +419,9 @@ public class PageBuffer {
     public boolean checkUnique(Object value, TableHeader tableHeader, int index) {
         ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
         for (int i = 0; i < coordinates.size(); i++) {
+            System.out.println("Checkpoint 1");
             Page page = getPage(coordinates.get(i), tableHeader);
+            System.out.println("Checkpoint 2");
             ArrayList<Record> pageRecords = page.getRecords();
             for (Record record : pageRecords) {
                 if ((record.getAttributes().get(index).getValue()).equals(value)

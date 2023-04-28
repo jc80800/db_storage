@@ -571,6 +571,7 @@ public class StorageManager {
         try {
             ArrayList<Record> records = parseRecords(values, metaTable, tableHeader);
 
+
             // Find where to place each record and place it
             Constant.PrepareResult result = this.pageBuffer.findRecordPlacement(records, tableHeader, bPlusTree);
 
@@ -648,10 +649,12 @@ public class StorageManager {
                 }
                 attributes.add(attribute);
             }
+
             Record record = new Record(attributes, metaAttributes);
             if (!pageBuffer.validateRecord(record, null, metaTable, tableHeader)) {
                 throw new IllegalArgumentException();
             };
+
             result.add(record);
         }
         return result;

@@ -41,7 +41,9 @@ public class Page {
 
     public static Page deserialize(byte[] bytes, MetaTable metaTable, int tableNumber,
         int pageSize) {
+
         int index = 0;
+
         int pageId = Helper.convertByteArrayToInt(
             Arrays.copyOf(bytes, index += Constant.INTEGER_SIZE));
 
@@ -51,7 +53,6 @@ public class Page {
         ArrayList<Record> records = new ArrayList<>();
 
         while (numOfRecords > 0) {
-
             Coordinate coordinate = Coordinate.deserialize(
                 Arrays.copyOfRange(bytes, index, index += Coordinate.getBinarySize()));
             pointers.add(coordinate);
@@ -60,7 +61,6 @@ public class Page {
                 coordinate.getOffset() + coordinate.getLength()), metaTable.metaAttributes());
             records.add(record);
             numOfRecords--;
-
         }
 
         return new Page(pageSize, tableNumber, pointers, records, pageId);
@@ -83,6 +83,7 @@ public class Page {
      * @return byte array
      */
     public byte[] serialize() {
+        byte[] pageIdBytes = Helper.convertIntToByteArray(this.pageId);
         byte[] numOfRecordsBytes = Helper.convertIntToByteArray(records.size());
         byte[] pointersBytes = new byte[0];
         for (Coordinate pointer : recordPointers) {
@@ -95,7 +96,7 @@ public class Page {
             byte[] recordBytes = record.serialize();
             recordsBytes = Helper.concatenate(recordBytes, recordsBytes);
         }
-        byte[] bytes = Helper.concatenate(numOfRecordsBytes, pointersBytes);
+        byte[] bytes = Helper.concatenate(pageIdBytes, numOfRecordsBytes, pointersBytes);
 
         // fill 0's between pointers and records
         bytes = Arrays.copyOf(bytes, pageSize - recordsBytes.length);
