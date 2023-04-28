@@ -1,44 +1,22 @@
 package main.StorageManager.B_Tree;
 
-import java.util.Arrays;
 import main.Constants.Constant;
-import main.Constants.Constant.DataType;
-
-import java.util.ArrayList;
 import main.Constants.Helper;
 import main.StorageManager.MetaData.MetaAttribute;
-import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.Headers;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Objects;
 
 public class Node {
     private final MetaAttribute metaAttribute;
     private final boolean isLeaf;
-    private Integer parentIndex;
+    private int parentIndex;
     private final int index;
     private ArrayList<Object> searchKeys;
     private ArrayList<RecordPointer> recordPointers;
     private final int N;
-    private BPlusTree bPlusTree = null;
-
-    public Node(MetaAttribute metaAttribute, boolean isLeaf, int N, int index) {
-        this.metaAttribute = metaAttribute;
-        this.isLeaf = isLeaf;
-        this.searchKeys = new ArrayList<>();
-        this.recordPointers = new ArrayList<>();
-        this.N = N;
-        this.parentIndex = null;
-        this.index = index;
-    }
-
-    public Node(MetaAttribute metaAttribute, boolean isLeaf, ArrayList<Object> searchKeys,
-                ArrayList<RecordPointer> recordPointers, int N, Integer parentIndex, int index) {
-        this.metaAttribute = metaAttribute;
-        this.isLeaf = isLeaf;
-        this.searchKeys = searchKeys;
-        this.recordPointers = recordPointers;
-        this.N = N;
-        this.parentIndex = parentIndex;
-        this.index = index;
-    }
+    private final BPlusTree bPlusTree;
 
     public Node(MetaAttribute metaAttribute, boolean isLeaf, int N, int index, BPlusTree bPlusTree) {
         this.metaAttribute = metaAttribute;
@@ -46,7 +24,19 @@ public class Node {
         this.searchKeys = new ArrayList<>();
         this.recordPointers = new ArrayList<>();
         this.N = N;
-        this.parentIndex = null;
+        this.parentIndex = -1;
+        this.index = index;
+        this.bPlusTree = bPlusTree;
+    }
+
+    public Node(MetaAttribute metaAttribute, boolean isLeaf, ArrayList<Object> searchKeys,
+                ArrayList<RecordPointer> recordPointers, int N, int parentIndex, int index, BPlusTree bPlusTree) {
+        this.metaAttribute = metaAttribute;
+        this.isLeaf = isLeaf;
+        this.searchKeys = searchKeys;
+        this.recordPointers = recordPointers;
+        this.N = N;
+        this.parentIndex = parentIndex;
         this.index = index;
         this.bPlusTree = bPlusTree;
     }
@@ -58,11 +48,11 @@ public class Node {
         for (int i = 0; i < this.searchKeys.size(); i++) {
             int compareValue = compareValues(searchKey, this.searchKeys.get(i));
             if (compareValue < 0) {
-                Node node = BPlusTree.getNodeAtIndex(recordPointers.get(i).getRecordIndex());
+                Node node = bPlusTree.getNodeAtIndex(recordPointers.get(i).getRecordIndex());
                 return node.search(searchKey);
             }
         }
-        Node node = BPlusTree.getNodeAtIndex(recordPointers.get(recordPointers.size() - 1).getRecordIndex());
+        Node node = bPlusTree.getNodeAtIndex(recordPointers.get(recordPointers.size() - 1).getRecordIndex());
         return node.search(searchKey);
     }
 
@@ -97,32 +87,30 @@ public class Node {
 
     private Node splitRoot() {
         Node sibling = this.split();
-        Node parent = new Node(metaAttribute, false, N, BPlusTree.getNextIndexAndIncrement());
+        Node parent = new Node(metaAttribute, false, N, bPlusTree.getNextIndexAndIncrement(), bPlusTree);
         RecordPointer left = new RecordPointer(-1, this.index);
         RecordPointer right = new RecordPointer(-1, sibling.index);
         parent.addElementByIndex(0, sibling.searchKeys.get(0), left, right);
-        this.parentIndex = parent.index;
-        sibling.parentIndex = parent.index;
-        BPlusTree.putNode(parent);
+        this.updateParentIndex(parent.index);
+        sibling.updateParentIndex(parent.index);
         return parent;
     }
 
     private Node splitRoot(Node leftChild, Node rightChild) {
         Node sibling = this.split();
-        Node parent = new Node(metaAttribute, false, N, BPlusTree.getNextIndexAndIncrement());
+        Node parent = new Node(metaAttribute, false, N, bPlusTree.getNextIndexAndIncrement(), bPlusTree);
         RecordPointer left = new RecordPointer(-1, this.index);
         RecordPointer right = new RecordPointer(-1, sibling.index);
         Object elementLiftedUp = sibling.searchKeys.get(0);
         parent.addElementByIndex(0, sibling.searchKeys.get(0), left, right);
         sibling.searchKeys.remove(0);
-        this.parentIndex = parent.index;
-        sibling.parentIndex = parent.index;
+        this.updateParentIndex(parent.index);
+        sibling.updateParentIndex(parent.index);
         int compareResult = compareValues(rightChild.searchKeys.get(rightChild.searchKeys.size() - 1), elementLiftedUp);
         if (compareResult >= 0) {
-            leftChild.parentIndex = sibling.index;
-            rightChild.parentIndex = sibling.index;
+            leftChild.updateParentIndex(sibling.index);
+            rightChild.updateParentIndex(sibling.index);
         }
-        BPlusTree.putNode(parent);
         return parent;
     }
 
@@ -138,12 +126,12 @@ public class Node {
         Node newNode;
         if (isLeaf) {
             newNode = new Node(metaAttribute, true, newSearchKeys, newRecordPointers, N, parentIndex,
-                    BPlusTree.getNextIndexAndIncrement());
+                    bPlusTree.getNextIndexAndIncrement(), bPlusTree);
         } else {
             newNode = new Node(metaAttribute, false, newSearchKeys, newRecordPointers, N, parentIndex,
-                    BPlusTree.getNextIndexAndIncrement());
+                    bPlusTree.getNextIndexAndIncrement(), bPlusTree);
         }
-        BPlusTree.putNode(newNode);
+//        bPlusTree.persistNode(newNode);
 
         this.searchKeys = new ArrayList<>(searchKeys.subList(0, mid));
         this.recordPointers = new ArrayList<>(recordPointers.subList(0, recordPointerMid));
@@ -167,13 +155,13 @@ public class Node {
 
     private Node addNodeToParent(Node newNode) {
         Object searchKey = newNode.searchKeys.get(0);
-        Node parent = BPlusTree.getNodeAtIndex(parentIndex);
+        Node parent = bPlusTree.getNodeAtIndex(parentIndex);
         boolean added = false;
         for (int i = 0; i < parent.searchKeys.size(); i++) {
             int compareValue = compareValues(searchKey, parent.searchKeys.get(i));
             if (compareValue < 0) {
                 parent.addElementByIndex(i, searchKey, new RecordPointer(-1, newNode.index));
-                newNode.parentIndex = parent.index;
+                newNode.updateParentIndex(parent.index);
                 if (parent.isRoot() && !newNode.isLeaf) {
                     newNode.searchKeys.remove(0);
                 }
@@ -183,7 +171,7 @@ public class Node {
         }
         if (!added) {
             parent.addElementByIndex(parent.searchKeys.size(), searchKey, new RecordPointer(-1, newNode.index));
-            newNode.parentIndex = parent.index;
+            newNode.updateParentIndex(parent.index);
             if (parent.isRoot() && !newNode.isLeaf) {
                 newNode.searchKeys.remove(0);
             }
@@ -194,12 +182,17 @@ public class Node {
                 return parent.splitRoot(this, newNode);
             } else {
                 Node parentSibling = parent.split();
-                this.parentIndex = parentSibling.index;
-                newNode.parentIndex = parentSibling.index;
+                this.updateParentIndex(parentSibling.index);
+                newNode.updateParentIndex(parentSibling.index);
                 return parent.addNodeToParent(parentSibling);
             }
         }
         return null;
+    }
+
+    public void updateParentIndex(int parentIndex) {
+        this.parentIndex = parentIndex;
+        bPlusTree.persistNode(this);
     }
 
     public Node insert(Object searchValue, int pageNumber, int recordNumber) {
@@ -227,7 +220,7 @@ public class Node {
                 }
                 // if internal node
                 else {
-                    Node node = BPlusTree.getNodeAtIndex(recordPointers.get(i).getRecordIndex());
+                    Node node = bPlusTree.getNodeAtIndex(recordPointers.get(i).getRecordIndex());
                     return node.insert(searchValue, pageNumber, recordNumber);
                 }
                 return null;
@@ -251,7 +244,7 @@ public class Node {
         }
         // if internal node
         else {
-            Node node = BPlusTree.getNodeAtIndex(recordPointers.get(searchKeys.size()).getRecordIndex());
+            Node node = bPlusTree.getNodeAtIndex(recordPointers.get(searchKeys.size()).getRecordIndex());
             return node.insert(searchValue, pageNumber, recordNumber);
         }
         return null;
@@ -300,7 +293,7 @@ public class Node {
         ArrayList<Node> siblings = getSiblings();
         Node leftSibling = siblings.get(0);
         Node rightSibling = siblings.get(1);
-        Node parentNode = BPlusTree.getNodeAtIndex(parentIndex);
+        Node parentNode = bPlusTree.getNodeAtIndex(parentIndex);
         if(!burrow(parentNode, leftSibling, rightSibling)){
             return merge(parentNode, leftSibling, rightSibling);
         }
@@ -431,7 +424,7 @@ public class Node {
                 return parentNode.handleDeficiency();
             } else {
                 if (parentNode.searchKeys.size() == 0){
-                    this.parentIndex = null;
+                    this.updateParentIndex(-1);
                     return this;
                 }
             }
@@ -444,7 +437,7 @@ public class Node {
     }
 
     public ArrayList<Node> getSiblings(){
-        Node parent = BPlusTree.getNodeAtIndex(this.parentIndex);
+        Node parent = bPlusTree.getNodeAtIndex(this.parentIndex);
         ArrayList<Node> result = new ArrayList<>();
         for (int i = 0; i < parent.recordPointers.size(); i++){
             if (parent.recordPointers.get(i).getRecordIndex() == this.index){
@@ -456,7 +449,7 @@ public class Node {
     }
 
     public int getIndexRelativetoParent(){
-        Node parent = BPlusTree.getNodeAtIndex(this.parentIndex);
+        Node parent = bPlusTree.getNodeAtIndex(this.parentIndex);
         ArrayList<Node> result = new ArrayList<>();
         for (int i = 0; i < parent.recordPointers.size(); i++){
             if (parent.recordPointers.get(i).getRecordIndex() == this.index){
@@ -471,7 +464,7 @@ public class Node {
         try {
             RecordPointer recordPointer = this.recordPointers.get(index);
             int recordPointerIndex = recordPointer.getRecordIndex();
-            return BPlusTree.getNodeAtIndex(recordPointerIndex);
+            return bPlusTree.getNodeAtIndex(recordPointerIndex);
         } catch (IndexOutOfBoundsException e){
             return null;
         }
@@ -510,7 +503,7 @@ public class Node {
                 }
                 case VARCHAR -> Helper.convertStringToByteArrays((String) searchKey);
             };
-            Helper.concatenate(bytes, valuesBytes);
+            bytes = Helper.concatenate(bytes, valuesBytes);
         }
         return bytes;
     }
@@ -540,14 +533,15 @@ public class Node {
         byte[] numOfSK = Helper.convertIntToByteArray(searchKeys.size());
         byte[] searchKeyArray = serializeSearchKeys();
         byte[] numOfRP = Helper.convertIntToByteArray(recordPointers.size());
-        Helper.concatenate(bytes, parentIndexArray, isLeafArray, numOfSK, searchKeyArray, numOfRP);
+        bytes = Helper.concatenate(bytes, parentIndexArray, isLeafArray, numOfSK, searchKeyArray, numOfRP);
         for (RecordPointer recordPointer : recordPointers) {
-            Helper.concatenate(bytes, recordPointer.serialize());
+            bytes = Helper.concatenate(bytes, recordPointer.serialize());
         }
+        bytes = Arrays.copyOf(bytes, bPlusTree.getPageSize() - bytes.length);
         return bytes;
     }
 
-    public static Node deserialize(byte[] bytes, MetaAttribute metaAttribute, int N) {
+    public static Node deserialize(byte[] bytes, MetaAttribute metaAttribute, int N, BPlusTree bPlusTree) {
         int i = 0;
         int nodeIndex = Helper.convertByteArrayToInt(
             Arrays.copyOfRange(bytes, i, i += Constant.INTEGER_SIZE));
@@ -567,7 +561,7 @@ public class Node {
                 Arrays.copyOfRange(bytes, i, i += RecordPointer.getBinarySize()));
             recordPointers.add(recordPointer);
         }
-        return new Node(metaAttribute, isLeaf, searchKeys, recordPointers, N, nodeIndex, parentIndex);
+        return new Node(metaAttribute, isLeaf, searchKeys, recordPointers, N, parentIndex, nodeIndex, bPlusTree);
     }
 
     protected int compareValues(Object searchValue, Object compareValue) {
@@ -581,7 +575,7 @@ public class Node {
     }
 
     public boolean isRoot() {
-        return parentIndex == null;
+        return parentIndex == -1;
     }
 
     public int getIndex() {
@@ -607,7 +601,7 @@ public class Node {
         if(!this.isLeaf) {
             for (RecordPointer recordPointer : recordPointers) {
                 if (recordPointer.getPageNumber() == -1) {
-                    Node node = BPlusTree.getNodeAtIndex(recordPointer.getRecordIndex());
+                    Node node = bPlusTree.getNodeAtIndex(recordPointer.getRecordIndex());
                     if (node != null) {
                         sb.append(node.toString());
                     }
@@ -618,7 +612,24 @@ public class Node {
         return sb.toString();
     }
 
-    public void insertValuesForTesting(int values){
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Node node = (Node) o;
+        return isLeaf == node.isLeaf && index == node.index && N == node.N
+                && Objects.equals(metaAttribute, node.metaAttribute)
+                && Objects.equals(parentIndex, node.parentIndex)
+                && Objects.equals(searchKeys, node.searchKeys)
+                && Objects.equals(recordPointers, node.recordPointers);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(metaAttribute, isLeaf, parentIndex, index, searchKeys, recordPointers, N);
+    }
+
+    public void insertValuesForTesting(int values) {
         this.searchKeys.add(values);
     }
 

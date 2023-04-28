@@ -4,6 +4,7 @@ import main.Constants.Constant;
 import main.Constants.Helper;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class RecordPointer {
 
@@ -49,5 +50,18 @@ public class RecordPointer {
 
     public static int getBinarySize() {
         return Constant.INTEGER_SIZE * 2;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        RecordPointer that = (RecordPointer) o;
+        return pageNumber == that.pageNumber && recordIndex == that.recordIndex;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pageNumber, recordIndex);
     }
 }
