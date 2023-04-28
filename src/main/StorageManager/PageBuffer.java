@@ -4,6 +4,7 @@ import static main.Constants.Constant.PrepareResult.PREPARE_SUCCESS;
 import static main.Constants.Constant.PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -85,7 +86,6 @@ public class PageBuffer {
     }
 
     public Page getPage(Coordinate coordinate, TableHeader tableHeader) {
-
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(
             tableHeader.getTable_file().getPath(), "r");) {
 
@@ -115,6 +115,28 @@ public class PageBuffer {
             e.printStackTrace();
             throw new IllegalArgumentException();
         }
+    }
+
+    public int getPageIndex(int pageId, ArrayList<Coordinate> coordinates, TableHeader tableHeader){
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(
+            tableHeader.getTable_file().getPath(), "r");) {
+
+            for (int i = 0; i < coordinates.size(); i++) {
+                Coordinate coordinate = coordinates.get(i);
+                System.out.println("LOOKING AT ");
+                System.out.println(coordinate);
+                randomAccessFile.seek(coordinate.getOffset());
+                byte[] pageIdBytes = new byte[Constant.INTEGER_SIZE];
+                randomAccessFile.readFully(pageIdBytes);
+
+                if (pageId == Page.deserializePageId(pageIdBytes)) {
+                    return i;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return -1;
     }
 
     public void putPage(Page page) {
@@ -228,6 +250,7 @@ public class PageBuffer {
         if (tableHeader.getCoordinates().size() == 0) {
             putPage(tableHeader.createFirstPage(this.pageSize));
         }
+
         ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
         for (Record record : records) {
             if (index) {
@@ -237,16 +260,18 @@ public class PageBuffer {
                 if (recordPointer == null) {
                     int pageNumber = 0;
                     int recordIndex = 0;
-                    Page page = getPageByPageId(pageNumber, tableHeader, tableHeader.getCoordinates());
 
-                    insertRecord(record, page, recordIndex, tableHeader, -1);
-                    bPlusTree.insert(searchKey, page.getPageId(), page.getRecordIndex(record));
+                    Page page = getPageByPageId(0, tableHeader, coordinates);
+                    insertRecord(record, page, recordIndex, tableHeader, 0);
+
+                    bPlusTree.insert(searchKey, pageNumber, 0);
                     continue;
                 }
                 int pageNumber = recordPointer.getPageNumber();
                 int recordIndex = recordPointer.getRecordIndex();
                 Page page = getPageByPageId(pageNumber, tableHeader, tableHeader.getCoordinates());
                 Constant.DataType type = record.getPrimaryKey().getMetaAttribute().getType();
+
                 int compareResult = compareValues(type, searchKey, page.getRecords().get(recordIndex).getPrimaryKey().getValue());
                 if (compareResult > 0) {
                     recordIndex++;
@@ -254,14 +279,21 @@ public class PageBuffer {
                     // duplicate primary key
                     return PREPARE_UNRECOGNIZED_STATEMENT;
                 }
-                // TODO change -1
-                Page newPage = insertRecord(record, page, recordIndex, tableHeader, -1);
+
+                int pageIndex = getPageIndex(page.getPageId(), coordinates, tableHeader);
+
+                System.out.println("page index is +++" + pageIndex);
+                Page newPage = insertRecord(record, page, recordIndex, tableHeader, pageIndex);
                 int pageId = page.containsRecord(record) ? page.getPageId() : newPage.getPageId();
+
                 recordIndex = page.getRecordIndex(record) != -1
                         ? page.getRecordIndex(record)
                         : newPage.getRecordIndex(record);
+
                 bPlusTree.insert(searchKey, pageId, recordIndex);
+
                 updateRecordPointersInBTree(bPlusTree, page);
+
                 if (newPage != null) {
                     updateRecordPointersInBTree(bPlusTree, newPage);
                 }

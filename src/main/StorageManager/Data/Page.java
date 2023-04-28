@@ -115,7 +115,6 @@ public class Page {
     }
 
     private int calculateAvailableSpace() {
-        // TODO changed for pageID
         int spaceTaken = Constant.INTEGER_SIZE + Constant.INTEGER_SIZE;
         spaceTaken += Coordinate.getBinarySize() * recordPointers.size();
         for (Record record : records) {
@@ -126,21 +125,12 @@ public class Page {
 
     public Page deleteRecord(Record record, int pageId, TableHeader tableHeader) {
         this.records.remove(record);
-        // TODO Changed here
-//        if (this.records.isEmpty()) {
-//            tableHeader.deletePage(pageId);
-//            return null;
-//        }
         this.recordPointers = constructPointers();
         return this;
     }
 
     public void deleteRecordAtIndex(int index, TableHeader tableHeader){
         this.records.remove(index);
-        // TODO CHANGED HERE
-//        if (this.records.isEmpty()) {
-//            tableHeader.deletePage(pageId);
-//        }
     }
 
     public Page insertRecord(Record record, int index, TableHeader tableHeader, PageBuffer pageBuffer, int currentPageIndex) {

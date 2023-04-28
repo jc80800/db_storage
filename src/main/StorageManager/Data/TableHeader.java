@@ -101,6 +101,7 @@ public class TableHeader {
         } else {
             this.coordinates.add(coordinate);
         }
+
         this.currentNumOfPages += 1;
 
         updateTableHeader(index);
@@ -142,7 +143,6 @@ public class TableHeader {
         return result;
     }
 
-    // TODO might need to change this
     public void updateTableHeader(int newPageIndex) {
         try {
             if (this.currentNumOfPages > this.maxPages) {
@@ -156,7 +156,8 @@ public class TableHeader {
                 byte[] bytes = this.serialize();
                 randomAccessFile.write(bytes);
                 Coordinate newCoordinate = this.coordinates.get(newPageIndex);
-                byte[] bytes1 = new byte[newCoordinate.getLength()];
+                System.out.println("LOOKING AT THE NEW COORDINATE " + newCoordinate);
+                byte[] bytes1 = new byte[this.pageSize];
                 randomAccessFile.seek(newCoordinate.getOffset());
                 randomAccessFile.write(bytes1);
                 randomAccessFile.close();

@@ -178,35 +178,54 @@ public class StorageManager {
         ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader)
                 .getCoordinates();
         Queue<String> whereClause = ShuntingYardAlgorithm.parse(conditions);
-        for (int i = 0; i < coordinates.size(); i++) {
-            Page page = pageBuffer.getPage(coordinates.get(i), tableHeader);
-            ArrayList<Record> records = page.getRecords();
-            ArrayList<Record> recordsToDelete = new ArrayList<>();
-            ArrayList<Record> updatedRecords = new ArrayList<>();
-            for (Record record : records) {
-                if (ShuntingYardAlgorithm.evaluate(new LinkedList<>(whereClause), record)) {
-                    Record updatedRecord = new Record(record);
-                    if (!record.hasAttribute(attributeName)) {
-                        System.out.printf("Table %s does not have column %s\n", tableName, attributeName);
-                        return PREPARE_UNRECOGNIZED_STATEMENT;
-                    }
-                    updatedRecord.getAttributeByName(attributeName).setValue(newValue);
-                    if (!pageBuffer.validateRecord(updatedRecord, record, metaTable, tableHeader)) {
-                        break;
-                    }
-                    recordsToDelete.add(record);
-                    updatedRecords.add(updatedRecord);
-                }
-            }
-            BPlusTree bPlusTree = null;
-            if(isIndex){
-                bPlusTree = bPlusTreeHashMap.get(tableHeader.getTableNumber());
-            }
 
-            for (Record record : recordsToDelete) {
-                pageBuffer.deleteRecord(record, page, i, tableHeader);
+        BPlusTree bPlusTree = null;
+        if(isIndex){
+            String[] field = conditions.split("=");
+            Object sk = convertValue(field[1], metaTable.getPrimaryKey().getType());
+            bPlusTree = bPlusTreeHashMap.get(tableHeader.getTableNumber());
+            RecordPointer recordPointer = bPlusTree.findRecordPointerForDeletion(sk);
+            if (recordPointer == null){
+                return PREPARE_UNRECOGNIZED_STATEMENT;
             }
-            pageBuffer.findRecordPlacement(updatedRecords, tableHeader, bPlusTree);
+            int pageNumber = recordPointer.getPageNumber();
+            int indexNumber = recordPointer.getRecordIndex();
+            Page page = pageBuffer.getPageByPageId(pageNumber, tableHeader, tableHeader.getCoordinates());
+            page.deleteRecordAtIndex(indexNumber, tableHeader);
+            bPlusTree.delete(newValue);
+
+            return executeInsert(tableName, new String[]{newValue});
+
+        } else {
+
+            for (int i = 0; i < coordinates.size(); i++) {
+                Page page = pageBuffer.getPage(coordinates.get(i), tableHeader);
+                ArrayList<Record> records = page.getRecords();
+                ArrayList<Record> recordsToDelete = new ArrayList<>();
+                ArrayList<Record> updatedRecords = new ArrayList<>();
+                for (Record record : records) {
+                    if (ShuntingYardAlgorithm.evaluate(new LinkedList<>(whereClause), record)) {
+                        Record updatedRecord = new Record(record);
+                        if (!record.hasAttribute(attributeName)) {
+                            System.out.printf("Table %s does not have column %s\n", tableName,
+                                attributeName);
+                            return PREPARE_UNRECOGNIZED_STATEMENT;
+                        }
+                        updatedRecord.getAttributeByName(attributeName).setValue(newValue);
+                        if (!pageBuffer.validateRecord(updatedRecord, record, metaTable,
+                            tableHeader)) {
+                            break;
+                        }
+                        recordsToDelete.add(record);
+                        updatedRecords.add(updatedRecord);
+                    }
+                }
+
+                for (Record record : recordsToDelete) {
+                    pageBuffer.deleteRecord(record, page, i, tableHeader);
+                }
+                pageBuffer.findRecordPlacement(updatedRecords, tableHeader, bPlusTree);
+            }
         }
         return PREPARE_SUCCESS;
     }
@@ -422,7 +441,6 @@ public class StorageManager {
             int N = calculateN(Objects.requireNonNull(metaTable.getPrimaryKey()));
             BPlusTree bPlusTree = new BPlusTree(N, getIndexFile(table_name), metaTable.getPrimaryKey());
             bPlusTreeHashMap.put(tableNumber, bPlusTree);
-            // TODO serializing
         }
         return PREPARE_SUCCESS;
     }
@@ -458,7 +476,16 @@ public class StorageManager {
 
                 for (int j = 0; j < coordinates.size(); j++) {
                     Coordinate coordinate = coordinates.get(j);
+
+                    System.out.println(j);
+                    System.out.println(coordinate);
+
                     Page page = pageBuffer.getPage(coordinate, tableHeader);
+
+                    System.out.println(page.getPageId());
+                    for(Record record : page.getRecords()){
+                        System.out.println(record);
+                    }
 
                     if (i == 0) {
                         newRecords.addAll(page.getRecords());
@@ -565,7 +592,6 @@ public class StorageManager {
         int tableNumber = tableHeader.getTableNumber();
         MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
 
-        // TODO check if index is on
         BPlusTree bPlusTree = bPlusTreeHashMap.get(tableNumber);
 
         // Parse the values from user and validate it
