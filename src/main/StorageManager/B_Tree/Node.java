@@ -57,7 +57,7 @@ public class Node {
                 return node.search(searchKey);
             }
         }
-        Node node = BPlusTree.getNodeAtIndex(recordPointers.get(searchKeys.size() - 1).getRecordIndex());
+        Node node = BPlusTree.getNodeAtIndex(recordPointers.get(recordPointers.size() - 1).getRecordIndex());
         return node.search(searchKey);
     }
 
