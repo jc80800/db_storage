@@ -134,7 +134,7 @@ public class StorageManager {
             MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
             bPlusTree = bPlusTreeHashMap.get(metaTable.getTableNumber());
             Object newValue = convertValue(value.trim(), metaTable.getPrimaryKey().getType());
-            RecordPointer recordPointer = bPlusTree.delete(newValue);
+            RecordPointer recordPointer = bPlusTree.findRecordPointerForDeletion(newValue);
             if(recordPointer == null){
                 System.out.println("RP is null??");
                 return PREPARE_UNRECOGNIZED_STATEMENT;
@@ -144,6 +144,7 @@ public class StorageManager {
             int indexNumber = recordPointer.getRecordIndex();
             Page page = pageBuffer.getPageByPageId(pageNumber, tableHeader, tableHeader.getCoordinates());
             page.deleteRecordAtIndex(indexNumber, tableHeader);
+            bPlusTree.delete(newValue);
 
         } else {
             for (int i = 0; i < coordinates.size(); i++) {

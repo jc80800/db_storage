@@ -79,6 +79,22 @@ public class Node {
         return node.recordPointers.get(node.searchKeys.size() - 1);
     }
 
+    public RecordPointer findRecordPointerForDeletion(Node node, Object searchKey) {
+        if (node.searchKeys.size() == 0) {
+            return null;
+        }
+        for (int i = 0; i < node.searchKeys.size(); i++) {
+            int compareValue = compareValues(searchKey, node.searchKeys.get(i));
+            if(compareValue == 0){
+                return node.recordPointers.get(i);
+            }
+            if (compareValue < 0) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     private Node splitRoot() {
         Node sibling = this.split();
         Node parent = new Node(metaAttribute, false, N, BPlusTree.getNextIndexAndIncrement());
@@ -245,7 +261,7 @@ public class Node {
         return this.searchKeys.size() == maxNum();
     }
 
-    public RecordPointer delete(Object searchValue){
+    public Node delete(Object searchValue){
         for(int i = 0; i < this.searchKeys.size(); i++) {
             int compareValue = compareValues(searchValue, this.searchKeys.get(i));
             if (compareValue == 0) {
@@ -254,9 +270,9 @@ public class Node {
                     this.searchKeys.remove(i);
                     if(minNum() > searchKeys.size() && !this.isRoot()){
                         // try to burrow, else merge
-                        handleDeficiency();
+                        return handleDeficiency();
                     }
-                    return recordPointer;
+                    return null;
                 }
                 else {
                     return getRecordPointerNode(i + 1).delete(searchValue);
@@ -280,14 +296,15 @@ public class Node {
         }
     }
 
-    private void handleDeficiency(){
+    private Node handleDeficiency(){
         ArrayList<Node> siblings = getSiblings();
         Node leftSibling = siblings.get(0);
         Node rightSibling = siblings.get(1);
         Node parentNode = BPlusTree.getNodeAtIndex(parentIndex);
         if(!burrow(parentNode, leftSibling, rightSibling)){
-            merge(parentNode, leftSibling, rightSibling);
+            return merge(parentNode, leftSibling, rightSibling);
         }
+        return null;
     }
 
     public boolean burrow(Node parentNode, Node leftSibling, Node rightSibling) {
@@ -332,7 +349,7 @@ public class Node {
         return false;
     }
 
-    public void merge(Node parentNode, Node leftSibling, Node rightSibling){
+    public Node merge(Node parentNode, Node leftSibling, Node rightSibling){
         int relativeIndex = getIndexRelativetoParent();
         int parentIndexToDelete;
 
@@ -411,15 +428,15 @@ public class Node {
         }
         if (parentNode.searchKeys.size() < parentNode.minNum()) {
             if(!parentNode.isRoot()) {
-                parentNode.handleDeficiency();
+                return parentNode.handleDeficiency();
             } else {
                 if (parentNode.searchKeys.size() == 0){
-                    this.bPlusTree = parentNode.bPlusTree;
-                    this.bPlusTree.setRootIndex(this.index);
                     this.parentIndex = null;
+                    return this;
                 }
             }
         }
+        return null;
     }
 
     public void update(){

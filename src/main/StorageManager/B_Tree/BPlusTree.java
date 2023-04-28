@@ -78,14 +78,23 @@ public class BPlusTree {
         nodes.add(node);
     }
 
-    public RecordPointer delete(Object key){
+    public RecordPointer findRecordPointerForDeletion(Object key){
+        Node root = getRoot();
+        Node nodeToDelete = search(root, key);
+        RecordPointer recordPointer = nodeToDelete.findRecordPointerForDeletion(nodeToDelete, key);
+        return recordPointer;
+    }
+
+    public void delete(Object key){
         if(rootIndex == null){
             System.out.println("Table is empty! Nothing to delete!");
-            return null;
         }
         else{
             Node rootNode = nodes.get(rootIndex);
-            return rootNode.delete(key);
+            Node node = rootNode.delete(key);
+            if(node != null){
+                this.rootIndex = node.getIndex();
+            }
         }
     }
 

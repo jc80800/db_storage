@@ -329,8 +329,7 @@ public class TreeTest {
         BPlusTree.insertNodeForTesting(node2);
 
         System.out.println(bPlusTree);
-        RecordPointer recordPointer = bPlusTree.delete(1);
-        System.out.println(recordPointer.getRecordIndex());
+        bPlusTree.delete(1);
 
     }
 
@@ -351,6 +350,54 @@ public class TreeTest {
         System.out.println(bPlusTree);
         bPlusTree.update(2, 3);
         System.out.println(bPlusTree);
+
+    }
+
+    @Test
+    void testDeleteAgain(){
+        MetaAttribute metaAttribute = new MetaAttribute(true, "num", DataType.INTEGER,
+            null);
+        BPlusTree bPlusTree = new BPlusTree(3, null, metaAttribute);
+
+        Node root = new Node(metaAttribute, false, 9, 0, bPlusTree);
+        root.insertValuesForTesting(5);
+
+        root.setRecordPointers(1);
+        root.setRecordPointers(2);
+
+        Node node1 = new Node(metaAttribute, true, 9, 1);
+        node1.insertValuesForTesting(1);
+        node1.insertValuesForTesting(2);
+        node1.insertValuesForTesting(3);
+        node1.insertValuesForTesting(4);
+        node1.setParentIndexForTesting(0);
+
+        node1.setRecordPointers(255);
+        node1.setRecordPointers(255);
+        node1.setRecordPointers(255);
+        node1.setRecordPointers(255);
+
+        Node node2 = new Node(metaAttribute, true, 9, 2);
+        node2.insertValuesForTesting(5);
+        node2.insertValuesForTesting(6);
+        node2.insertValuesForTesting(7);
+        node2.insertValuesForTesting(8);
+        node2.setParentIndexForTesting(0);
+
+        node2.setRecordPointers(255);
+        node2.setRecordPointers(255);
+        node2.setRecordPointers(255);
+        node2.setRecordPointers(255);
+
+        bPlusTree.setRootIndex(0);
+        BPlusTree.insertNodeForTesting(root);
+        BPlusTree.insertNodeForTesting(node1);
+        BPlusTree.insertNodeForTesting(node2);
+
+        System.out.println(bPlusTree);
+        bPlusTree.delete(5);
+        System.out.println(bPlusTree);
+
 
     }
 
