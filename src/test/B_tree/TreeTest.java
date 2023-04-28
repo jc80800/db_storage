@@ -1,14 +1,16 @@
 package test.B_tree;
 
 import main.Constants.Constant;
+import main.Constants.Constant.DataType;
 import main.StorageManager.B_Tree.BPlusTree;
 import main.StorageManager.B_Tree.Node;
+import main.StorageManager.B_Tree.RecordPointer;
 import org.junit.jupiter.api.Test;
 
 public class TreeTest {
     @Test
     void BTree() {
-        BPlusTree bPlusTree = new BPlusTree(4, null);
+        BPlusTree bPlusTree = new BPlusTree(4, null, DataType.INTEGER);
 //        bPlusTree.insert(10);
 //        System.out.println(bPlusTree);
 //        bPlusTree.insert(15);
@@ -28,7 +30,7 @@ public class TreeTest {
 
     @Test
     void delete(){
-        BPlusTree bPlusTree = new BPlusTree(3, null);
+        BPlusTree bPlusTree = new BPlusTree(3, null, DataType.INTEGER);
         Node root = new Node(Constant.DataType.INTEGER, false, 3, 0);
         root.insertValuesForTesting(2);
         root.insertValuesForTesting(3);
@@ -68,7 +70,7 @@ public class TreeTest {
 
     @Test
     void testBorrowRight(){
-        BPlusTree bPlusTree = new BPlusTree(4, null);
+        BPlusTree bPlusTree = new BPlusTree(4, null, DataType.INTEGER);
         Node root = new Node(Constant.DataType.INTEGER, false, 4, 0);
         root.insertValuesForTesting(3);
         root.insertValuesForTesting(5);
@@ -125,7 +127,7 @@ public class TreeTest {
 
     @Test
     void testBorrowLeft(){
-        BPlusTree bPlusTree = new BPlusTree(4, null);
+        BPlusTree bPlusTree = new BPlusTree(4, null, DataType.INTEGER);
         Node root = new Node(Constant.DataType.INTEGER, false, 4, 0);
         root.insertValuesForTesting(3);
         root.insertValuesForTesting(6);
@@ -182,7 +184,7 @@ public class TreeTest {
 
     @Test
     void testBorrowInternalLeftNode(){
-        BPlusTree bPlusTree = new BPlusTree(4, null);
+        BPlusTree bPlusTree = new BPlusTree(4, null, DataType.INTEGER);
 
         Node root = new Node(Constant.DataType.INTEGER, false, 4, 0);
         root.insertValuesForTesting(22);
@@ -288,7 +290,7 @@ public class TreeTest {
 
     @Test
     void testRootDeletion(){
-        BPlusTree bPlusTree = new BPlusTree(3, null);
+        BPlusTree bPlusTree = new BPlusTree(3, null, DataType.INTEGER);
 
         Node root = new Node(Constant.DataType.INTEGER, false, 4, 0, bPlusTree);
         root.insertValuesForTesting(2);
@@ -314,14 +316,14 @@ public class TreeTest {
         BPlusTree.insertNodeForTesting(node2);
 
         System.out.println(bPlusTree);
-        bPlusTree.delete(1);
-        System.out.println(bPlusTree);
+        RecordPointer recordPointer = bPlusTree.delete(1);
+        System.out.println(recordPointer.getRecordIndex());
 
     }
 
     @Test
     void testUpdate(){
-        BPlusTree bPlusTree = new BPlusTree(3, null);
+        BPlusTree bPlusTree = new BPlusTree(3, null, DataType.INTEGER);
 
         Node root = new Node(Constant.DataType.INTEGER, true, 4, 0, bPlusTree);
         root.insertValuesForTesting(2);

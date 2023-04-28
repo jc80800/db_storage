@@ -6,7 +6,9 @@ import java.util.Objects;
 import main.Constants.Constant;
 import main.Constants.Coordinate;
 import main.Constants.Helper;
+import main.StorageManager.B_Tree.BPlusTree;
 import main.StorageManager.MetaData.MetaTable;
+import main.StorageManager.PageBuffer;
 
 public class Page {
 
@@ -120,7 +122,14 @@ public class Page {
         return this;
     }
 
-    public Page insertRecord(Record record, int index, TableHeader tableHeader) {
+    public void deleteRecordAtIndex(int index, TableHeader tableHeader){
+        this.records.remove(index);
+        if (this.records.isEmpty()) {
+            tableHeader.deletePage(pageId);
+        }
+    }
+
+    public Page insertRecord(Record record, int index, TableHeader tableHeader, PageBuffer pageBuffer) {
         boolean canInsert = isEnoughSpaceForInsert(record);
 
         this.records.add(index, record);
@@ -128,17 +137,16 @@ public class Page {
             this.recordPointers = constructPointers();
             return null;
         } else {
+            pageBuffer.updateAllPage();
             // split the page's record and put into a new page
             int splittingPoint = this.records.size() / 2;
             ArrayList<Record> temp = new ArrayList<>(this.records.subList(splittingPoint, this.records.size()));
             this.records = new ArrayList<>(
                 this.records.subList(0, splittingPoint));
 
-
             Page newPage = new Page(this.pageSize, this.tableNumber, temp, this.pageId + 1);
-
-
             tableHeader.insertNewPage(this.pageId + 1);
+
             return newPage;
         }
     }

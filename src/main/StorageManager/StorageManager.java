@@ -10,12 +10,14 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.xml.crypto.Data;
 import main.Constants.CommandLineTable;
 import main.Constants.Constant;
 import main.Constants.Constant.DataType;
 import main.Constants.Coordinate;
 import main.SqlParser.ShuntingYardAlgorithm;
 import main.StorageManager.B_Tree.BPlusTree;
+import main.StorageManager.B_Tree.RecordPointer;
 import main.StorageManager.Data.*;
 import main.StorageManager.Data.Record;
 import main.StorageManager.MetaData.Catalog;
@@ -117,21 +119,46 @@ public class StorageManager {
             System.out.printf("No such table %s\n", tableName);
             return PREPARE_UNRECOGNIZED_STATEMENT;
         }
+
         TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
+        assert tableHeader != null;
+
         ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader)
                 .getCoordinates();
         Queue<String> whereClause = ShuntingYardAlgorithm.parse(conditions);
-        for (int i = 0; i < coordinates.size(); i++) {
-            Page page = pageBuffer.getPage(i, tableHeader);
-            ArrayList<Record> records = page.getRecords();
-            ArrayList<Record> recordsToDelete = new ArrayList<>();
-            for (Record record : records) {
-                if (ShuntingYardAlgorithm.evaluate(new LinkedList<>(whereClause), record)) {
-                    recordsToDelete.add(record);
-                }
+        BPlusTree bPlusTree = null;
+        if(isIndex){
+            String[] field = conditions.split("=");
+            String value = field[1];
+            int tableNumber = tableHeader.getTableNumber();
+            MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
+            bPlusTree = bPlusTreeHashMap.get(metaTable.getTableNumber());
+            Object newValue = convertValue(value.trim(), metaTable.getPrimaryKey().getType());
+            RecordPointer recordPointer = bPlusTree.delete(newValue);
+            if(recordPointer == null){
+                System.out.println("RP is null??");
+                return PREPARE_UNRECOGNIZED_STATEMENT;
             }
-            for (Record record : recordsToDelete) {
-                pageBuffer.deleteRecord(record, page, i, tableHeader);
+
+            int pageNumber = recordPointer.getPageNumber();
+            int indexNumber = recordPointer.getRecordIndex();
+            Page page = pageBuffer.getPage(pageNumber, tableHeader);
+            page.deleteRecordAtIndex(indexNumber, tableHeader);
+            System.out.println("Deleted");
+            System.out.println(bPlusTree);
+        } else {
+            for (int i = 0; i < coordinates.size(); i++) {
+                Page page = pageBuffer.getPage(i, tableHeader);
+                ArrayList<Record> records = page.getRecords();
+                ArrayList<Record> recordsToDelete = new ArrayList<>();
+                for (Record record : records) {
+                    if (ShuntingYardAlgorithm.evaluate(new LinkedList<>(whereClause), record)) {
+                        recordsToDelete.add(record);
+                    }
+                }
+                for (Record record : recordsToDelete) {
+                    pageBuffer.deleteRecord(record, page, i, tableHeader);
+                }
             }
         }
 
@@ -147,7 +174,6 @@ public class StorageManager {
         }
         TableHeader tableHeader = TableHeader.parseTableHeader(table_file, pageSize);
         int tableNumber = tableHeader.getTableNumber();
-        BPlusTree bPlusTree = bPlusTreeHashMap.get(tableNumber);
         MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
         ArrayList<Coordinate> coordinates = Objects.requireNonNull(tableHeader)
                 .getCoordinates();
@@ -172,6 +198,11 @@ public class StorageManager {
                     updatedRecords.add(updatedRecord);
                 }
             }
+            BPlusTree bPlusTree = null;
+            if(isIndex){
+                bPlusTree = bPlusTreeHashMap.get(tableHeader.getTableNumber());
+            }
+
             for (Record record : recordsToDelete) {
                 pageBuffer.deleteRecord(record, page, i, tableHeader);
             }
@@ -389,7 +420,8 @@ public class StorageManager {
         if(this.isIndex){
             MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
             int N = calculateN(Objects.requireNonNull(metaTable.getPrimaryKey()));
-            BPlusTree bPlusTree = new BPlusTree(N, getIndexFile(table_name));
+            BPlusTree bPlusTree = new BPlusTree(N, getIndexFile(table_name), metaTable.getPrimaryKey()
+                .getType());
             bPlusTreeHashMap.put(tableNumber, bPlusTree);
             // TODO serializing
         }
@@ -530,6 +562,8 @@ public class StorageManager {
         // Get the table number and get the schema table from catalog
         int tableNumber = tableHeader.getTableNumber();
         MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
+
+        // TODO check if index is on
         BPlusTree bPlusTree = bPlusTreeHashMap.get(tableNumber);
 
         // Parse the values from user and validate it
@@ -538,6 +572,8 @@ public class StorageManager {
 
             // Find where to place each record and place it
             Constant.PrepareResult result = this.pageBuffer.findRecordPlacement(records, tableHeader, bPlusTree);
+            System.out.println("INSERTED");
+            System.out.println(bPlusTree);
 
             if (records.size() != values.length || result.equals(PREPARE_UNRECOGNIZED_STATEMENT)) {
                 return PREPARE_UNRECOGNIZED_STATEMENT;
@@ -681,6 +717,16 @@ public class StorageManager {
             System.out.format("Records: %s\n", numOfRecords);
         }
         return PREPARE_SUCCESS;
+    }
+
+    public Object convertValue(String searchValue, DataType dataType){
+        return switch (dataType) {
+            case INTEGER -> Integer.parseInt(searchValue);
+            case DOUBLE -> Double.parseDouble(searchValue);
+            case BOOLEAN -> Boolean.parseBoolean(searchValue);
+            case VARCHAR -> searchValue;
+            default -> searchValue.charAt(0);
+        };
     }
 
     public Catalog createNewCatalog() {

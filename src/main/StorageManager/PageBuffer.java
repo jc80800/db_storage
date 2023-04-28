@@ -234,10 +234,9 @@ public class PageBuffer {
     }
 
     public Page insertRecord(Record record, Page page, int index, TableHeader tableHeader) {
-        Page potentialNewPage = page.insertRecord(record, index, tableHeader);
+        Page potentialNewPage = page.insertRecord(record, index, tableHeader, this);
         if (potentialNewPage != null) {
             putPage(potentialNewPage);
-            updateAllPage();
         }
         return potentialNewPage;
     }

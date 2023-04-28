@@ -4,27 +4,31 @@ import main.Constants.Constant;
 
 import java.io.File;
 import java.util.ArrayList;
+import main.Constants.Constant.DataType;
 
 public class BPlusTree {
     Integer rootIndex;
     int N;
     File file;
     static int nums;
+    private DataType dataType;
 
     // for testing purposes
     static ArrayList<Node> nodes = new ArrayList<>();
 
-    public BPlusTree(int N, File file) {
+    public BPlusTree(int N, File file, DataType dataType) {
         this.N = N;
         this.file = file;
         this.rootIndex = null;
         nums = 0;
+        this.dataType = dataType;
+
     }
 
     private Node getRoot() {
         Node rootNode;
         if (rootIndex == null) {
-            rootNode = new Node(Constant.DataType.INTEGER, true, N, nums++, this);
+            rootNode = new Node(this.dataType, true, N, nums++, this);
             nodes.add(rootNode);
             rootIndex = rootNode.getIndex();
         } else{
@@ -73,17 +77,18 @@ public class BPlusTree {
         nodes.add(node);
     }
 
-    public void delete(int key){
+    public RecordPointer delete(Object key){
         if(rootIndex == null){
             System.out.println("Table is empty! Nothing to delete!");
+            return null;
         }
         else{
             Node rootNode = nodes.get(rootIndex);
-            rootNode.delete(key);
+            return rootNode.delete(key);
         }
     }
 
-    public void update(int key, int value){
+    public void update(Object key, Object value){
 //        delete(key);
 //        insert(value);
     }

@@ -240,37 +240,38 @@ public class Node {
         return this.searchKeys.size() == maxNum();
     }
 
-    public void delete(Object searchValue){
+    public RecordPointer delete(Object searchValue){
         for(int i = 0; i < this.searchKeys.size(); i++) {
             int compareValue = compareValues(searchValue, this.searchKeys.get(i));
             if (compareValue == 0) {
                 if (this.isLeaf){
-                    this.recordPointers.remove(i);
+                    RecordPointer recordPointer = this.recordPointers.remove(i);
                     this.searchKeys.remove(i);
                     if(minNum() > searchKeys.size() && !this.isRoot()){
                         // try to burrow, else merge
                         handleDeficiency();
                     }
+                    return recordPointer;
                 }
                 else {
-                    getRecordPointerNode(i + 1).delete(searchValue);
+                    return getRecordPointerNode(i + 1).delete(searchValue);
                 }
-                return;
             }
             else if (compareValue < 0){
                 if(this.isLeaf){
                     System.out.println("Search Value doesn't exist");
+                    return null;
                 }
                 else{
-                    getRecordPointerNode(i).delete(searchValue);
+                    return getRecordPointerNode(i).delete(searchValue);
                 }
-                return;
             }
         }
         if(this.isLeaf){
             System.out.println("Search Value doesn't exist");
+            return null;
         } else {
-            getRecordPointerNode(this.recordPointers.size() - 1).delete(searchValue);
+            return getRecordPointerNode(this.recordPointers.size() - 1).delete(searchValue);
         }
     }
 
