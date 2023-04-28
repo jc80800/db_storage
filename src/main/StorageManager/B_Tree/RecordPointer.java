@@ -46,4 +46,8 @@ public class RecordPointer {
                 Arrays.copyOfRange(bytes, index, index + Constant.INTEGER_SIZE));
         return new RecordPointer(pageNumber, recordIndex);
     }
+
+    public static int getBinarySize() {
+        return Constant.INTEGER_SIZE * 2;
+    }
 }

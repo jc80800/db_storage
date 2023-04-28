@@ -1,11 +1,16 @@
 package main.StorageManager.B_Tree;
 
+import java.util.Arrays;
+import main.Constants.Constant;
 import main.Constants.Constant.DataType;
 
 import java.util.ArrayList;
+import main.Constants.Helper;
+import main.StorageManager.MetaData.MetaAttribute;
+import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.Headers;
 
 public class Node {
-    private final DataType dataType;
+    private final MetaAttribute metaAttribute;
     private final boolean isLeaf;
     private Integer parentIndex;
     private final int index;
@@ -14,8 +19,8 @@ public class Node {
     private final int N;
     private BPlusTree bPlusTree = null;
 
-    public Node(DataType dataType, boolean isLeaf, int N, int index) {
-        this.dataType = dataType;
+    public Node(MetaAttribute metaAttribute, boolean isLeaf, int N, int index) {
+        this.metaAttribute = metaAttribute;
         this.isLeaf = isLeaf;
         this.searchKeys = new ArrayList<>();
         this.recordPointers = new ArrayList<>();
@@ -24,9 +29,9 @@ public class Node {
         this.index = index;
     }
 
-    public Node(DataType dataType, boolean isLeaf, ArrayList<Object> searchKeys,
+    public Node(MetaAttribute metaAttribute, boolean isLeaf, ArrayList<Object> searchKeys,
                 ArrayList<RecordPointer> recordPointers, int N, Integer parentIndex, int index) {
-        this.dataType = dataType;
+        this.metaAttribute = metaAttribute;
         this.isLeaf = isLeaf;
         this.searchKeys = searchKeys;
         this.recordPointers = recordPointers;
@@ -35,8 +40,8 @@ public class Node {
         this.index = index;
     }
 
-    public Node(DataType dataType, boolean isLeaf, int N, int index, BPlusTree bPlusTree) {
-        this.dataType = dataType;
+    public Node(MetaAttribute metaAttribute, boolean isLeaf, int N, int index, BPlusTree bPlusTree) {
+        this.metaAttribute = metaAttribute;
         this.isLeaf = isLeaf;
         this.searchKeys = new ArrayList<>();
         this.recordPointers = new ArrayList<>();
@@ -76,7 +81,7 @@ public class Node {
 
     private Node splitRoot() {
         Node sibling = this.split();
-        Node parent = new Node(dataType, false, N, BPlusTree.getNextIndexAndIncrement());
+        Node parent = new Node(metaAttribute, false, N, BPlusTree.getNextIndexAndIncrement());
         RecordPointer left = new RecordPointer(-1, this.index);
         RecordPointer right = new RecordPointer(-1, sibling.index);
         parent.addElementByIndex(0, sibling.searchKeys.get(0), left, right);
@@ -88,7 +93,7 @@ public class Node {
 
     private Node splitRoot(Node leftChild, Node rightChild) {
         Node sibling = this.split();
-        Node parent = new Node(dataType, false, N, BPlusTree.getNextIndexAndIncrement());
+        Node parent = new Node(metaAttribute, false, N, BPlusTree.getNextIndexAndIncrement());
         RecordPointer left = new RecordPointer(-1, this.index);
         RecordPointer right = new RecordPointer(-1, sibling.index);
         Object elementLiftedUp = sibling.searchKeys.get(0);
@@ -116,10 +121,10 @@ public class Node {
                 (recordPointers.subList(recordPointerMid, recordPointers.size()));
         Node newNode;
         if (isLeaf) {
-            newNode = new Node(dataType, true, newSearchKeys, newRecordPointers, N, parentIndex,
+            newNode = new Node(metaAttribute, true, newSearchKeys, newRecordPointers, N, parentIndex,
                     BPlusTree.getNextIndexAndIncrement());
         } else {
-            newNode = new Node(dataType, false, newSearchKeys, newRecordPointers, N, parentIndex,
+            newNode = new Node(metaAttribute, false, newSearchKeys, newRecordPointers, N, parentIndex,
                     BPlusTree.getNextIndexAndIncrement());
         }
         BPlusTree.putNode(newNode);
@@ -471,18 +476,85 @@ public class Node {
     }
 
 
-    public byte[] serialize(){
-        // TODO
-        return null;
+    private byte[] serializeSearchKeys() {
+        byte[] bytes = new byte[]{};
+        for (Object searchKey : searchKeys) {
+            byte[] valuesBytes = switch (metaAttribute.getType()) {
+                case BOOLEAN -> new byte[]{Helper.convertBooleanToByte((Boolean) searchKey)};
+                case INTEGER -> Helper.convertIntToByteArray((int) searchKey);
+                case DOUBLE -> Helper.convertDoubleToByteArray((double) searchKey);
+                // CHAR: [len, xxxx, 0, 0...] xxx is actual data, the rest 0's are padding
+                case CHAR -> {
+                    byte[] valueBytes = Helper.convertStringToByteArrays((String) searchKey);
+                    byte[] valueLength = Helper.convertIntToByteArray(valueBytes.length);
+                    // padding with 0 to CHAR maxLength;
+                    valueBytes = Arrays.copyOf(valueBytes, metaAttribute.getMaxLength());
+                    yield Helper.concatenate(valueLength, valueBytes);
+                }
+                case VARCHAR -> Helper.convertStringToByteArrays((String) searchKey);
+            };
+            Helper.concatenate(bytes, valuesBytes);
+        }
+        return bytes;
     }
 
-    public static Node deserialize(byte[] bytes) {
-        // TODO
-        return null;
+    private static ArrayList<Object> deserializeSearchKeys(byte[] bytes, int n) {
+        ArrayList<Object> searchKeys = new ArrayList<>();
+        int i = 0;
+        while(n > 0) {
+            int searchKey = Helper.convertByteArrayToInt(
+                Arrays.copyOfRange(bytes, i, i += Constant.INTEGER_SIZE));
+            searchKeys.add(searchKey);
+            n--;
+        }
+        return searchKeys;
+    }
+
+
+    /**
+     * [index(int), parentIndex(int), isLeaf(Bool), numSK(int), array(searchKeys),
+     * numRP(int), array(recordPointers)]
+     * @return
+     */
+    public byte[] serialize(){
+        byte[] bytes = Helper.convertIntToByteArray(index);
+        byte[] parentIndexArray = Helper.convertIntToByteArray(parentIndex);
+        byte[] isLeafArray = new byte[]{Helper.convertBooleanToByte(isLeaf)};
+        byte[] numOfSK = Helper.convertIntToByteArray(searchKeys.size());
+        byte[] searchKeyArray = serializeSearchKeys();
+        byte[] numOfRP = Helper.convertIntToByteArray(recordPointers.size());
+        Helper.concatenate(bytes, parentIndexArray, isLeafArray, numOfSK, searchKeyArray, numOfRP);
+        for (RecordPointer recordPointer : recordPointers) {
+            Helper.concatenate(bytes, recordPointer.serialize());
+        }
+        return bytes;
+    }
+
+    public static Node deserialize(byte[] bytes, MetaAttribute metaAttribute, int N) {
+        int i = 0;
+        int nodeIndex = Helper.convertByteArrayToInt(
+            Arrays.copyOfRange(bytes, i, i += Constant.INTEGER_SIZE));
+        int parentIndex = Helper.convertByteArrayToInt(
+            Arrays.copyOfRange(bytes, i, i += Constant.INTEGER_SIZE));
+        boolean isLeaf = Helper.convertByteToBoolean(bytes[i++]);
+        int numOfSK = Helper.convertByteArrayToInt(
+            Arrays.copyOfRange(bytes, i, i += Constant.INTEGER_SIZE));
+        ArrayList<Object> searchKeys = deserializeSearchKeys(
+            Arrays.copyOfRange(bytes, i, i += Constant.INTEGER_SIZE * numOfSK),
+            numOfSK);
+        int numOfRP = Helper.convertByteArrayToInt(
+            Arrays.copyOfRange(bytes, i, i += Constant.INTEGER_SIZE));
+        ArrayList<RecordPointer> recordPointers = new ArrayList<>();
+        for (int j = 0; j < numOfRP; j++) {
+            RecordPointer recordPointer = RecordPointer.deserialize(
+                Arrays.copyOfRange(bytes, i, i += RecordPointer.getBinarySize()));
+            recordPointers.add(recordPointer);
+        }
+        return new Node(metaAttribute, isLeaf, searchKeys, recordPointers, N, nodeIndex, parentIndex);
     }
 
     protected int compareValues(Object searchValue, Object compareValue) {
-        return switch (dataType) {
+        return switch (metaAttribute.getType()) {
             case INTEGER -> ((Integer) searchValue).compareTo((Integer) compareValue);
             case DOUBLE -> ((Double) searchValue).compareTo((Double) compareValue);
             case BOOLEAN -> ((Boolean) searchValue).compareTo((Boolean) compareValue);

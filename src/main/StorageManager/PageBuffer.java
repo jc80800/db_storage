@@ -274,7 +274,7 @@ public class PageBuffer {
                     // Check if record can be placed in this page
                     try {
                         if (checkPlacement(pageRecords, record, page, tableHeader, i)) {
-                            return PREPARE_SUCCESS;
+                            break;
                         }
                     } catch (IllegalArgumentException e) {
                         return PREPARE_UNRECOGNIZED_STATEMENT;

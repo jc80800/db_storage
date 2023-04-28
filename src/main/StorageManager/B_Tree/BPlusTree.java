@@ -5,30 +5,31 @@ import main.Constants.Constant;
 import java.io.File;
 import java.util.ArrayList;
 import main.Constants.Constant.DataType;
+import main.StorageManager.MetaData.MetaAttribute;
 
 public class BPlusTree {
     Integer rootIndex;
     int N;
     File file;
     static int nums;
-    private DataType dataType;
+    private MetaAttribute metaAttribute;
 
     // for testing purposes
     static ArrayList<Node> nodes = new ArrayList<>();
 
-    public BPlusTree(int N, File file, DataType dataType) {
+    public BPlusTree(int N, File file, MetaAttribute metaAttribute) {
         this.N = N;
         this.file = file;
         this.rootIndex = null;
         nums = 0;
-        this.dataType = dataType;
+        this.metaAttribute = metaAttribute;
 
     }
 
     private Node getRoot() {
         Node rootNode;
         if (rootIndex == null) {
-            rootNode = new Node(this.dataType, true, N, nums++, this);
+            rootNode = new Node(metaAttribute, true, N, nums++, this);
             nodes.add(rootNode);
             rootIndex = rootNode.getIndex();
         } else{

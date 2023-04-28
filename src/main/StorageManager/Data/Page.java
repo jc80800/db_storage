@@ -60,7 +60,9 @@ public class Page {
                 coordinate.getOffset() + coordinate.getLength()), metaTable.metaAttributes());
             records.add(record);
             numOfRecords--;
+
         }
+
         return new Page(pageSize, tableNumber, pointers, records, pageId);
     }
 
@@ -81,7 +83,6 @@ public class Page {
      * @return byte array
      */
     public byte[] serialize() {
-        byte[] pageIdBytes = Helper.convertIntToByteArray(this.pageId);
         byte[] numOfRecordsBytes = Helper.convertIntToByteArray(records.size());
         byte[] pointersBytes = new byte[0];
         for (Coordinate pointer : recordPointers) {
@@ -94,7 +95,7 @@ public class Page {
             byte[] recordBytes = record.serialize();
             recordsBytes = Helper.concatenate(recordBytes, recordsBytes);
         }
-        byte[] bytes = Helper.concatenate(pageIdBytes, numOfRecordsBytes, pointersBytes);
+        byte[] bytes = Helper.concatenate(numOfRecordsBytes, pointersBytes);
 
         // fill 0's between pointers and records
         bytes = Arrays.copyOf(bytes, pageSize - recordsBytes.length);

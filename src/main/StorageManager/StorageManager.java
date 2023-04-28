@@ -419,8 +419,7 @@ public class StorageManager {
         if(this.isIndex){
             MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
             int N = calculateN(Objects.requireNonNull(metaTable.getPrimaryKey()));
-            BPlusTree bPlusTree = new BPlusTree(N, getIndexFile(table_name), metaTable.getPrimaryKey()
-                .getType());
+            BPlusTree bPlusTree = new BPlusTree(N, getIndexFile(table_name), metaTable.getPrimaryKey());
             bPlusTreeHashMap.put(tableNumber, bPlusTree);
             // TODO serializing
         }
