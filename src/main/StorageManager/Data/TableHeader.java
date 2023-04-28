@@ -43,6 +43,10 @@ public class TableHeader {
         this.pageSize = pageSize;
     }
 
+    public int getCurrentNumOfPages(){
+        return this.currentNumOfPages;
+    }
+
     public static TableHeader parseTableHeader(File table_file, int pageSize) {
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(table_file.getPath(), "rw");
@@ -146,10 +150,10 @@ public class TableHeader {
                 randomAccessFile.seek(0);
                 byte[] bytes = this.serialize();
                 randomAccessFile.write(bytes);
-//                Coordinate newCoordinate = this.coordinates.get(newPageIndex);
-//                byte[] bytes1 = new byte[newCoordinate.getLength()];
-//                randomAccessFile.seek(newCoordinate.getOffset());
-//                randomAccessFile.write(bytes1);
+                Coordinate newCoordinate = this.coordinates.get(newPageIndex);
+                byte[] bytes1 = new byte[newCoordinate.getLength()];
+                randomAccessFile.seek(newCoordinate.getOffset());
+                randomAccessFile.write(bytes1);
                 randomAccessFile.close();
             }
 

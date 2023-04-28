@@ -133,7 +133,11 @@ public class Page {
             ArrayList<Record> temp = new ArrayList<>(this.records.subList(splittingPoint, this.records.size()));
             this.records = new ArrayList<>(
                 this.records.subList(0, splittingPoint));
+
+
             Page newPage = new Page(this.pageSize, this.tableNumber, temp, this.pageId + 1);
+
+
             tableHeader.insertNewPage(this.pageId + 1);
             return newPage;
         }

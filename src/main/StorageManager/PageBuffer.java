@@ -74,7 +74,6 @@ public class PageBuffer {
     public void putPage(Page page) {
         if (bufferQueue.size() >= bufferSize) {
             Page removedPage = bufferQueue.removeLast();
-            updatePage(removedPage);
             pages.remove(new PageKey(removedPage.getPageId(), removedPage.getTableNumber()));
         }
 
@@ -83,9 +82,11 @@ public class PageBuffer {
     }
 
     public void updateAllPage() {
-        for (Page page : this.bufferQueue) {
+        while (!this.bufferQueue.isEmpty()){
+            Page page = this.bufferQueue.poll();
             updatePage(page);
         }
+
     }
 
     public void updatePage(Page page) {
@@ -236,6 +237,7 @@ public class PageBuffer {
         Page potentialNewPage = page.insertRecord(record, index, tableHeader);
         if (potentialNewPage != null) {
             putPage(potentialNewPage);
+            updateAllPage();
         }
         return potentialNewPage;
     }

@@ -413,6 +413,7 @@ public class StorageManager {
                 TableHeader tableHeader = TableHeader.parseTableHeader(tableFile, pageSize);
 
                 assert tableHeader != null;
+
                 for (MetaAttribute attribute : catalog.getMetaTable(tableHeader.getTableNumber()).metaAttributes()) {
                     if (tableList.size() == 1) {
                         metaAttributes.add(attribute);
