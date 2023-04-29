@@ -57,9 +57,6 @@ class BPlusTreeTest {
         node2.setRecordPointers(255);
 
         bPlusTree.setRootIndex(0);
-        BPlusTree.insertNodeForTesting(root);
-        BPlusTree.insertNodeForTesting(node1);
-        BPlusTree.insertNodeForTesting(node2);
 
         System.out.println(bPlusTree);
         bPlusTree.delete(5);

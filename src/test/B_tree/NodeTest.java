@@ -22,7 +22,8 @@ class NodeTest {
         recordPointers.add(recordPointer);
         ArrayList<Object> searchKeys = new ArrayList<>();
         searchKeys.add(1);
-        int N = 2;
+        int N = 4;
+
         Node node = new Node(metaAttribute1, false, searchKeys, recordPointers, N, -1, 0, bPlusTree);
         byte[] bytes = node.serialize();
         Node deserialized = Node.deserialize(bytes, metaAttribute1, N, bPlusTree);

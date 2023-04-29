@@ -93,6 +93,7 @@ public class Node {
         parent.addElementByIndex(0, sibling.searchKeys.get(0), left, right);
         this.updateParentIndex(parent.index);
         sibling.updateParentIndex(parent.index);
+        bPlusTree.persistNode(parent);
         return parent;
     }
 
@@ -106,11 +107,13 @@ public class Node {
         sibling.searchKeys.remove(0);
         this.updateParentIndex(parent.index);
         sibling.updateParentIndex(parent.index);
+        System.out.println(rightChild.searchKeys.size());
         int compareResult = compareValues(rightChild.searchKeys.get(rightChild.searchKeys.size() - 1), elementLiftedUp);
         if (compareResult >= 0) {
             leftChild.updateParentIndex(sibling.index);
             rightChild.updateParentIndex(sibling.index);
         }
+        bPlusTree.persistNode(parent);
         return parent;
     }
 
@@ -131,10 +134,11 @@ public class Node {
             newNode = new Node(metaAttribute, false, newSearchKeys, newRecordPointers, N, parentIndex,
                     bPlusTree.getNextIndexAndIncrement(), bPlusTree);
         }
-//        bPlusTree.persistNode(newNode);
 
         this.searchKeys = new ArrayList<>(searchKeys.subList(0, mid));
         this.recordPointers = new ArrayList<>(recordPointers.subList(0, recordPointerMid));
+        bPlusTree.persistNode(this);
+        bPlusTree.persistNode(newNode);
         return newNode;
     }
 
@@ -164,6 +168,7 @@ public class Node {
                 newNode.updateParentIndex(parent.index);
                 if (parent.isRoot() && !newNode.isLeaf) {
                     newNode.searchKeys.remove(0);
+                    bPlusTree.persistNode(newNode);
                 }
                 added = true;
                 break;
@@ -174,6 +179,7 @@ public class Node {
             newNode.updateParentIndex(parent.index);
             if (parent.isRoot() && !newNode.isLeaf) {
                 newNode.searchKeys.remove(0);
+                bPlusTree.persistNode(newNode);
             }
         }
         if (parent.overflow()) {
@@ -187,6 +193,7 @@ public class Node {
                 return parent.addNodeToParent(parentSibling);
             }
         }
+        bPlusTree.persistNode(parent);
         return null;
     }
 
@@ -204,49 +211,41 @@ public class Node {
             }
             if (compareValue < 0) {
                 // if root as leaf (only one node)
-                if (isRoot() && isLeaf) {
+                if (isRoot()) {
                     addElementByIndex(i, searchValue, new RecordPointer(pageNumber, recordNumber));
                     if (overflow()) {
                         return splitRoot();
                     }
                 }
                 // if leaf node
-                else if (isLeaf) {
+                else {
                     addElementByIndex(i, searchValue, new RecordPointer(pageNumber, recordNumber));
                     if (overflow()) {
                         Node newNode = split();
                         return addNodeToParent(newNode);
                     }
                 }
-                // if internal node
-                else {
-                    Node node = bPlusTree.getNodeAtIndex(recordPointers.get(i).getRecordIndex());
-                    return node.insert(searchValue, pageNumber, recordNumber);
-                }
+                bPlusTree.persistNode(this);
                 return null;
             }
         }
         // largest value
         // if it's root
-        if (isRoot() && isLeaf) {
+        if (isRoot()) {
             addElementByIndex(searchKeys.size(), searchValue, new RecordPointer(pageNumber, recordNumber));
             if (overflow()) {
                 return splitRoot();
             }
         }
         // if leaf node
-        else if (isLeaf) {
+        else {
             addElementByIndex(searchKeys.size(), searchValue, new RecordPointer(pageNumber, recordNumber));
             if (overflow()) {
                 Node newNode = split();
                 return addNodeToParent(newNode);
             }
         }
-        // if internal node
-        else {
-            Node node = bPlusTree.getNodeAtIndex(recordPointers.get(searchKeys.size()).getRecordIndex());
-            return node.insert(searchValue, pageNumber, recordNumber);
-        }
+        bPlusTree.persistNode(this);
         return null;
     }
 
@@ -537,7 +536,7 @@ public class Node {
         for (RecordPointer recordPointer : recordPointers) {
             bytes = Helper.concatenate(bytes, recordPointer.serialize());
         }
-        bytes = Arrays.copyOf(bytes, bPlusTree.getPageSize() - bytes.length);
+        bytes = Arrays.copyOf(bytes, bPlusTree.getPageSize());
         return bytes;
     }
 

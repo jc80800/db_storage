@@ -19,9 +19,6 @@ public class BPlusTree {
     private final int pageSize;
     private final MetaAttribute metaAttribute;
 
-    // for testing purposes
-    static ArrayList<Node> nodes = new ArrayList<>();
-
     public BPlusTree(File file, MetaAttribute metaAttribute, int pageSize) {
         this.file = file;
         this.rootIndex = -1;
@@ -44,10 +41,10 @@ public class BPlusTree {
         Node rootNode;
         if (rootIndex == -1) {
             rootNode = new Node(metaAttribute, true, N, numOfNodes++, this);
-            nodes.add(rootNode);
+            persistNode(rootNode);
             rootIndex = rootNode.getIndex();
         } else {
-            rootNode = nodes.get(rootIndex);
+            rootNode = getNodeAtIndex(rootIndex);
         }
         return rootNode;
     }
@@ -63,6 +60,7 @@ public class BPlusTree {
                 RecordPointer recordPointer = recordPointers.get(i);
                 recordPointer.setPageNumber(newPageId);
                 recordPointer.setRecordIndex(newRecordIndex);
+                persistNode(node);
                 return;
             }
         }
@@ -88,10 +86,6 @@ public class BPlusTree {
     }
 
 
-    public static void putNode(Node node) {
-        nodes.add(node);
-    }
-
     public RecordPointer findRecordPointerForDeletion(Object key) {
         Node root = getRoot();
         Node nodeToDelete = search(root, key);
@@ -103,7 +97,7 @@ public class BPlusTree {
         if (rootIndex == -1) {
             System.out.println("Table is empty! Nothing to delete!");
         } else {
-            Node rootNode = nodes.get(rootIndex);
+            Node rootNode = getRoot();
             Node node = rootNode.delete(key);
             if (node != null) {
                 this.rootIndex = node.getIndex();
@@ -116,18 +110,15 @@ public class BPlusTree {
 //        insert(value);
     }
 
-    public static void insertNodeForTesting(Node node) {
-        nodes.add(node);
-    }
-
     public void setRootIndex(int index) {
         this.rootIndex = index;
     }
 
     public Node getNodeAtIndex(int index) {
-        index += getBinarySize();
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file.getParentFile(), "r")) {
-            randomAccessFile.seek(index);
+        int pointer = getBinarySize();
+        pointer += index * pageSize;
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file.getPath(), "r")) {
+            randomAccessFile.seek(pointer);
             byte[] pageBytes = new byte[pageSize];
             randomAccessFile.readFully(pageBytes);
             return Node.deserialize(pageBytes, metaAttribute, N, this);
@@ -138,7 +129,8 @@ public class BPlusTree {
 
     public void persistNode(Node node) {
         int index = getBinarySize();
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file.getParentFile(), "w")) {
+        index += node.getIndex() * pageSize;
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(file.getPath(), "rw")) {
             randomAccessFile.seek(index);
             byte[] pageBytes = node.serialize();
             randomAccessFile.write(pageBytes);
@@ -152,6 +144,7 @@ public class BPlusTree {
     }
 
     private int calculateN() {
+        int size = pageSize - (Constant.INTEGER_SIZE * 4 + Constant.BOOLEAN_SIZE);
         Constant.DataType dataType = metaAttribute.getType();
         float maxSize = switch (dataType) {
             case INTEGER -> Constant.INTEGER_SIZE;
@@ -159,24 +152,10 @@ public class BPlusTree {
             case BOOLEAN -> Constant.BOOLEAN_SIZE;
             default -> Constant.CHAR_SIZE * metaAttribute.getMaxLength();
         };
-
-        return (int) Math.floor(pageSize / (maxSize)) - 1;
+        maxSize += RecordPointer.getBinarySize();
+        return (int) Math.floor(size / (maxSize)) - 1;
     }
 
-    public static void printNodes() {
-        for (Node n : nodes) {
-            System.out.println(n);
-        }
-    }
-
-    @Override
-    public String toString() {
-        if (rootIndex == -1) {
-            return "No tree";
-        }
-        Node root = nodes.get(rootIndex);
-        return root.toString();
-    }
 
     /**
      * [numOfNodes(int), rootIndex(int)]
@@ -202,6 +181,14 @@ public class BPlusTree {
 
     private int getBinarySize() {
         return Constant.INTEGER_SIZE * 2;
+    }
+
+    public static int BinarySize() {
+        return Constant.INTEGER_SIZE * 2;
+    }
+
+    public File getFile() {
+        return file;
     }
 
     @Override

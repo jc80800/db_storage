@@ -39,7 +39,6 @@ public class StorageManager {
         this.pageSize = pageSize;
         this.bufferSize = bufferSize;
         this.isIndex = isIndex;
-        bPlusTreeHashMap = new HashMap<>();
     }
 
     /**
@@ -63,6 +62,7 @@ public class StorageManager {
             System.out.println("Restarting the database...");
         }
         checkCatalog();
+        parseBTrees();
         System.out.println("\nPlease enter commands, enter <quit> to shutdown the db\n");
     }
 
@@ -418,7 +418,8 @@ public class StorageManager {
         // Create an index
         if(this.isIndex){
             MetaTable metaTable = this.catalog.getMetaTable(tableNumber);
-            BPlusTree bPlusTree = new BPlusTree(getIndexFile(table_name), metaTable.getPrimaryKey(), pageSize);
+            File BPlusTreeFile = createIndexFile(table_name);
+            BPlusTree bPlusTree = new BPlusTree(BPlusTreeFile, metaTable.getPrimaryKey(), pageSize);
             bPlusTreeHashMap.put(tableNumber, bPlusTree);
         }
         return PREPARE_SUCCESS;
@@ -746,6 +747,42 @@ public class StorageManager {
         }
     }
 
+    private void persistBTree(BPlusTree bPlusTree) {
+        try (RandomAccessFile raf = new RandomAccessFile(bPlusTree.getFile(), "rw")) {
+            byte[] bytes = bPlusTree.serialize();
+            raf.write(bytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void persistBTrees() {
+        for (Map.Entry<Integer, BPlusTree> entry : bPlusTreeHashMap.entrySet()) {
+            BPlusTree bPlusTree = entry.getValue();
+            persistBTree(bPlusTree);
+        }
+    }
+
+    private BPlusTree parseBtree(File file, MetaAttribute metaAttribute) {
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+            byte[] bytes = new byte[BPlusTree.BinarySize()];
+            raf.readFully(bytes);
+            return BPlusTree.deserialize(bytes,file, metaAttribute, pageSize);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private void parseBTrees() {
+        HashMap<Integer, BPlusTree> bPlusTreeHashMap = new HashMap<>();
+        for (Map.Entry<Integer, MetaTable> entry : this.catalog.getMetaTableHashMap().entrySet()) {
+            MetaTable metaTable = entry.getValue();
+            File BTreeFile = new File(db.getName() + "/" + metaTable.getTableName() + "_index");
+            MetaAttribute primaryKeyMA = metaTable.getPrimaryKey();
+            bPlusTreeHashMap.put(entry.getKey(), parseBtree(BTreeFile, primaryKeyMA));
+        }
+        this.bPlusTreeHashMap = bPlusTreeHashMap;
+    }
+
     private Catalog parseCatalog(File catalog_file) {
         // Deserialize the file and return a catalog
         try (RandomAccessFile raf = new RandomAccessFile(catalog_file, "rw")) {
@@ -763,9 +800,17 @@ public class StorageManager {
         return new File(table_path);
     }
 
-    public File getIndexFile(String table){
+    public File createIndexFile(String table){
         String index_path = db.getName() + "/" + table + "_index";
-        return new File(index_path);
+        File file = new File(index_path);
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return file;
     }
 
     public void createFile(File file, int tableNumber) {
@@ -786,5 +831,7 @@ public class StorageManager {
 
         System.out.println("Saving catalog...");
         saveCatalog();
+        System.out.println("Saving B+ Trees");
+        persistBTrees();
     }
 }

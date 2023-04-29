@@ -64,4 +64,12 @@ public class RecordPointer {
     public int hashCode() {
         return Objects.hash(pageNumber, recordIndex);
     }
+
+    @Override
+    public String toString() {
+        return "RecordPointer{" +
+                "pageNumber=" + pageNumber +
+                ", recordIndex=" + recordIndex +
+                '}';
+    }
 }
