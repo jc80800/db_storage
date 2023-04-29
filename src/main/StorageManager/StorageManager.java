@@ -456,16 +456,7 @@ public class StorageManager {
                 for (int j = 0; j < coordinates.size(); j++) {
                     Coordinate coordinate = coordinates.get(j);
 
-                    System.out.println("START!");
-                    System.out.println("At index: " + j + " The coordinate is " + coordinate);
-
                     Page page = pageBuffer.getPage(coordinate, tableHeader);
-
-                    System.out.println(page.getPageId());
-                    for(Record record : page.getRecords()){
-                        System.out.println(record);
-                    }
-                    System.out.println("END!");
 
                     if (i == 0) {
                         newRecords.addAll(page.getRecords());

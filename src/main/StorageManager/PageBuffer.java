@@ -269,7 +269,6 @@ public class PageBuffer {
                 }
 
                 int pageIndex = getPageIndex(page.getPageId(), coordinates);
-                System.out.println("PageID came out to be:" + pageIndex + "At " + page.getPageId());
 
                 Page newPage = insertRecord(record, page, recordIndex, tableHeader, pageIndex);
                 int pageId = page.containsRecord(record) ? page.getPageId() : newPage.getPageId();

@@ -74,7 +74,6 @@ public class Page {
 
     public boolean isEnoughSpaceForInsert(Record record) {
         int available = calculateAvailableSpace();
-        System.out.println("Avaialble space for page " + pageId + " is" + available);
         return available >= (record.getBinarySize() + Coordinate.getBinarySize());
     }
 
@@ -149,8 +148,6 @@ public class Page {
             this.recordPointers = constructPointers();
 
             Page newPage = new Page(this.pageSize, this.tableNumber, temp, tableHeader.getCurrentNumOfPages());
-
-            System.out.println("Current Page ID is " + this.pageId + " And going to insert at index " + (currentPageIndex + 1));
 
             tableHeader.insertNewPage(currentPageIndex + 1, newPage.getPageId());
             return newPage;

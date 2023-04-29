@@ -101,7 +101,6 @@ public class TableHeader {
         } else {
             this.coordinates.add(coordinate);
         }
-        System.out.println("Inserted a new Coordinate of " + coordinate + " At index " + index);
 
         this.currentNumOfPages += 1;
 
@@ -157,7 +156,6 @@ public class TableHeader {
                 byte[] bytes = this.serialize();
                 randomAccessFile.write(bytes);
                 Coordinate newCoordinate = this.coordinates.get(newPageIndex);
-                System.out.println("Working on expanding coordinate " + newCoordinate);
                 byte[] bytes1 = new byte[this.pageSize];
                 randomAccessFile.seek(newCoordinate.getOffset());
                 randomAccessFile.write(bytes1);
