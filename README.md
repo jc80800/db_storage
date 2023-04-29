@@ -3,12 +3,7 @@
 # How to run the program
 - cd inside src folder
 - javac main/Main.java
-- java main/Main \<db loc> \<page size> \<buffer size>
-
-# Starting Functionality
-
-- java src.main <db loc> <page size> <buffer size>
-- May need to compile beforehand if using terminal
+- java main/Main \<db loc> \<page size> \<buffer size> \<indexOn>
 
 # Database Directory
 
