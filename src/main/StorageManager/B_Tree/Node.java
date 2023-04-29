@@ -107,7 +107,6 @@ public class Node {
         sibling.searchKeys.remove(0);
         this.updateParentIndex(parent.index);
         sibling.updateParentIndex(parent.index);
-        System.out.println(rightChild.searchKeys.size());
         int compareResult = compareValues(rightChild.searchKeys.get(rightChild.searchKeys.size() - 1), elementLiftedUp);
         if (compareResult >= 0) {
             leftChild.updateParentIndex(sibling.index);
@@ -119,9 +118,7 @@ public class Node {
 
     private Node split() {
         int mid = searchKeys.size() / 2;
-        int recordPointerMid = (isLeaf) ?
-                recordPointers.size() / 2
-                : (recordPointers.size() / 2) + 1;
+        int recordPointerMid = recordPointers.size() / 2;
         // construct new Node
         ArrayList<Object> newSearchKeys = new ArrayList<>(searchKeys.subList(mid, searchKeys.size()));
         ArrayList<RecordPointer> newRecordPointers = new ArrayList<>
@@ -260,6 +257,7 @@ public class Node {
                 if (this.isLeaf){
                     RecordPointer recordPointer = this.recordPointers.remove(i);
                     this.searchKeys.remove(i);
+                    bPlusTree.persistNode(this);
                     if(minNum() > searchKeys.size() && !this.isRoot()){
                         // try to burrow, else merge
                         return handleDeficiency();
@@ -307,12 +305,16 @@ public class Node {
                 searchKeys.add(0, borrow);
 
                 parentNode.searchKeys.set(getIndexRelativetoParent() - 1, borrow);
+                bPlusTree.persistNode(leftSibling);
+                bPlusTree.persistNode(parentNode);
                 return true;
 
             } else if (rightSibling != null && rightSibling.searchKeys.size() > rightSibling.minNum()) {
                 Object borrow = rightSibling.searchKeys.remove(0);
                 searchKeys.add(borrow);
                 parentNode.searchKeys.set(getIndexRelativetoParent(), rightSibling.searchKeys.get(0));
+                bPlusTree.persistNode(rightSibling);
+                bPlusTree.persistNode(parentNode);
                 return true;
             }
         } else {
@@ -326,6 +328,8 @@ public class Node {
                 parentNode.searchKeys.set(relativeIndex - 1, transfer);
                 RecordPointer recordPointer = leftSibling.recordPointers.remove(leftSibling.recordPointers.size() - 1);
                 this.recordPointers.add(0, recordPointer);
+                bPlusTree.persistNode(leftSibling);
+                bPlusTree.persistNode(parentNode);
                 return true;
             } else if (rightSibling != null && rightSibling.searchKeys.size() > rightSibling.minNum()){
                 Object borrow = parentNode.searchKeys.get(relativeIndex);
@@ -335,6 +339,8 @@ public class Node {
                 parentNode.searchKeys.set(relativeIndex, transfer);
                 RecordPointer recordPointer = rightSibling.recordPointers.remove(0);
                 this.recordPointers.add(recordPointer);
+                bPlusTree.persistNode(rightSibling);
+                bPlusTree.persistNode(parentNode);
                 return true;
             }
         }
@@ -418,12 +424,15 @@ public class Node {
             parentNode.recordPointers.add(lesserIndex, new RecordPointer(-1, this.index));
 
         }
+        bPlusTree.persistNode(this);
+        bPlusTree.persistNode(parentNode);
         if (parentNode.searchKeys.size() < parentNode.minNum()) {
             if(!parentNode.isRoot()) {
                 return parentNode.handleDeficiency();
             } else {
                 if (parentNode.searchKeys.size() == 0){
                     this.updateParentIndex(-1);
+                    bPlusTree.persistNode(this);
                     return this;
                 }
             }
@@ -470,11 +479,12 @@ public class Node {
     }
 
     private int maxNum() {
-        if (isLeaf) {
-            return N - 1;
-        } else {
-            return N;
-        }
+//        if (isLeaf) {
+//            return N - 1;
+//        } else {
+//            return N;
+//        }
+        return N;
     }
 
     private int minNum() {
