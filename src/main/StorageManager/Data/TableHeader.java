@@ -101,6 +101,7 @@ public class TableHeader {
         } else {
             this.coordinates.add(coordinate);
         }
+        System.out.println("Inserted a new Coordinate of " + coordinate + " At index " + index);
 
         this.currentNumOfPages += 1;
 
@@ -156,7 +157,7 @@ public class TableHeader {
                 byte[] bytes = this.serialize();
                 randomAccessFile.write(bytes);
                 Coordinate newCoordinate = this.coordinates.get(newPageIndex);
-                System.out.println("LOOKING AT THE NEW COORDINATE " + newCoordinate);
+                System.out.println("Working on expanding coordinate " + newCoordinate);
                 byte[] bytes1 = new byte[this.pageSize];
                 randomAccessFile.seek(newCoordinate.getOffset());
                 randomAccessFile.write(bytes1);
@@ -195,13 +196,13 @@ public class TableHeader {
 
                 // copy the old pages over
                 for (int i = 0; i < coordinates.size() - 1; i++) {
-                    byte[] bytes = new byte[coordinates.get(0).getLength()];
+                    byte[] bytes = new byte[this.pageSize];
                     randomAccessFile.readFully(bytes);
                     tempRandomAccessFile.write(bytes);
                 }
 
                 // Write the new page padding
-                byte[] bytes1 = new byte[coordinates.get(0).getLength()];
+                byte[] bytes1 = new byte[this.pageSize];
                 tempRandomAccessFile.write(bytes1);
 
                 // Rename and overwrite old file

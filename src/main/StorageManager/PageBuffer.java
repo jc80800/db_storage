@@ -117,24 +117,12 @@ public class PageBuffer {
         }
     }
 
-    public int getPageIndex(int pageId, ArrayList<Coordinate> coordinates, TableHeader tableHeader){
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile(
-            tableHeader.getTable_file().getPath(), "r");) {
-
-            for (int i = 0; i < coordinates.size(); i++) {
-                Coordinate coordinate = coordinates.get(i);
-                System.out.println("LOOKING AT ");
-                System.out.println(coordinate);
-                randomAccessFile.seek(coordinate.getOffset());
-                byte[] pageIdBytes = new byte[Constant.INTEGER_SIZE];
-                randomAccessFile.readFully(pageIdBytes);
-
-                if (pageId == Page.deserializePageId(pageIdBytes)) {
-                    return i;
-                }
+    public int getPageIndex(int pageId, ArrayList<Coordinate> coordinates){
+        for (int i = 0; i < coordinates.size(); i++) {
+            Coordinate coordinate = coordinates.get(i);
+            if(coordinate.getLength() == pageId){
+                return i;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
         return -1;
     }
@@ -280,9 +268,9 @@ public class PageBuffer {
                     return PREPARE_UNRECOGNIZED_STATEMENT;
                 }
 
-                int pageIndex = getPageIndex(page.getPageId(), coordinates, tableHeader);
+                int pageIndex = getPageIndex(page.getPageId(), coordinates);
+                System.out.println("PageID came out to be:" + pageIndex + "At " + page.getPageId());
 
-                System.out.println("page index is +++" + pageIndex);
                 Page newPage = insertRecord(record, page, recordIndex, tableHeader, pageIndex);
                 int pageId = page.containsRecord(record) ? page.getPageId() : newPage.getPageId();
 
@@ -344,8 +332,6 @@ public class PageBuffer {
         TableHeader tableHeader, int pageIndex) {
         Object recordValue = target.getPrimaryKey().getValue();
 
-        System.out.println("Checking the placement of the record on page " + pageIndex);
-
         for (int i = 0; i < records.size(); i++) {
             Constant.DataType type = target.getPrimaryKey().getMetaAttribute().getType();
             Record currentPageRecord = records.get(i);
@@ -357,7 +343,6 @@ public class PageBuffer {
                 throw new IllegalArgumentException();
             }
             if (compareResult < 0) {
-                System.out.println("Inserting the Record at index " + i + "on pageIndex of " + pageIndex);
                 insertRecord(target, page, i, tableHeader, pageIndex);
                 return true;
             }
@@ -451,9 +436,7 @@ public class PageBuffer {
     public boolean checkUnique(Object value, TableHeader tableHeader, int index) {
         ArrayList<Coordinate> coordinates = tableHeader.getCoordinates();
         for (int i = 0; i < coordinates.size(); i++) {
-            System.out.println("Checkpoint 1");
             Page page = getPage(coordinates.get(i), tableHeader);
-            System.out.println("Checkpoint 2");
             ArrayList<Record> pageRecords = page.getRecords();
             for (Record record : pageRecords) {
                 if ((record.getAttributes().get(index).getValue()).equals(value)

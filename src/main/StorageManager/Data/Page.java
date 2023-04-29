@@ -141,23 +141,16 @@ public class Page {
             this.recordPointers = constructPointers();
             return null;
         } else {
-            System.out.println("Splitting page now");
             // split the page's record and put into a new page
             int splittingPoint = this.records.size() / 2;
             ArrayList<Record> temp = new ArrayList<>(this.records.subList(splittingPoint, this.records.size()));
             this.records = new ArrayList<>(
                 this.records.subList(0, splittingPoint));
             this.recordPointers = constructPointers();
-            System.out.println("Current Records for this page at " + this.pageId);
-            for (Record record1 : this.records){
-                System.out.println(record1);
-            }
 
             Page newPage = new Page(this.pageSize, this.tableNumber, temp, tableHeader.getCurrentNumOfPages());
-            System.out.println("The New Page Created is at pageID of " + newPage.getPageId() );
-            for (Record record1 : newPage.records){
-                System.out.println(record1);
-            }
+
+            System.out.println("Current Page ID is " + this.pageId + " And going to insert at index " + (currentPageIndex + 1));
 
             tableHeader.insertNewPage(currentPageIndex + 1, newPage.getPageId());
             return newPage;
